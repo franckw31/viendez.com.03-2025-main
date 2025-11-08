@@ -1,0 +1,17 @@
+{
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "previewLimit": 50,
+            "server": "192.168.1.166",
+            "port": 3306,
+            "driver": "MySQL",
+            "name": "166",
+            "username": "root",
+            "database": "dbs9616600"
+        }
+    ]
+}
