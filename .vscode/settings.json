@@ -5,13 +5,48 @@
                 "authProtocol": "default",
                 "enableSsl": "Disabled"
             },
+            "ssh": "Disabled",
             "previewLimit": 50,
-            "server": "192.168.1.166",
+            "server": "192.168.1.77",
             "port": 3306,
             "driver": "MySQL",
-            "name": "166",
+            "name": "77",
             "username": "root",
             "database": "dbs9616600"
+        },
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "ssh": "Disabled",
+            "previewLimit": 50,
+            "server": "192.168.1.77",
+            "port": 3306,
+            "driver": "MySQL",
+            "database": "dbs9616600",
+            "username": "root",
+            "name": "1.77"
+        },
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "ssh": "Enabled",
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 3306,
+            "sshOptions": {
+                "port": 22,
+                "host": "192.168.1.77",
+                "username": "root",
+                "password": "Kookies"
+            },
+            "driver": "MySQL",
+            "database": "dbs9616600",
+            "username": "root",
+            "name": "192.168.1.77"
         }
     ],
     "githubPullRequests.queries": [
