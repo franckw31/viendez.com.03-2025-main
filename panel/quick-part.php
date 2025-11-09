@@ -6,7 +6,7 @@ session_start();
 // error_reporting(E_ALL);
 error_reporting(0); // Production setting
 
-include(__DIR__ . '/../asup-config.php'); // Ensure DB connection ($con)
+include('include/config.php');// Ensure DB connection ($con)
 
 // --- Initial Variable Setup & Defaults ---
 $gid_part = isset($_GET['part']) ? intval($_GET['part']) : null;
