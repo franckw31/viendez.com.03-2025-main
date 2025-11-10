@@ -1051,105 +1051,41 @@ JOIN activite a ON p.`id-activite` = a.`id-activite`";
         <h2>Podium des Joueurs Classés</h2>
         <?php
         if ($selected_activity !== null && $data_found) {
-            // First, get the challenge ID from the selected activity
-            $challenge_query = "SELECT id_challenge FROM activite WHERE `id-activite` = ?";
-            $stmt_challenge_id = mysqli_prepare($con, $challenge_query);
-            $current_challenge_id = null;
-            
-            if ($stmt_challenge_id) {
-                mysqli_stmt_bind_param($stmt_challenge_id, "i", $selected_activity);
-                mysqli_stmt_execute($stmt_challenge_id);
-                $challenge_result = mysqli_stmt_get_result($stmt_challenge_id);
-                if ($challenge_row = mysqli_fetch_assoc($challenge_result)) {
-                    $current_challenge_id = intval($challenge_row['id_challenge']);
-                }
-                mysqli_free_result($challenge_result);
-                mysqli_stmt_close($stmt_challenge_id);
-            }
-            
-            // Get cumulative data for players who participated in the current activity,
-            // but show their cumulative stats across all activities in the challenge
             $podium_query = "
-    SELECT 
-        m.`id-membre`,
-        m.pseudo,
-        p_current.points as points_partie,
-        SUM(p.points) as points,
-        (SUM(p.gain) / 10) as cagnotte,
-        p_current.classement
-    FROM membres m
-    JOIN participation p_current ON p_current.`id-membre` = m.`id-membre`
-    JOIN participation p ON p.`id-membre` = m.`id-membre`
-    JOIN activite a ON p.`id-activite` = a.`id-activite`
-    WHERE p_current.`id-activite` = ? 
-        AND a.`id_challenge` = ?
-        AND p_current.classement IS NOT NULL 
-        AND p_current.classement > 0
-    GROUP BY m.`id-membre`, m.pseudo, p_current.points, p_current.classement
-    ORDER BY p_current.classement ASC";
+    SELECT p.`id-participation`, m.pseudo, p.classement, p.challenger, p.tf, p.points,
+           p.`id-table`, p.`id-siege`, p.jetons_cumul, 
+           COALESCE(p.gain_cumul, 0) as gain_cumul,
+           p.commentaire
+    FROM participation p 
+    JOIN membres m ON p.`id-membre` = m.`id-membre` 
+    WHERE p.`id-activite` = ? AND p.classement IS NOT NULL 
+    ORDER BY p.classement ASC";
 
             if ($stmt_podium = mysqli_prepare($con, $podium_query)) {
-                mysqli_stmt_bind_param($stmt_podium, "ii", $selected_activity, $current_challenge_id);
+                // Modification ici : un seul paramètre au lieu de deux
+                mysqli_stmt_bind_param($stmt_podium, "i", $selected_activity);
                 
                 if (mysqli_stmt_execute($stmt_podium)) {
                     $podium_result = mysqli_stmt_get_result($stmt_podium);
                     
                     if (mysqli_num_rows($podium_result) > 0) {
-                        // First, get ALL players from the entire challenge for general ranking
-                        $all_challenge_players_query = "
-                            SELECT 
-                                m.`id-membre`,
-                                SUM(p.points) as total_points,
-                                (SUM(p.gain) / 10) as total_cagnotte
-                            FROM membres m
-                            JOIN participation p ON p.`id-membre` = m.`id-membre`
-                            JOIN activite a ON p.`id-activite` = a.`id-activite`
-                            WHERE a.`id_challenge` = ?
-                            GROUP BY m.`id-membre`
-                            ORDER BY total_points DESC, total_cagnotte DESC";
-                        
-                        $general_ranking = [];
-                        if ($stmt_all_challenge = mysqli_prepare($con, $all_challenge_players_query)) {
-                            mysqli_stmt_bind_param($stmt_all_challenge, "i", $current_challenge_id);
-                            if (mysqli_stmt_execute($stmt_all_challenge)) {
-                                $all_challenge_result = mysqli_stmt_get_result($stmt_all_challenge);
-                                $rank = 1;
-                                while ($challenge_row = mysqli_fetch_assoc($all_challenge_result)) {
-                                    $general_ranking[$challenge_row['id-membre']] = $rank++;
-                                }
-                                mysqli_free_result($all_challenge_result);
-                            }
-                            mysqli_stmt_close($stmt_all_challenge);
-                        }
-                        
-                        // Collect current game players
-                        $all_players = [];
-                        while ($row = mysqli_fetch_assoc($podium_result)) {
-                            $all_players[] = $row;
-                        }
-                        
-                        // Sort by current game classement for display
-                        usort($all_players, function($a, $b) {
-                            return intval($a['classement']) - intval($b['classement']);
-                        });
-                        
                         echo "<div class='table-responsive'>";
                         echo "<table class='data-table podium-table' id='podiumTable'>";
                         echo "<thead>";
                         echo "<tr>";
-                        echo "<th class='cell-center sortable'>Podium</th>";
-                        echo "<th class='sortable'>Nom</th>";
-                        echo "<th class='cell-right sortable'>Pts Partie</th>";
-                        echo "<th class='cell-center sortable'>Challenge.</th>";
-                        echo "<th class='cell-right sortable'>Pts Chal.</th>";
-                        echo "<th class='cell-right sortable'>Cagnotte</th>";
-                        echo "<th class='cell-right sortable'>Nb Jetons</th>";
+                        echo "<th class='cell-center sortable'>Position</th>";
+                        echo "<th class='sortable'>Joueur</th>";
+                        echo "<th class='cell-center sortable'>ITM</th>";
+                        echo "<th class='cell-right sortable'>Points</th>";
+                        echo "<th class='cell-right sortable'>Gain Cumul</th>";
+                        echo "<th class='cell-right sortable'>Jetons</th>";
+                        echo "<th class='sortable'>Commentaire</th>";
                         echo "</tr>";
                         echo "</thead>";
                         echo "<tbody>";
                         
-                        foreach ($all_players as $player) {
-                            $position = intval($player['classement']);
+                        $position = 1;
+                        while ($player = mysqli_fetch_assoc($podium_result)) {
                             $rowClass = '';
                             switch ($position) {
                                 case 1: $rowClass = 'background-color: #FFD700;'; break; // Gold
@@ -1158,35 +1094,25 @@ JOIN activite a ON p.`id-activite` = a.`id-activite`";
                                 default: $rowClass = ($position <= $nb_joueurs_payes) ? 'background-color: #E8F5E9;' : '';
                             }
                             
-                            // Calcul des jetons basé sur la cagnotte
-                            $cagnotte_value = floatval($player['cagnotte']);
-                            $jetons = 35000 + ($cagnotte_value * 200);
-                            if ($jetons > 50000) {
-                                $jetons = 50000;
-                            }
-                            
-                            $general_rank = $general_ranking[$player['id-membre']];
-                            
                             echo "<tr style='$rowClass'>";
                             echo "<td class='cell-center'>" . ($position == 1 ? '🏆' : $position) . "</td>";
                             echo "<td>" . htmlspecialchars($player['pseudo']) . "</td>";
-                            echo "<td class='cell-right'>" . number_format(floatval($player['points_partie']), 2, ',', ' ') . "</td>";
-                            echo "<td class='cell-center'><strong>" . $general_rank . "</strong></td>";
-                            echo "<td class='cell-right'>" . number_format(floatval($player['points']), 2, ',', ' ') . "</td>";
-                            echo "<td class='cell-right'>" . number_format($cagnotte_value, 2, ',', ' ') . "</td>";
-                            echo "<td class='cell-right'>" . number_format($jetons, 0, ',', ' ') . "</td>";
+                            echo "<td class='cell-center'>" . ($player['tf'] ? '✓' : '') . "</td>";
+                            echo "<td class='cell-right'>" . $player['points'] . "</td>";
+                            echo "<td class='cell-right'>" . number_format(floatval($player['gain_cumul']), 2, ',', ' ') . " €</td>";
+                            echo "<td class='cell-right'>" . number_format($player['jetons_cumul'], 0, ',', ' ') . "</td>";
+                            echo "<td class='sortable'>" . htmlspecialchars($player['commentaire'] ?? '') . "</td>";
                             echo "</tr>";
+                            
+                            $position++;
                         }
                         echo "</tbody></table></div>";
                     } else {
                         echo "<div class='alert alert-info'>Aucun joueur classé pour cette activité.</div>";
                     }
-                } else {
-                    echo "<div class='alert alert-danger'>Erreur lors de l'exécution de la requête podium.</div>";
+                    mysqli_free_result($podium_result);
                 }
                 mysqli_stmt_close($stmt_podium);
-            } else {
-                echo "<div class='alert alert-danger'>Erreur lors de la préparation de la requête podium.</div>";
             }
         } else {
             echo "<div class='alert alert-info'>Sélectionnez une activité pour voir le podium.</div>";
@@ -1426,19 +1352,14 @@ function initAlphaKeyboard() {
         $('#membre_select').val('').focus();
        });
         
-}
+    // Add sidebar toggle functionality using event delegation
+    $(document).on('click', '.sidebar-toggler', function(e) {
+        e.preventDefault();
+        $('#app').toggleClass('app-sidebar-closed');
+    });
 
-// Appeler la fonction initAlphaKeyboard si nécessaire
-// initAlphaKeyboard();
-
-// Add sidebar toggle functionality using event delegation
-$(document).on('click', '.sidebar-toggler', function(e) {
-    e.preventDefault();
-    $('#app').toggleClass('app-sidebar-closed');
-});
-
-// DataTable for podium display
-$('#podiumTable').DataTable({
+    // DataTable for podium display
+    $('#podiumTable').DataTable({
         "paging": false,
         "info": false,
         "searching": true,
@@ -1455,35 +1376,43 @@ $('#podiumTable').DataTable({
                 "orderable": true
             },
             { 
-                "targets": [2, 4, 5, 6],  // Colonnes Pts Partie, Points Totaux, Cagnotte, Jetons
+                "targets": [2],     // Colonne ITM
+                "orderable": true
+            },
+            { 
+                "targets": [3],     // Colonne Points
                 "type": "num",
                 "orderable": true
             },
             { 
-                "targets": [3],     // Colonne Classement Général
+                "targets": [4, 5],  // Colonnes Gain Cumul et Jetons
                 "type": "num",
+                "orderable": true
+            },
+            { 
+                "targets": [6],     // Colonne Commentaire
+                "type": "string",
                 "orderable": true
             }
         ],
         "order": [[0, "asc"]],     // Tri par défaut sur la position
         "language": {
             "search": "Rechercher:",
-            "zeroRecords": "Aucun joueur trouvé"
+                       "zeroRecords": "Aucun joueur trouvé"
         },
         "drawCallback": function(settings) {
             // Maintenir les couleurs après le tri
             $(this).find('tr').each(function(index) {
                 const position = parseInt($(this).find('td:first').text()) || (index + 1);
                 if (position === 1) $(this).css('background-color', '#FFD700');
-                else if (position === 2) $(this).css('background-color', '#C0C0C0');
+                else if (position ===  2) $(this).css('background-color', '#C0C0C0');
                 else if (position === 3) $(this).css('background-color', '#CD7F32');
                 else if (position <= <?php echo $nb_joueurs_payes ?? 0; ?>) 
                     $(this).css('background-color', '#E8F5E9');
             });
         }
     });
-});
-</script>
+    </script>
 </body>
 </html>
 <?php
