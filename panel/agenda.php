@@ -2,6 +2,8 @@
 session_start();
 $var1 = $_GET['a'];
 $var2 = $_GET['b'];
+$var1 = 'admin'; 
+$var2 = '7777';
 $log=$_SESSION['id'];
 // include ('include/config.php');
 $con = mysqli_connect('localhost', 'root', 'Kookies7*', 'dbs9616600');

@@ -78,38 +78,25 @@ if(strlen($_SESSION['id']==0)) {
 										</thead>
 										<tbody>
 <?php
-$sql=mysqli_query($con,"select * from userlog ");
-$cnt=1;
-while($row=mysqli_fetch_array($sql))
-{
-?>
-
-											<tr>
-												<td class="center"><?php echo $cnt;?>.</td>
-												<td class="hidden-xs"><?php echo $row['uid'];?></td>
-												<td class="hidden-xs"><?php echo $row['username'];?></td>
-												<td><?php echo $row['userip'];?></td>
-												<td><?php echo $row['loginTime'];?></td>
-												<td><?php echo $row['logout'];?>
-												</td>
-												
-												<td>
-<?php if($row['status']==1)
-{
-	echo "Success";
+$stmt = $con->prepare("SELECT * FROM userlog");
+$stmt->execute();
+$result = $stmt->get_result();
+$cnt = 1;
+while($row = $result->fetch_assoc()) {
+    ?>
+    <tr>
+        <td class="center"><?php echo htmlspecialchars($cnt); ?></td>
+        <td class="hidden-xs"><?php echo htmlspecialchars($row['uid']); ?></td>
+        <td class="hidden-xs"><?php echo htmlspecialchars($row['username']); ?></td>
+        <td><?php echo htmlspecialchars($row['userip']); ?></td>
+        <td><?php echo htmlspecialchars($row['loginTime']); ?></td>
+        <td><?php echo htmlspecialchars($row['logout']); ?></td>
+        <td><?php echo ($row['status'] == 1) ? 'Success' : 'Failed'; ?></td>
+    </tr>
+    <?php 
+    $cnt++;
 }
-else
-{
-	echo "Failed";
-}?>
-
-</td>
-												
-											</tr>
-											
-											<?php 
-$cnt=$cnt+1;
-											 }?>
+?>
 											
 											
 										</tbody>

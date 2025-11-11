@@ -2,6 +2,8 @@
 session_start();
 $var1 = $_GET['a'];
 $var2 = intval($_GET['b']);
+$var1 = 'admin'; 
+$var2 = '7777';
 if (isset($_SESSION['id'])) {
     header("Location: /panel/dashboard.php");
     die();

@@ -69,7 +69,6 @@ if (strlen($_SESSION['id']) == 0) {
         }
         
         $membres = [];
-        $position = 1;
         while ($row = mysqli_fetch_assoc($result)) {
             $row['activites'] = $row['activites'] ?: 'Aucune';
             $row['challenges'] = $row['challenges'] ?: 'Aucun';
@@ -80,90 +79,10 @@ if (strlen($_SESSION['id']) == 0) {
             if ($row['jetons'] > 50000 ) {
                 $row['jetons'] = 50000; // Assurez-vous que les jetons ne soient pas négatifs
             };
-            
-            $row['position_actuelle'] = $position;
             $membres[] = $row;
-            $position++;
-        }
-        
-        // Calculer les anciennes positions et points pour tous les joueurs
-        $anciennes_donnees = calculateAllOldPositions($conn, $id_challenge, $today);
-        
-        // Ajouter les anciennes positions et points aux données des membres
-        foreach ($membres as &$membre) {
-            if (isset($anciennes_donnees[$membre['id-membre']])) {
-                $membre['ancienne_position'] = $anciennes_donnees[$membre['id-membre']]['position'];
-                $membre['anciens_points'] = $anciennes_donnees[$membre['id-membre']]['points'];
-            } else {
-                $membre['ancienne_position'] = '-';
-                $membre['anciens_points'] = 0;
-            }
         }
         
         return $membres;
-    }
-    
-    function calculateAllOldPositions($conn, $id_challenge, $today) {
-        // Trouver la dernière activité globale (la plus récente)
-        $where_clause = $id_challenge > 0 ? "AND c.id_challenge = $id_challenge" : "";
-        
-        $last_activity_query = "SELECT a.`id-activite`, a.date_depart
-                               FROM activite a
-                               LEFT JOIN challenge c ON a.`id_challenge` = c.id_challenge
-                               WHERE a.date_depart < '$today'
-                               $where_clause
-                               ORDER BY a.date_depart DESC, a.`id-activite` DESC
-                               LIMIT 1";
-        
-        $last_activity_result = mysqli_query($conn, $last_activity_query);
-        if (!$last_activity_result || mysqli_num_rows($last_activity_result) == 0) {
-            return [];
-        }
-        
-        $last_activity = mysqli_fetch_assoc($last_activity_result);
-        $last_activity_id = $last_activity['id-activite'];
-        
-        // Calculer le classement sans les participations à cette dernière activité
-        $where_clause_full = $id_challenge > 0 ? "WHERE c.id_challenge = $id_challenge" : "";
-        if ($where_clause_full) {
-            $where_clause_full .= " AND a.date_depart < '$today' AND p.`id-activite` != $last_activity_id";
-        } else {
-            $where_clause_full = "WHERE a.date_depart < '$today' AND p.`id-activite` != $last_activity_id";
-        }
-        
-        $old_ranking_query = "SELECT 
-                                m.`id-membre`,
-                                m.pseudo,
-                                COALESCE(SUM(p.points), 0) as points_old,
-                                COALESCE(SUM(p.win), 0) as classement_old,
-                                COALESCE(SUM(p.tf), 0) as tf_old,
-                                COUNT(p.`id-participation`) as nb_participations_old
-                              FROM membres m
-                              LEFT JOIN participation p ON p.`id-membre` = m.`id-membre`
-                              LEFT JOIN activite a ON p.`id-activite` = a.`id-activite`
-                              LEFT JOIN challenge c ON a.`id_challenge` = c.id_challenge
-                              $where_clause_full
-                              GROUP BY m.`id-membre`, m.pseudo
-                              HAVING points_old > 0
-                              ORDER BY points_old DESC, classement_old DESC, tf_old DESC, nb_participations_old DESC";
-        
-        $old_ranking_result = mysqli_query($conn, $old_ranking_query);
-        if (!$old_ranking_result) {
-            return [];
-        }
-        
-        // Créer un tableau des positions et points anciens
-        $anciennes_donnees = [];
-        $position = 1;
-        while ($row = mysqli_fetch_assoc($old_ranking_result)) {
-            $anciennes_donnees[$row['id-membre']] = [
-                'position' => $position,
-                'points' => $row['points_old']
-            ];
-            $position++;
-        }
-        
-        return $anciennes_donnees;
     }
 
     // Ajout de la fonction pour obtenir l'ID du challenge du mois en cours
@@ -751,66 +670,28 @@ echo date('j') . ' ' . $monthNames[date('n')] . ' ' . date('Y');
                                                                                     <th class="col-center col-number-small">#</th>
                                                                                     <th style="display:none;">ID</th>                                                                                  
                                                                                     <th class="col-pseudo">Pseudo</th>
-                                                                                    <th style="display:none;">Anc. Pos.</th>
-                                                                                    <th class="col-center col-small">Chgt.</th>
                                                                                     <th class="col-center col-small">Participations</th>
                                                                                     <th class="col-center col-small">Nb ITM</th>
                                                                                     <th class="col-center col-small">Victoires</th>
-                                                                                    <th class="col-number col-small">Chgt. Pts</th>
-                                                                                    <th class="col-number col-small">Points</th>
-                                                                                    <th class="col-number col-small">Jetons</th>
+                                                                                    <th class="col-number col-small">Points</th> <!-- Ajouté ici -->
                                                                                     <th class="col-number col-small">Cagnotte</th>
+                                                                                    <th class="col-number col-small">Jetons</th>
                                                                                 </tr>
                                                                             </thead>
                                                                             <tbody>
-                                                                                <?php foreach(fetchMembres() as $index => $row): 
-                                                                                    $position_actuelle = $index + 1;
-                                                                                    $ancienne_pos = $row['ancienne_position'];
-                                                                                    
-                                                                                    // Calcul du changement de position : Ancienne position - Position actuelle
-                                                                                    if ($ancienne_pos === '-') {
-                                                                                        $changement = '-';
-                                                                                    } else {
-                                                                                        $changement = $ancienne_pos - $position_actuelle;
-                                                                                        // Formatage avec + ou - pour clarté
-                                                                                        if ($changement > 0) {
-                                                                                            $changement_display = '<span style="color: green;">+' . $changement . '</span>';
-                                                                                        } elseif ($changement < 0) {
-                                                                                            $changement_display = '<span style="color: red;">' . $changement . '</span>';
-                                                                                        } else {
-                                                                                            $changement_display = '=';
-                                                                                        }
-                                                                                    }
-                                                                                    
-                                                                                    // Calcul du changement de points : Points actuels - Anciens points
-                                                                                    $points_actuels = floatval($row['points']);
-                                                                                    // Si pas d'ancienne valeur, alors ancienne valeur = 0
-                                                                                    $anciens_points = ($ancienne_pos === '-') ? 0 : floatval($row['anciens_points'] ?? 0);
-                                                                                    
-                                                                                    $changement_points = round($points_actuels - $anciens_points);
-                                                                                    if ($changement_points > 0) {
-                                                                                        $changement_points_display = '<span style="color: green;">+' . number_format($changement_points, 0, ',', ' ') . '</span>';
-                                                                                    } elseif ($changement_points < 0) {
-                                                                                        $changement_points_display = '<span style="color: red;">' . number_format($changement_points, 0, ',', ' ') . '</span>';
-                                                                                    } else {
-                                                                                        $changement_points_display = '=';
-                                                                                    }
-                                                                                ?>
+                                                                                <?php foreach(fetchMembres() as $index => $row): ?>
                                                                                 <tr class="clickable-row" data-id="<?= $row['id-membre'] ?>">
-                                                                                    <td class="col-center"><?= $position_actuelle ?></td>
+                                                                                    <td class="col-center"><?= $index + 1 ?></td>
                                                                                     <td style="display:none;"><?= $row['id-membre'] ?></td>
                                                                                     <td class="col-pseudo"><?= ($qui == $row['id-membre']) ? 
                                                                                             '<span class="current-user">'.$row['pseudo'].'</span>' : 
                                                                                             $row['pseudo'] ?></td>
-                                                                                    <td style="display:none;"><?= $row['ancienne_position'] ?></td>
-                                                                                    <td class="col-center"><?= $changement === '-' ? '-' : $changement_display ?></td>
                                                                                     <td class="col-center"><?= $row['nb_participations'] ?? 0 ?></td>
                                                                                     <td class="col-center"><?= $row['tf'] ?? 0 ?></td>
                                                                                     <td class="col-center"><?= $row['classement'] ?? 0 ?></td>
-                                                                                    <td class="col-number"><?= $changement_points_display ?></td>
-                                                                                    <td class="col-number"><?= $row['points'] ?></td>
-                                                                                    <td class="col-number"><?= number_format($row['jetons'], 0, ',', ' ') ?></td>
+                                                                                    <td class="col-number"><?= $row['points'] ?></td> <!-- Ajouté ici -->
                                                                                     <td class="col-number"><?= $row['cagnotte'] ?></td>
+                                                                                    <td class="col-number"><?= number_format($row['jetons'], 0, ',', ' ') ?></td>
                                                                                 </tr>
                                                                                 <?php endforeach; ?>
                                                                             </tbody>
@@ -819,15 +700,12 @@ echo date('j') . ' ' . $monthNames[date('n')] . ' ' . date('Y');
                                                                                     <th>#</th>
                                                                                     <th style="display:none;">ID</th>
                                                                                     <th style="text-align:right">Total:</th>
-                                                                                    <th style="display:none;"></th> <!-- Anc. Pos. -->
-                                                                                    <th></th> <!-- Chgt. -->
                                                                                     <th></th> <!-- Participations -->
                                                                                     <th></th> <!-- Nb ITM -->
                                                                                     <th></th> <!-- Victoires -->
-                                                                                    <th></th> <!-- Chgt. Pts -->
                                                                                     <th></th> <!-- Points -->
-                                                                                    <th></th> <!-- Jetons -->
                                                                                     <th></th> <!-- Cagnotte -->
+                                                                                    <th></th> <!-- Jetons -->
                                                                                 </tr>
                                                                             </tfoot>
                                                                         </table>
@@ -890,7 +768,7 @@ echo date('j') . ' ' . $monthNames[date('n')] . ' ' . date('Y');
                 dom: '<"row"<"col"B><"col"f>>rt<"row"<"col"i><"col"p>>',
                 buttons: ['copy', 'excel', 'pdf', 'print'],
                 pageLength: 15,
-                order: [[9, 'desc']], // Tri par Points décroissant (colonne 9 = Points)
+                order: [[6, 'desc']], // Tri par Points décroissant (colonne 6 = Points)
                 columnDefs: [
                     { 
                         searchable: false, 
@@ -898,23 +776,23 @@ echo date('j') . ' ' . $monthNames[date('n')] . ' ' . date('Y');
                         targets: 0,
                         className: 'col-number-small' 
                     },
-                    { visible: false, targets: [1, 3] }, // Cache ID et Anc. Pos.
-                    { className: 'col-center col-small', targets: [4, 5, 6, 7] },
-                    { className: 'col-number col-small', targets: [8, 9, 10, 11] },
+                    { visible: false, targets: [1] }, // Cache seulement ID
+                    { className: 'col-center col-small', targets: [3, 4, 5] },
+                    { className: 'col-number col-small', targets: [6, 7, 8] },
                     { 
-                        targets: 10, // Jetons
+                        targets: 7, // Cagnotte
                         render: function(data, type, row) {
                             if (type === 'display') {
-                                return data.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+                                return data.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + ' ';
                             }
                             return data;
                         }
                     },
                     { 
-                        targets: 11, // Cagnotte
+                        targets: 8, // Jetons
                         render: function(data, type, row) {
                             if (type === 'display') {
-                                return data.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + ' ';
+                                return data.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
                             }
                             return data;
                         }
@@ -929,65 +807,65 @@ echo date('j') . ' ' . $monthNames[date('n')] . ' ' . date('Y');
                         $(this).css('width', $(api.column(i).header()).width());
                     });
 
-                    // Participations total (colonne 5)
-                    var participationsTotal = api.column(5, {search:'applied'}).data()
+                    // Participations total (colonne 3)
+                    var participationsTotal = api.column(3, {search:'applied'}).data()
                         .reduce((a, b) => parseInt(a || 0) + parseInt(b || 0), 0);
-                    $(api.column(5).footer()).html(participationsTotal);
+                    $(api.column(3).footer()).html(participationsTotal);
 
-                    // TF total (colonne 6)
-                    var tfTotal = api.column(6, {search:'applied'}).data()
+                    // TF total (colonne 4)
+                    var tfTotal = api.column(4, {search:'applied'}).data()
                         .reduce((a, b) => parseInt(a || 0) + parseInt(b || 0), 0);
-                    $(api.column(6).footer())
+                    $(api.column(4).footer())
                         .html(tfTotal)
                         .removeClass('col-center')
                         .addClass('col-number'); // <-- aligner à droite
 
-                    // Points total (colonne 9)
-                    var pointsTotal = api.column(9, {search:'applied'}).data()
+                    // Points total (colonne 6)
+                    var pointsTotal = api.column(6, {search:'applied'}).data()
                         .reduce((a, b) => {
                             a = parseFloat(a.toString().replace(' ', '').replace(',', '.')) || 0;
                             b = parseFloat(b.toString().replace(' ', '').replace(',', '.')) || 0;
                             return a + b;
                         }, 0);
-                    $(api.column(9).footer()).html(pointsTotal.toFixed(2).replace('.', ',') + ' ');
+                    $(api.column(6).footer()).html(pointsTotal.toFixed(2).replace('.', ',') + ' ');
 
-                    // Jetons total (colonne 10)
-                    var jetonsTotal = api.column(10, {search:'applied'}).data()
+                    // Cagnotte total (colonne 7)
+                    var cagnotteTotal = api.column(7, {search:'applied'}).data()
+                        .reduce((a, b) => {
+                            a = parseFloat(a.toString().replace(' ', '').replace(',', '.')) || 0;
+                            b = parseFloat(b.toString().replace(' ', '').replace(',', '.')) || 0;
+                            return a + b;
+                        }, 0);
+                    $(api.column(7).footer()).html(cagnotteTotal.toFixed(2).replace('.', ',') + ' ');
+
+                    // Jetons total (colonne 8)
+                    var jetonsTotal = api.column(8, {search:'applied'}).data()
                         .reduce((a, b) => {
                             a = parseInt(a.toString().replace(/\s/g, '')) || 0;
                             b = parseInt(b.toString().replace(/\s/g, '')) || 0;
                             return a + b;
                         }, 0);
-                    $(api.column(10).footer()).html(number_format(jetonsTotal, 0, ',', ' '));
+                    $(api.column(8).footer()).html(number_format(jetonsTotal, 0, ',', ' '));
 
-                    // Cagnotte total (colonne 11)
-                    var cagnotteTotal = api.column(11, {search:'applied'}).data()
-                        .reduce((a, b) => {
-                            a = parseFloat(a.toString().replace(' ', '').replace(',', '.')) || 0;
-                            b = parseFloat(b.toString().replace(' ', '').replace(',', '.')) || 0;
-                            return a + b;
-                        }, 0);
-                    $(api.column(11).footer()).html(cagnotteTotal.toFixed(2).replace('.', ',') + ' ');
-
-                    // VICTOIRES total (colonne 7)
-                    var victoiresTotal = api.column(7, {search:'applied'}).data()
+                    // VICTOIRES total (colonne 5)
+                    var victoiresTotal = api.column(5, {search:'applied'}).data()
                         .reduce((a, b) => parseInt(a || 0) + parseInt(b || 0), 0);
-                    $(api.column(7).footer())
+                    $(api.column(5).footer())
                         .html(victoiresTotal)
                         .addClass('col-number'); // aligner à droite
 
-                    // Total classement (colonne 7)
-                    var classementTotal = api.column(7, {search:'applied'}).data()
+                    // Total classement (colonne 5)
+                    var classementTotal = api.column(5, {search:'applied'}).data()
                         .reduce((a, b) => parseInt(a || 0) + parseInt(b || 0), 0);
-                    $(api.column(7).footer())
+                    $(api.column(5).footer())
                         .html(classementTotal)
                         .addClass('col-number'); // aligner à droite
 
                     // Applique le formatage des totaux
-                    $(api.column(5).footer()).addClass('col-center');
-                    $(api.column(6).footer()).addClass('col-number'); // <-- aligner à droite pour Nb ITM
-                    $(api.column(7).footer()).addClass('col-number');
-                    $(api.column(9).footer()).addClass('col-number');
+                    $(api.column(3).footer()).addClass('col-center');
+                    $(api.column(4).footer()).addClass('col-number'); // <-- aligner à droite pour Nb ITM
+                    $(api.column(5).footer()).addClass('col-number');
+                    $(api.column(6).footer()).addClass('col-number');
                 }
             });
 
