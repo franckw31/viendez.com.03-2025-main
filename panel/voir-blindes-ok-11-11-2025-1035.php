@@ -2,7 +2,6 @@
 session_start();
 error_reporting(0);
 include ('include/config.php');
-
 $id = intval($_GET['uid']);
 if (strlen($_SESSION['id'] == 0)) {
     header('location:logout.php');
@@ -54,7 +53,7 @@ window.location.replace("/index.php");
         $id = $_GET['uid'];
         ?>
 <script type="text/javascript">
-window.location.replace("/panel/modif-horloge.php?act=<?php echo $id ?>&min=-2&sou=/panel/voir-blindes.php?uid=");
+window.location.replace("/panel/modif-horloge.php?act=<?php echo $id ?>&min=-5&sou=/panel/voir-blindes.php?uid=");
 </script> ; <?php
 
     }
@@ -62,7 +61,7 @@ window.location.replace("/panel/modif-horloge.php?act=<?php echo $id ?>&min=-2&s
         $id = $_GET['uid'];
         ?>
 <script type="text/javascript">
-window.location.replace("/panel/modif-horloge.php?act=<?php echo $id ?>&min=+2&sou=/panel/voir-blindes.php?uid=");
+window.location.replace("/panel/modif-horloge.php?act=<?php echo $id ?>&min=+5&sou=/panel/voir-blindes.php?uid=");
 </script> ; <?php
 
     }
@@ -103,7 +102,7 @@ window.location.replace("/panel/de-pause.php?act=<?php echo $id ?>&sou=/panel/vo
 
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-16" />
-    <meta http-equiv="refresh" content="60">
+    <meta http-equiv="refresh" content="15">
     <title>Admin | Edition Membre</title>
     <link
         href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic"
@@ -214,56 +213,6 @@ window.location.replace("/panel/de-pause.php?act=<?php echo $id ?>&sou=/panel/vo
     }
     //  playAudio();
     </script>
-    <style>
-/* Réduire hauteur des lignes du tableau "Liste des Joueurs" */
-.ppanel-body .players-table th,
-.ppanel-body .players-table td {
-    padding: 4px 6px;
-    vertical-align: middle;
-    font-size: 14px;
-    line-height: 1.1;
-}
-.ppanel-body .players-table tbody tr {
-    height: 28px;
-}
-.ppanel-body .players-table .recave-input {
-    height: 24px;
-    padding: 4px;
-    font-size: 14px;
-    line-height: 1.1;
-}
-.ppanel-body .players-table tr.total-row td {
-    font-weight: bold;
-    background-color: #f0f0f0;
-}
-
-/* Nouveau style pour la colonne Pseudo */
-.pseudo-cell {
-    background-color: #f0f0f0;
-    color: white;
-    font-weight: bold;
-    padding: 8px;
-}
-
-/* Style pour le groupe input-recave */
-.input-group {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-}
-
-.input-group .form-control {
-    flex: 1;
-    min-width: 60px;
-}
-
-.input-group .btn {
-    padding: 4px 8px;
-    height: 24px;
-    line-height: 1;
-    white-space: nowrap;
-}
-</style>
 </head>
 
 <body>
@@ -387,6 +336,26 @@ window.location.replace("/panel/de-pause.php?act=<?php echo $id ?>&sou=/panel/vo
                                                                     <div class="ppanel panel-wwhite">
                                                                         <div class="ppanel-body">
                                                                             <div id="llayoutSidenav_content">
+                                                                                <main>
+                                                                                    <div class="ccontainer-fluid px-4">
+                                                                                        <ol class="breadcrumb mb-4">
+                                                                                            <li class="breadcrumb-item">
+                                                                                                <a
+                                                                                                    href="/panel/voir-activite.php?uid=<?php echo $id; ?>">Retour
+                                                                                                    Activité</a>
+                                                                                            </li>
+                                                                                            <li
+                                                                                                class="breadcrumb-item active">
+                                                                                                <a
+                                                                                                    href="/panel/voir-blindes.php?&uid=<?php echo $id ?>">Blindes</a>
+                                                                                            </li>
+                                                                                        </ol>
+                                                                                        <div class="card mb-4">
+                                                                                            <div class="card-body">
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </main>
                                                                             </div>
 
                                                                             <?php $id = intval($_GET['uid']);
@@ -405,7 +374,7 @@ window.location.replace("/panel/de-pause.php?act=<?php echo $id ?>&sou=/panel/vo
                                                                                                     id="moins"
                                                                                                     class="btn btn-primaryg btn-block"
                                                                                                     name="moins">
-                                                                                                    <<< -2 Minutes
+                                                                                                    <<< -5 Minutes
                                                                                                         </button>
                                                                                             </td>
                                                                                             <td colspan="3"
@@ -420,7 +389,7 @@ window.location.replace("/panel/de-pause.php?act=<?php echo $id ?>&sou=/panel/vo
                                                                                                 style="text-align:center ;">
                                                                                                 <button type="submit"
                                                                                                     class="btn btn-primary-rouge btn-block"
-                                                                                                    name="plus">+2
+                                                                                                    name="plus">+5
                                                                                                     Minutes >>>
                                                                                                 </button>
                                                                                             </td>
@@ -465,93 +434,8 @@ window.location.replace("/panel/de-pause.php?act=<?php echo $id ?>&sou=/panel/vo
                                                                             <div style="color:red ; font-size: 30px ; text-align: center"
                                                                                 id="car-pause"></div>
                                                                             <?php include_once ('horloge-estim.php'); ?>
-                                                                            <div style="color:grey ; font-size: 30px ; text-align: center"></div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="col-lg-4 col-md-12">
-
-                                                                    <div class="ppanel panel-white">
-                                                                        <div class="ppanel-heading">
-                                                                            <h5 class="ppanel-title">Liste des Joueurs</h5>
-                                                                        </div>
-                                                                        <div class="ppanel-body">
-                                                                            <table class="table table-striped table-bordered players-table" style="font-size:14px;">
-                                                                                <thead>
-                                                                                    <tr>
-                                                                                        <th>Pseudo</th>
-                                                                                        <th>Recaves</th>
-                                                                                        <th>Bust Par :</th>
-                                                                                    </tr>
-                                                                                </thead>
-                                                                                <tbody id="joueurs-list">
-                                                                                    <?php 
-                                                                                        $id = intval($_GET['uid']);
-                                                                                        $req = mysqli_query($con, "SELECT * FROM `participation` WHERE `id-activite` = '$id' ORDER BY `nom-membre` ASC");
-                                                                                        $totalRecaves = 0;
-                                                                                        $countJoueurs = 0;
-                                                                                        
-                                                                                        while($row = mysqli_fetch_array($req)) {
-                                                                                            $totalRecaves += intval($row['recave']);
-                                                                                            $countJoueurs++;
-
-                                                                                            // récupérer tous les éliminants enregistrés pour cette participation
-                                                                                            $elims_html = '';
-                                                                                            $elim_q = mysqli_query($con, "SELECT * FROM `eliminations` WHERE `id_participation` = '".intval($row['id-participation'])."' ORDER BY `created_at` ASC");
-                                                                                            if ($elim_q && mysqli_num_rows($elim_q) > 0) {
-                                                                                                $names = [];
-                                                                                                while($er = mysqli_fetch_array($elim_q)) {
-                                                                                                    $names[] = htmlspecialchars($er['nom_membre'], ENT_QUOTES);
-                                                                                                }
-                                                                                                $elims_html = implode(', ', $names);
-                                                                                            }
-
-                                                                                            // récupérer id-membre depuis table membres (pour que data-member-id soit correct)
-                                                                                            $membre_id = 0;
-                                                                                            $pseudo_clean = mysqli_real_escape_string($con, $row['nom-membre']);
-                                                                                            $mq = mysqli_query($con, "SELECT `id-membre` FROM `membres` WHERE `pseudo` = '$pseudo_clean' LIMIT 1");
-                                                                                            if ($mq && mysqli_num_rows($mq) > 0) {
-                                                                                                $mr = mysqli_fetch_array($mq);
-                                                                                                $membre_id = intval($mr['id-membre']);
-                                                                                            }
-
-                                                                                            $eliminatedBy = isset($row['nom-membre-vainqueur']) ? $row['nom-membre-vainqueur'] : '';
-                                                                                            $isEliminated = !empty($eliminatedBy);
-                                                                                            $rowStyle = $isEliminated ? 'opacity:0.5;background-color:#f0f0f0;' : '';
-                                                                                            $disabledAttr = $isEliminated ? 'disabled' : '';
-
-                                                                                            echo '<tr style="'.$rowStyle.'">
-                                                                                                <td class="pseudo-cell">'.htmlspecialchars($row['nom-membre'], ENT_QUOTES).'</td>
-                                                                                                <td>
-                                                                                                    <div class="input-group" style="width:100%;">
-                                                                                                        <input type="number" class="form-control recave-input" data-id="'.intval($row['id-participation'])."\" data-member-id=\"".intval($membre_id).'" value="'.intval($row['recave']).'" '.$disabledAttr.' />
-                                                                                                        <button class="btn btn-success btn-sm btn-plus" type="button" data-id="'.intval($row['id-participation']).'" '.$disabledAttr.'>+</button>
-                                                                                                        <button class="btn btn-danger btn-sm btn-trash" type="button" data-id="'.intval($row['id-participation']).'" data-member-id="'.intval($membre_id).'" data-name="'.htmlspecialchars($row['nom-membre'], ENT_QUOTES).'" '.$disabledAttr.'><i class="fa fa-trash"></i></button>
-                                                                                                    </div>
-                                                                                                </td>
-                                                                                                <td><span class="eliminated-by" data-player-id="'.intval($row['id-participation']).'" style="font-size:12px;color:'.($isEliminated ? 'red' : 'inherit').';font-weight:'.($isEliminated ? 'bold' : 'normal').'">';
-                                                                                                // afficher liste d'éliminants si existante, sinon afficher nom-membre-vainqueur
-                                                                                                if (!empty($elims_html)) {
-                                                                                                    echo $elims_html;
-                                                                                                } elseif ($isEliminated) {
-                                                                                                    echo htmlspecialchars($eliminatedBy, ENT_QUOTES);
-                                                                                                } else {
-                                                                                                    echo '';
-                                                                                                }
-                                                                                        echo '</span></td>
-                                                                                        </tr>';
-                                                                                    }
-                                                                                    ?>
-                                                                                    <tr style="background-color: #f0f0f0; font-weight: bold;">
-                                                                                        <td>Total: <?php echo $countJoueurs; ?></td>
-                                                                                        <td><?php echo $totalRecaves; ?></td>
-                                                                                        <td></td>
-                                                                                    </tr>
-                                                                                </tbody>
-                                                                            </table>
-                                                                            <div class="text-center" style="margin-top:8px;">
-                                                                                <button class="btn btn-primary" onclick="validerRecaves()">Valider Modifications</button>
-                                                                            </div>
+                                                                            <div style="color:grey ; font-size: 30px ; text-align: center"
+                                                                                id="response-estim"></div>
                                                                         </div>
                                                                     </div>
                                                                 </div>
@@ -892,273 +776,6 @@ window.location.replace("/panel/de-pause.php?act=<?php echo $id ?>&sou=/panel/vo
         <script src="assets/js/main.js"></script>
         <!-- start: JavaScript Event Handlers for this page -->
         <script src="assets/js/form-elements.js"></script>
-
-<script type="text/javascript">
-function incrementRecave(button) {
-    var input = button.parentElement.querySelector('.recave-input');
-    var currentValue = parseInt(input.value) || 0;
-    input.value = currentValue + 1;
-}
-
-function eliminatePlayer(button) {
-    var row = button.closest('tr');
-    var playerId = button.parentElement.querySelector('.recave-input').getAttribute('data-id');
-    var playerName = row.querySelector('.pseudo-cell').textContent;
-    
-    // Récupérer tous les joueurs actifs (non éliminés)
-    var activePlayersHtml = '<select id="eliminatorSelect" style="width:100%; padding:8px;">\n';
-    activePlayersHtml += '<option value="">-- Sélectionner un joueur --</option>\n';
-    
-    var rows = document.querySelectorAll('#joueurs-list tr:not(.total-row)');
-    rows.forEach(function(playerRow) {
-        var opacity = playerRow.style.opacity;
-        // Exclure la ligne du joueur éliminé et les joueurs déjà éliminés
-        if (opacity !== '0.5' && playerRow !== row) {
-            var pseudo = playerRow.querySelector('.pseudo-cell').textContent;
-            activePlayersHtml += '<option value="' + pseudo + '">' + pseudo + '</option>\n';
-        }
-    });
-    
-    activePlayersHtml += '</select>';
-    
-    // Afficher une boîte de dialogue personnalisée
-    var modal = document.createElement('div');
-    modal.innerHTML = `
-        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
-            <div style="background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 400px;">
-                <h5 style="margin-top: 0;">Quel joueur a éliminé <strong>${playerName}</strong> ?</h5>
-                ${activePlayersHtml}
-                <div style="text-align: right; margin-top: 15px;">
-                    <button class="btn btn-secondary btn-sm" onclick="this.parentElement.parentElement.parentElement.remove()">Annuler</button>
-                    <button class="btn btn-primary btn-sm" onclick="confirmElimination('${playerName}', this)">Confirmer</button>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
-}
-
-function confirmElimination(eliminatedPlayer, button) {
-    var select = button.parentElement.parentElement.querySelector('#eliminatorSelect');
-    var eliminatorName = select.value;
-    
-    if (eliminatorName === '') {
-        alert('Veuillez sélectionner un joueur éliminateur');
-        return;
-    }
-    
-    // Fermer la modal
-    button.parentElement.parentElement.parentElement.remove();
-    
-    // Trouver et mettre à jour la ligne du joueur éliminé
-    var rows = document.querySelectorAll('#joueurs-list tr:not(.total-row)');
-    rows.forEach(function(row) {
-        if (row.querySelector('.pseudo-cell').textContent === eliminatedPlayer) {
-            var statusCell = row.querySelector('.eliminated-by');
-            statusCell.textContent = eliminatorName;
-            statusCell.style.color = 'red';
-            statusCell.style.fontWeight = 'bold';
-            
-            // Masquer la ligne du joueur éliminé
-            row.style.opacity = '0.5';
-            row.style.backgroundColor = '#f0f0f0';
-            
-            // Désactiver les inputs
-            var inputs = row.querySelectorAll('input, button');
-            inputs.forEach(function(input) {
-                input.disabled = true;
-            });
-        }
-    });
-}
-
-function validerRecaves() {
-    var recaveInputs = document.querySelectorAll('.recave-input');
-    var updates = [];
-
-    recaveInputs.forEach(function(input) {
-        updates.push({
-            'id-participation': input.getAttribute('data-id'),
-            'recave': input.value
-        });
-    });
-
-    console.log('Données envoyées:', updates);
-
-    $.ajax({
-        url: 'update_recave.php',
-        type: 'POST',
-        data: { updates: JSON.stringify(updates) },
-        dataType: 'json',
-        success: function(response) {
-            console.log('Réponse serveur:', response);
-            alert(response.message);
-            if (response.status === 'success') {
-                location.reload();
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Erreur AJAX:', error);
-            console.error('Réponse du serveur:', xhr.responseText);
-            alert('Erreur lors de la mise à jour.');
-        }
-    });
-}
-</script>
-<script type="text/javascript">
-// Gestion par délégation : bouton + et poubelle (corrigé pour utiliser data-member-id)
-document.addEventListener('click', function(e) {
-    // + bouton
-    var btnPlus = e.target.closest('.btn-plus');
-    if (btnPlus) {
-        var row = btnPlus.closest('tr');
-        var input = row.querySelector('.recave-input');
-        if (input) {
-            var current = parseInt(input.value) || 0;
-            input.value = current + 1;
-        }
-        return;
-    }
-
-    // poubelle
-    var btnTrash = e.target.closest('.btn-trash');
-    if (btnTrash) {
-        e.preventDefault();
-        // victimId = id-participation (pour exclure la victime dans la liste)
-        var victimId = btnTrash.getAttribute('data-id');
-        var victimName = btnTrash.getAttribute('data-name');
-        openEliminationModal(victimId, victimName);
-        return;
-    }
-});
-
-function openEliminationModal(victimParticipationId, victimName) {
-    // Construire options avec joueurs encore en jeu (exclure victim & déjà éliminés)
-    var rows = document.querySelectorAll('#joueurs-list tr');
-    var options = '<option value="" data-member-id="">-- Sélectionner un joueur --</option>';
-    rows.forEach(function(r) {
-        var inp = r.querySelector('.recave-input');
-        var pseudoCell = r.querySelector('.pseudo-cell');
-        if (!inp || !pseudoCell) return;
-        var partId = inp.dataset.id;            // id-participation
-        var membreId = inp.dataset.memberId;    // id-membre !!
-        if (String(partId) === String(victimParticipationId)) return; // exclure victime
-        var eliminatedBy = r.querySelector('.eliminated-by')?.textContent || '';
-        if (r.style.opacity === '0.5' || eliminatedBy.trim() !== '') return; // exclure déjà éliminés
-        var pseudo = pseudoCell.textContent.trim();
-        options += '<option value="' + pseudo + '" data-member-id="' + membreId + '">' + pseudo + '</option>';
-    });
-
-    // Modal HTML
-    var overlay = document.createElement('div');
-    overlay.className = 'elimination-modal-overlay';
-    overlay.style = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:9999;';
-    overlay.innerHTML = `
-        <div style="background:#fff;padding:16px;border-radius:6px;min-width:320px;">
-            <h5 style="margin:0 0 10px">Quel joueur a éliminé <strong>${victimName}</strong> ?</h5>
-            <select id="eliminatorSelect" style="width:100%;padding:6px;margin-top:6px;">${options}</select>
-            <div style="text-align:right;margin-top:10px;">
-                <button class="btn btn-secondary btn-sm" id="elimCancel">Annuler</button>
-                <button class="btn btn-primary btn-sm" id="elimConfirm" data-victim-part-id="${victimParticipationId}">Confirmer</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-
-    // Handlers
-    overlay.querySelector('#elimCancel').addEventListener('click', function() {
-        overlay.remove();
-    });
-
-    overlay.querySelector('#elimConfirm').addEventListener('click', function() {
-        var select = overlay.querySelector('#eliminatorSelect');
-        var selectedOption = select.options[select.selectedIndex];
-        var eliminatorName = selectedOption.value;
-        var eliminatorId = selectedOption.getAttribute('data-member-id') || '';
-        if (!eliminatorId) {
-            alert('Veuillez sélectionner un joueur éliminateur');
-            return;
-        }
-        var victimPartId = this.getAttribute('data-victim-part-id');
-        overlay.remove();
-        applyElimination(victimPartId, eliminatorId, eliminatorName);
-    });
-}
-
-function applyElimination(victimParticipationId, eliminatorMemberId, eliminatorName) {
-    // Mettre à jour l'interface : colonne eliminated-by, griser la ligne et désactiver contrôles
-    var rows = document.querySelectorAll('#joueurs-list tr');
-    rows.forEach(function(r) {
-        var inp = r.querySelector('.recave-input');
-        if (!inp) return;
-        if (String(inp.dataset.id) === String(victimParticipationId)) {
-            var statusCell = r.querySelector('.eliminated-by');
-            if (statusCell) {
-                statusCell.textContent = eliminatorName;
-                statusCell.setAttribute('data-eliminator-id', eliminatorMemberId);
-                statusCell.style.color = 'red';
-                statusCell.style.fontWeight = 'bold';
-            }
-            r.style.opacity = '0.5';
-            r.style.backgroundColor = '#f0f0f0';
-            var controls = r.querySelectorAll('input, button');
-            controls.forEach(function(c) { c.disabled = true; });
-        }
-    });
-
-    // Enregistrer l'élimination côté serveur : envoyer id-membre (eliminatorMemberId) et id-participation (victimParticipationId)
-    $.post('record_elimination.php', {
-        victim_id: victimParticipationId,
-        eliminator_id: eliminatorMemberId,
-        eliminator_name: eliminatorName
-    }, function(resp) {
-        if (!resp || resp.status !== 'success') {
-            console.error('Erreur enregistrement élimination:', resp);
-            alert('Erreur lors de l\'enregistrement de l\'élimination (voir console).');
-        } else {
-            // reload to reflect pertes/elims stored
-            location.reload();
-        }
-    }, 'json').fail(function(xhr) {
-        console.error('AJAX failed:', xhr.responseText);
-    });
-}
-
-// validerRecaves reste inchangé - il collecte les inputs .recave-input et envoie au serveur
-function validerRecaves() {
-    var recaveInputs = document.querySelectorAll('.recave-input');
-    var updates = [];
-
-    recaveInputs.forEach(function(input) {
-        updates.push({
-            'id-participation': input.getAttribute('data-id'),
-            'recave': input.value
-        });
-    });
-
-    console.log('Données envoyées:', updates);
-
-    $.ajax({
-        url: 'update_recave.php',
-        type: 'POST',
-        data: { updates: JSON.stringify(updates) },
-        dataType: 'json',
-        success: function(response) {
-            console.log('Réponse serveur:', response);
-            alert(response.message);
-            if (response.status === 'success') {
-                location.reload();
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Erreur AJAX:', error);
-            console.error('Réponse du serveur:', xhr.responseText);
-            alert('Erreur lors de la mise à jour.');
-        }
-    });
-}
-</script>
         <script>
         jQuery(document).ready(function() {
             Main.init();

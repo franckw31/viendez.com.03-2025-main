@@ -7,7 +7,7 @@ if (strlen($_SESSION['id'] == 0)) {
     exit;
 } else {
     $id = intval($_GET['id']); // get valuabout:blank#blockede
-    if (isset($_POST['submit']) ) {
+    if ((isset($_POST['submit'])) or (isset($_POST['btnelim']))) {
         echo "aa";
         $id_challenge = '1';
         $id_membre = $_POST['id-membre'];
@@ -110,22 +110,16 @@ if (strlen($_SESSION['id'] == 0)) {
     }
     if (isset($_POST['btnelim'])) {
         echo "start";
-        $status = 'Elimine';
-        $option = $_POST['option'];
         $id_activite = $_POST['id-activite'];
-        $recave = $_POST['recave'];
-        $id_membre = $_POST['id-membre'];
-        $vainqueur = $_POST['vainqueur'];
-        $id_membre_vainqueur = $_POST['id-membre-vainqueur'];
-        //$id_membre_vainqueur = 700;
+        //       $id_membre_vainqueur = $_POST['vainqueur'];
+        $id_membre_vainqueur = 700;
         echo "suite";
-        $rech = mysqli_query($con, "SELECT `bonbon` FROM `participation` WHERE ( `id-activite` = '$id_activite' AND `id-membre` = '$id_membre_vainqueur' )");
+        $rech = mysqli_query($con, "SELECT `bounty` FROM `participation` WHERE ( `id-activite` = '$id_activite' AND `id-membre` = '$id_membre_vainqueur' )");
         $result = mysqli_fetch_array($rech);
         echo "ok";
-        $bounty = $result['bonbon'] + 1;
-        echo $bounty."+";
-        echo $recave . "," . $id_activite . "->" . $id_membre."/".$id."/".$vainqueur;
-        $sql = mysqli_query($con, "UPDATE `participation` SET `ds`= CURRENT_TIMESTAMP, `option`= 'Elimine', `id-membre-vainqueur`= '$vainqueur' WHERE `id-participation` = '$id'");
+        $bounty = $result['bounty'] + 1;
+        echo $recave . "," . $id_activite . "->" . $id_membre;
+        $sql = mysqli_query($con, "UPDATE `participation` SET `bounty`='$bounty',`ds`= CURRENT_TIMESTAMP WHERE ((`participation`.`id-activite` = $id_activite) AND (`participation`.`id-membre`) = '$id_membre_vainqueur')");
         echo " sql ok";
         ?>
         //
