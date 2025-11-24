@@ -197,6 +197,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                             <div style="color:blue ; font-size: 30px" id="response-ante"></div>
                                                                         <?php include('horloge-sb.php'); ?>  
                                                                             <div style="color:orange ; font-size: 48px" id="response-sb"></div>
+                                                                        <?php include('compte-rebours-30s.php'); ?>
                                                                     </div>
                                                                 </div>
                                                             </div>

@@ -58,11 +58,148 @@ if ($ecar > 0) {
 // echo $_SESSION["bl"];
 //  if ($_SESSION["stop"] == '0') {
     if (1) { ?>
-        <script type="text/javascript">
-            var audio = new Audio("/la-cucaracha-horn.mp3");
+        <audio id="audioElement" class="blind-alert-audio" preload="none">
+            <source src="/newtimer/changement.mp3" type="audio/mpeg">
+            <source src="/newtimer/changement.wav" type="audio/wav">
+        </audio>
 
+        <script type="text/javascript">
             let nIntervId;
-            stopall();
+            let lastBlindLevel = null;
+            let audioElement = document.getElementById('audioElement');
+            let isPageRefreshed = true;
+            let pauseMode = false;
+            let pageLoadTime = Date.now();
+            let silencePeriodMs = 10000;
+            let audioPlayingBeforePause = false;
+
+            // STOP AUDIO IMMEDIATELY on page load
+            try {
+                audioElement.pause();
+                audioElement.currentTime = 0;
+                console.log('🔇 Audio arrêté immédiatement au chargement');
+            } catch(e) {
+                console.log('Error stopping audio on load:', e);
+            }
+
+            sessionStorage.removeItem('lastKnownBlindLevel');
+
+            function checkPauseStatus() {
+                try {
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("GET", "get-pause-status.php", false);
+                    xhr.send(null);
+                    var status = xhr.responseText.trim();
+                    var wasPaused = pauseMode;
+                    pauseMode = (status === '1');
+                    
+                    if (pauseMode && !wasPaused) {
+                        audioPlayingBeforePause = true;
+                        stopBlindAlert();
+                        console.log('⏸️ Pause activé - audio arrêté');
+                    }
+                    if (!pauseMode && wasPaused) {
+                        audioPlayingBeforePause = false;
+                        console.log('⏸️ Pause désactivé');
+                    }
+                } catch(e) {
+                    console.log('Error checking pause status:', e);
+                }
+            }
+
+            function initAudioOnInteraction() {
+                audioElement.volume = 1.0;
+                audioElement.play().then(() => {
+                    audioElement.pause();
+                    audioElement.currentTime = 0;
+                }).catch(() => {
+                    console.log('Audio initialization failed');
+                });
+            }
+
+            ['click', 'touchstart', 'touchend'].forEach(eventType => {
+                document.addEventListener(eventType, initAudioOnInteraction, { once: true });
+            });
+
+            function playBlindAlert() {
+                if (pauseMode) {
+                    console.log('⏸️ En pause - pas de son');
+                    return;
+                }
+                console.log('🔔 ALERTE BLINDE! Tentative de lecture audio...');
+                try {
+                    audioElement.currentTime = 0;
+                    audioElement.volume = 1.0;
+                    var playPromise = audioElement.play();
+                    
+                    if (playPromise !== undefined) {
+                        playPromise.then(() => {
+                            console.log('✓ Son joué');
+                        }).catch(error => {
+                            console.log('✗ Erreur lecture audio:', error);
+                        });
+                    }
+                } catch(e) {
+                    console.log('✗ Exception audio:', e.message);
+                }
+            }
+
+            function stopBlindAlert() {
+                try {
+                    audioElement.pause();
+                    audioElement.currentTime = 0;
+                    console.log('🔇 Audio arrêté');
+                } catch(e) {
+                    console.log('Error stopping audio:', e);
+                }
+            }
+
+            function checkBlindeLevelChange() {
+                try {
+                    checkPauseStatus();
+                    
+                    if (pauseMode) {
+                        stopBlindAlert();
+                        return;
+                    }
+                    
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("GET", "get-blindes-level.php", false);
+                    xhr.send(null);
+                    var currentBlindLevel = xhr.responseText.trim();
+                    
+                    if (lastBlindLevel === null) {
+                        lastBlindLevel = currentBlindLevel;
+                        sessionStorage.setItem('lastKnownBlindLevel', lastBlindLevel);
+                        console.log('📍 Initial blind level:', lastBlindLevel);
+                        return;
+                    }
+                    
+                    if (currentBlindLevel !== lastBlindLevel) {
+                        console.log('🚨 BLINDE LEVEL CHANGED! From:', lastBlindLevel, 'To:', currentBlindLevel);
+                        var timeSinceLoad = Date.now() - pageLoadTime;
+                        var stillInSilencePeriod = timeSinceLoad < silencePeriodMs;
+                        
+                        if (pauseMode || stillInSilencePeriod) {
+                            stopBlindAlert();
+                            if (pauseMode) {
+                                console.log('⏸️ Mode pause - pas d\'alerte');
+                            } else {
+                                console.log('⏳ Silence period');
+                            }
+                        } else if (!isPageRefreshed) {
+                            console.log('✅ Alerte sonore activée');
+                            playBlindAlert();
+                        }
+                        
+                        isPageRefreshed = false;
+                        lastBlindLevel = currentBlindLevel;
+                        sessionStorage.setItem('lastKnownBlindLevel', lastBlindLevel);
+                    }
+                } catch(e) {
+                    console.log('Error checking blind level:', e);
+                }
+            }
 
             function compteur() {
                 if (!nIntervId) {
@@ -71,15 +208,16 @@ if ($ecar > 0) {
             }
 
             function decompte() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") {
                     stopcompteur();
                     compteur2()
                 } else {
-                    document.getElementById("response").innerHTML = xmlhttp.responseText;
+                    document.getElementById("response").innerHTML = responseText;
                 }
             }
 
@@ -95,15 +233,16 @@ if ($ecar > 0) {
             }
 
             function decompte2() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") {
                     stopcompteur2();
                     compteur3()
                 } else {
-                    document.getElementById("response").innerHTML = xmlhttp.responseText;
+                    document.getElementById("response").innerHTML = responseText;
                 }
             }
 
@@ -119,15 +258,16 @@ if ($ecar > 0) {
             }
 
             function decompte3() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") {
                     stopcompteur3();
                     compteur4()
                 } else {
-                    document.getElementById("response").innerHTML = xmlhttp.responseText;
+                    document.getElementById("response").innerHTML = responseText;
                 }
             }
 
@@ -143,15 +283,16 @@ if ($ecar > 0) {
             }
 
             function decompte4() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") {
                     stopcompteur4();
                     compteur6()
                 } else {
-                    document.getElementById("response").innerHTML = xmlhttp.responseText;
+                    document.getElementById("response").innerHTML = responseText;
                 }
             }
 
@@ -167,15 +308,16 @@ if ($ecar > 0) {
             }
 
             function decompte5() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") {
                     stopcompteur5();
                     compteur5()
                 } else {
-                    document.getElementById("response").innerHTML = xmlhttp.responseText;
+                    document.getElementById("response").innerHTML = responseText;
                 }
             }
 
@@ -191,11 +333,12 @@ if ($ecar > 0) {
             }
 
             function decompte6() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") {
                     stopcompteur6();
                     stopcompteur4();
                     stopcompteur3();
@@ -203,7 +346,7 @@ if ($ecar > 0) {
                     stopcompteur();
                     compteur6()
                 } else {
-                    document.getElementById("response").innerHTML = xmlhttp.responseText;
+                    document.getElementById("response").innerHTML = responseText;
                 }
             }
 
@@ -219,15 +362,16 @@ if ($ecar > 0) {
             }
 
             function decompte7() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") {
                     stopcompteur7();
                     compteur7()
                 } else {
-                    document.getElementById("response").innerHTML = xmlhttp.responseText;
+                    document.getElementById("response").innerHTML = responseText;
                 }
             }
 
@@ -236,485 +380,217 @@ if ($ecar > 0) {
                 nIntervId = null;
             }
 
-            function compteur8() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte8, 250);
-                }
-            }
-
+            function compteur8() { nIntervId = setInterval(decompte8, 250); }
             function decompte8() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur8();
-                    compteur9()
-                } else {
-                    document.getElementById("response").innerHTML = xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur8(); compteur9(); } else { document.getElementById("response").innerHTML = responseText; }
             }
-
-            function stopcompteur8() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
-
-            function compteur9() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte9, 250);
-                }
-            }
-
+            function stopcompteur8() { clearInterval(nIntervId); nIntervId = null; }
+            
+            function compteur9() { nIntervId = setInterval(decompte9, 250); }
             function decompte9() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur9();
-                    compteur10()
-                } else {
-                    document.getElementById("response").innerHTML = xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur9(); compteur10(); } else { document.getElementById("response").innerHTML = responseText; }
             }
+            function stopcompteur9() { clearInterval(nIntervId); nIntervId = null; }
 
-            function stopcompteur9() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
-
-            function compteur10() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte10, 250);
-                }
-            }
-
+            function compteur10() { nIntervId = setInterval(decompte10, 250); }
             function decompte10() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur10();
-                    compteur11()
-                } else {
-                    document.getElementById("response").innerHTML = xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur10(); compteur11(); } else { document.getElementById("response").innerHTML = responseText; }
             }
+            function stopcompteur10() { clearInterval(nIntervId); nIntervId = null; }
 
-            function stopcompteur10() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
-
-            function compteur11() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte11, 250);
-                }
-            }
-
+            function compteur11() { nIntervId = setInterval(decompte11, 250); }
             function decompte11() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur11();
-                    compteur12()
-                } else {
-                    document.getElementById("response").innerHTML = xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur11(); compteur12(); } else { document.getElementById("response").innerHTML = responseText; }
             }
+            function stopcompteur11() { clearInterval(nIntervId); nIntervId = null; }
 
-            function stopcompteur11() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
-
-            function compteur12() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte12, 250);
-                }
-            }
-
+            function compteur12() { nIntervId = setInterval(decompte12, 250); }
             function decompte12() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur12();
-                    compteur13()
-                } else {
-                    document.getElementById("response").innerHTML = xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur12(); compteur13(); } else { document.getElementById("response").innerHTML = responseText; }
             }
+            function stopcompteur12() { clearInterval(nIntervId); nIntervId = null; }
 
-            function stopcompteur12() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
-
-            function compteur13() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte13, 250);
-                }
-            }
-
+            function compteur13() { nIntervId = setInterval(decompte13, 250); }
             function decompte13() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur13();
-                    compteur14()
-                } else {
-                    document.getElementById("response").innerHTML = document.getElementById("nom13").value + " + " + document
-                        .getElementById("ante13").value + " : " + xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur13(); compteur14(); } else { document.getElementById("response").innerHTML = document.getElementById("nom13").value + " + " + document.getElementById("ante13").value + " : " + responseText; }
             }
+            function stopcompteur13() { clearInterval(nIntervId); nIntervId = null; }
 
-            function stopcompteur13() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
-
-            function compteur14() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte14, 250);
-                }
-            }
-
+            function compteur14() { nIntervId = setInterval(decompte14, 250); }
             function decompte14() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur14();
-                    compteur15()
-                } else {
-                    document.getElementById("response").innerHTML = document.getElementById("nom14").value + " + " + document
-                        .getElementById("ante14").value + " : " + xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur14(); compteur15(); } else { document.getElementById("response").innerHTML = document.getElementById("nom14").value + " + " + document.getElementById("ante14").value + " : " + responseText; }
             }
+            function stopcompteur14() { clearInterval(nIntervId); nIntervId = null; }
 
-            function stopcompteur14() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
-
-            function compteur15() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte15, 250);
-                }
-            }
-
+            function compteur15() { nIntervId = setInterval(decompte15, 250); }
             function decompte15() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur15();
-                    compteur16()
-                } else {
-                    document.getElementById("response").innerHTML = document.getElementById("nom15").value + " + " + document
-                        .getElementById("ante15").value + " : " + xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur15(); compteur16(); } else { document.getElementById("response").innerHTML = document.getElementById("nom15").value + " + " + document.getElementById("ante15").value + " : " + responseText; }
             }
+            function stopcompteur15() { clearInterval(nIntervId); nIntervId = null; }
 
-            function stopcompteur15() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
-
-            function compteur16() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte16, 250);
-                }
-            }
-
+            function compteur16() { nIntervId = setInterval(decompte16, 250); }
             function decompte16() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur16();
-                    compteur17()
-                } else {
-                    document.getElementById("response").innerHTML = document.getElementById("nom16").value + " + " + document
-                        .getElementById("ante16").value + " : " + xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur16(); compteur17(); } else { document.getElementById("response").innerHTML = document.getElementById("nom16").value + " + " + document.getElementById("ante16").value + " : " + responseText; }
             }
+            function stopcompteur16() { clearInterval(nIntervId); nIntervId = null; }
 
-            function stopcompteur16() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
-
-            function compteur17() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte17, 250);
-                }
-            }
-
+            function compteur17() { nIntervId = setInterval(decompte17, 250); }
             function decompte17() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur17();
-                    compteur18()
-                } else {
-                    document.getElementById("response").innerHTML = document.getElementById("nom17").value + " + " + document
-                        .getElementById("ante17").value + " : " + xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur17(); compteur18(); } else { document.getElementById("response").innerHTML = document.getElementById("nom17").value + " + " + document.getElementById("ante17").value + " : " + responseText; }
             }
+            function stopcompteur17() { clearInterval(nIntervId); nIntervId = null; }
 
-            function stopcompteur17() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
-
-            function compteur18() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte18, 250);
-                }
-            }
-
+            function compteur18() { nIntervId = setInterval(decompte18, 250); }
             function decompte18() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur18();
-                    compteur19()
-                } else {
-                    document.getElementById("response").innerHTML = document.getElementById("nom18").value + " + " + document
-                        .getElementById("ante18").value + " : " + xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur18(); compteur19(); } else { document.getElementById("response").innerHTML = document.getElementById("nom18").value + " + " + document.getElementById("ante18").value + " : " + responseText; }
             }
+            function stopcompteur18() { clearInterval(nIntervId); nIntervId = null; }
 
-            function stopcompteur18() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
-
-            function compteur19() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte19, 250);
-                }
-            }
-
+            function compteur19() { nIntervId = setInterval(decompte19, 250); }
             function decompte19() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur19();
-                    compteur20()
-                } else {
-                    document.getElementById("response").innerHTML = document.getElementById("nom19").value + " + " + document
-                        .getElementById("ante19").value + " : " + xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur19(); compteur20(); } else { document.getElementById("response").innerHTML = document.getElementById("nom19").value + " + " + document.getElementById("ante19").value + " : " + responseText; }
             }
+            function stopcompteur19() { clearInterval(nIntervId); nIntervId = null; }
 
-            function stopcompteur19() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
-
-            function compteur20() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte20, 250);
-                }
-            }
-
+            function compteur20() { nIntervId = setInterval(decompte20, 250); }
             function decompte20() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur20();
-                    compteur21()
-                } else {
-                    document.getElementById("response").innerHTML = document.getElementById("nom20").value + " + " + document
-                        .getElementById("ante20").value + " : " + xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur20(); compteur21(); } else { document.getElementById("response").innerHTML = document.getElementById("nom20").value + " + " + document.getElementById("ante20").value + " : " + responseText; }
             }
+            function stopcompteur20() { clearInterval(nIntervId); nIntervId = null; }
 
-            function stopcompteur20() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
-
-            function compteur21() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte21, 250);
-                }
-            }
-
+            function compteur21() { nIntervId = setInterval(decompte21, 250); }
             function decompte21() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur21();
-                    compteur22()
-                } else {
-                    document.getElementById("response").innerHTML = document.getElementById("nom21").value + " + " + document
-                        .getElementById("ante21").value + " : " + xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur21(); compteur22(); } else { document.getElementById("response").innerHTML = document.getElementById("nom21").value + " + " + document.getElementById("ante21").value + " : " + responseText; }
             }
+            function stopcompteur21() { clearInterval(nIntervId); nIntervId = null; }
 
-            function stopcompteur21() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
-
-            function compteur22() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte22, 250);
-                }
-            }
-
+            function compteur22() { nIntervId = setInterval(decompte22, 250); }
             function decompte22() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur22();
-                    compteur23()
-                } else {
-                    document.getElementById("response").innerHTML = document.getElementById("nom22").value + " + " + document
-                        .getElementById("ante22").value + " : " + xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur22(); compteur23(); } else { document.getElementById("response").innerHTML = document.getElementById("nom22").value + " + " + document.getElementById("ante22").value + " : " + responseText; }
             }
+            function stopcompteur22() { clearInterval(nIntervId); nIntervId = null; }
 
-            function stopcompteur22() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
-
-            function compteur23() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte23, 250);
-                }
-            }
-
+            function compteur23() { nIntervId = setInterval(decompte23, 250); }
             function decompte23() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur23();
-                    compteur24()
-                } else {
-                    document.getElementById("response").innerHTML = document.getElementById("nom23").value + " + " + document
-                        .getElementById("ante23").value + " : " + xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur23(); compteur24(); } else { document.getElementById("response").innerHTML = document.getElementById("nom23").value + " + " + document.getElementById("ante23").value + " : " + responseText; }
             }
+            function stopcompteur23() { clearInterval(nIntervId); nIntervId = null; }
 
-            function stopcompteur23() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
-
-            function compteur24() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte24, 250);
-                }
-            }
-
+            function compteur24() { nIntervId = setInterval(decompte24, 250); }
             function decompte24() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur24();
-                    compteur25()
-                } else {
-                    document.getElementById("response").innerHTML = document.getElementById("nom24").value + " + " + document
-                        .getElementById("ante24").value + " : " + xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur24(); compteur25(); } else { document.getElementById("response").innerHTML = document.getElementById("nom24").value + " + " + document.getElementById("ante24").value + " : " + responseText; }
             }
+            function stopcompteur24() { clearInterval(nIntervId); nIntervId = null; }
 
-            function stopcompteur24() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
-
-            function compteur25() {
-                if (!nIntervId) {
-                    nIntervId = setInterval(decompte25, 250);
-                }
-            }
-
+            function compteur25() { nIntervId = setInterval(decompte25, 250); }
             function decompte25() {
+                checkBlindeLevelChange();
                 var xmlhttp = new XMLHttpRequest();
                 xmlhttp.open("GET", "response.php", false);
                 xmlhttp.send(null);
-                if (xmlhttp.responseText == 0) {
-                    audio.play();
-                    stopcompteur25()
-                } else {
-                    document.getElementById("response").innerHTML = document.getElementById("nom25").value + " + " + document
-                        .getElementById("ante25").value + " : " + xmlhttp.responseText;
-                }
+                var responseText = xmlhttp.responseText.trim();
+                if (responseText === "0") { stopcompteur25(); } else { document.getElementById("response").innerHTML = document.getElementById("nom25").value + " + " + document.getElementById("ante25").value + " : " + responseText; }
             }
-
-            function stopcompteur25() {
-                clearInterval(nIntervId);
-                nIntervId = null;
-            }
+            function stopcompteur25() { clearInterval(nIntervId); nIntervId = null; }
 
             function stopall() {
-                stopcompteur();
-                stopcompteur2();
-                stopcompteur3();
-                stopcompteur4();
-                stopcompteur5();
-                stopcompteur6();
-                stopcompteur7();
-                stopcompteur8();
-                stopcompteur9();
-                stopcompteur10();
-                stopcompteur11();
-                stopcompteur12();
-                stopcompteur13();
-                stopcompteur14();
-                stopcompteur15();
-                stopcompteur16();
-                stopcompteur17();
-                stopcompteur18();
-                stopcompteur19();
-                stopcompteur20();
-                stopcompteur21();
-                stopcompteur22();
-                stopcompteur23();
-                stopcompteur(24);
-                stopcompteur25()
+                stopcompteur(); stopcompteur2(); stopcompteur3(); stopcompteur4(); stopcompteur5(); stopcompteur6(); stopcompteur7(); stopcompteur8(); stopcompteur9(); stopcompteur10();
+                stopcompteur11(); stopcompteur12(); stopcompteur13(); stopcompteur14(); stopcompteur15(); stopcompteur16(); stopcompteur17(); stopcompteur18(); stopcompteur19(); stopcompteur20();
+                stopcompteur21(); stopcompteur22(); stopcompteur23(); stopcompteur24(); stopcompteur25();
             }
+
             stopall();
             compteur();
-            // compteur_pause();
         </script>
-        <!-- <div id="response"></div> -->
 
-        <?php ;
+        <div id="response" style="color: red; font-size: 200px; font-weight: normal; text-align: center; padding: 20px;"></div>
+
+        <?php
     }
 }
-;
 ?>

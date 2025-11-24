@@ -43,12 +43,12 @@ while ($res1 = mysqli_fetch_array($req1)) {
             $sb = $res3['val-sb'];
             $bb = $res3['val-bb'];
             echo $res2['duree'] . " / ";
-            $duree = $res2['duree'] / 60;
+            $duree = $res2['duree']/60 ;
             echo $heure . " / ";
             $fin = $heure;
             echo $res3['ante'] . " ---------- ";
             $ante = $res3['ante'];
-            $modif = mysqli_query($con, "INSERT INTO `blindes-live` (`id-activite`, `ordre`, `nom`, `sb`, `bb`, `duree`, `fin`, `ante`) VALUES ('$activite', '$ordre', '$nom', '$sb', '$bb', '$duree', '$heure', '$ante' )");
+            $modif = mysqli_query($con, "INSERT INTO `blindes-live` (`id-activite`, `ordre`, `nom`, `sb`, `bb`, `minutes`, `fin`, `ante`) VALUES ('$activite', '$ordre', '$nom', '$sb', '$bb', '$duree', '$heure', '$ante' )");
         }
         ;
     }

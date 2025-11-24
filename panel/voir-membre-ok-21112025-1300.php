@@ -295,12 +295,11 @@ if (isset($_POST['submitdup'])) {
         $new_activity_id = mysqli_insert_id($con);
 
         // Create participation record
-        $nom_membre = $member['pseudo'];
         $stmt = mysqli_prepare($con, "INSERT INTO `participation` 
-            (`id-membre`, `id-activite`, `id-siege`, `id-table`, `option`, `ordre`, `valide`, `nom-membre`) 
-            VALUES (?, ?, 1, 1, 'Inscrit', 1, 'Actif', ?)");
+            (`id-membre`, `id-activite`, `id-siege`, `id-table`, `option`, `ordre`, `valide`) 
+            VALUES (?, ?, 1, 1, 'Inscrit', 1, 'Actif')");
 
-        mysqli_stmt_bind_param($stmt, 'iis', $id, $new_activity_id, $nom_membre);
+        mysqli_stmt_bind_param($stmt, 'ii', $id, $new_activity_id);
         
         if (!mysqli_stmt_execute($stmt)) {
             throw new Exception("Failed to create participation: " . mysqli_stmt_error($stmt));

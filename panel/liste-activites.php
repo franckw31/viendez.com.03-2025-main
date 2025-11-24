@@ -31,7 +31,8 @@ if (strlen($_SESSION['id']) == 0) {
 
     function fetchActivites() {
         $conn = getDBConnection();
-        $result = mysqli_query($conn, "SELECT * FROM `activite` ORDER BY `date_depart` ASC");
+        // Trier par date décroissante côté serveur
+        $result = mysqli_query($conn, "SELECT * FROM `activite` ORDER BY `date_depart` DESC");
         return mysqli_num_rows($result) > 0 ? $result : [];
     }
 ?>
@@ -210,7 +211,8 @@ if (strlen($_SESSION['id']) == 0) {
                 dom: '<"row"<"col"B><"col"f>>rt<"row"<"col"i><"col"p>>',
                 buttons: ['copy', 'excel', 'pdf', 'print'],
                 pageLength: 8,
-                order: [[2, 'asc']],
+                // Tri initial côté client : date décroissante
+                order: [[2, 'desc']],
                 columnDefs: [
                     { targets: 2, type: 'date-eu' },
                     { targets: [4, 5], className: 'points-cell' }

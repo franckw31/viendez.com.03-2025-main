@@ -1,8 +1,8 @@
 <?php
 session_start();
-error_reporting(0);
+error_reporting(E_ALL);
 include ('include/config.php');
-if (strlen($_SESSION['id'] == 0)) {
+if (empty($_SESSION['id'])) {
     header('location:logout.php');
 } else {
 
@@ -18,7 +18,6 @@ if (strlen($_SESSION['id'] == 0)) {
         $buyin = $_POST['buyin'];
         $bounty = $_POST['bounty'];
         $recave = $_POST['recave'];
-        $addon = $_POST['addon'];
         $ante = $_POST['ante'];
         $longitude = $_POST['longitude'];
         $latitude = $_POST['latitude'];
@@ -37,17 +36,17 @@ if (strlen($_SESSION['id'] == 0)) {
         echo $departd;
         echo $departh;
         echo $maintenant;
-        $msg = mysqli_query($con, "INSERT INTO `activite` (`id-activite`, `id-structure`, `id-membre`, `titre-activite`, `date_depart`, `heure_depart`, `ville`, `lng`, `lat`, `places`,  `buyin`, `rake`, `bounty`, `jetons`, `recave`, `addon`, `ante`, `bonus`) VALUES (NULL, '$idstructure', '$idmembre', '$titreactivite',  '$maintenant',  '$maintenant', '$ville', '$longitude', '$latitude', '$places', '$buyin', '$rake', '$bounty', '$jetons', '$recave', '$addon', '$ante', '$bonus')");
+        $stmt = mysqli_prepare($con, "INSERT INTO `activite` (`id-activite`, `id-structure`, `id-membre`, `titre-activite`, `date_depart`, `heure_depart`, `ville`, `lng`, `lat`, `places`, `buyin`, `rake`, `bounty`, `jetons`, `recave`, `addon`, `ante`, `bonus`) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+$stmt->bind_param("siiiiissiiiiiiiis", $idstructure, $idmembre, $titreactivite, $date_depart, $heure_depart, $ville, $longitude, $latitude, $places, $buyin, $rake, $bounty, $jetons, $recave, $addon, $ante, $bonus);
+$stmt->execute();
         $_SESSION['msg'] = "Activité ajoutée avec succés !!";
-        echo "apres insert";
         $acti = mysqli_query($con, "SELECT `id-activite` FROM `activite` ORDER BY `id-activite` DESC");
         $choix = mysqli_fetch_assoc($acti);
         $numact = $choix['id-activite'];
-        echo $numact;
         ?>
 <script language="JavaScript" type="text/javascript">
 window.location.replace("/panel/creation-blindes-init.php?act=<?php echo $numact ?>");
-</script>';
+</script>
 <?php
 
         //    header('location:/panel/liste-activites.php');
@@ -57,7 +56,9 @@ window.location.replace("/panel/creation-blindes-init.php?act=<?php echo $numact
     //Code Deletion
     if (isset($_GET['del'])) {
         $sid = $_GET['id'];
-        mysqli_query($con, "delete from competences where id = '$sid'");
+        $del_stmt = mysqli_prepare($con, "DELETE FROM activite WHERE `id-activite` = ?");
+        $del_stmt->bind_param("i", $sid);
+        $del_stmt->execute();
         $_SESSION['msg'] = "data deleted !!";
     }
     ?>
@@ -138,7 +139,7 @@ window.location.replace("/panel/creation-blindes-init.php?act=<?php echo $numact
                                                                 <td>
                                                                     <input class="form-control" id="titre-activite"
                                                                         name="titre-activite" type="text"
-                                                                        value="<?php echo $result['titre-activite']; ?>"
+                                                                        value="<?php echo htmlspecialchars($result['titre-activite']); ?>"
                                                                         required />
                                                                 </td>
                                                             </tr>
@@ -146,91 +147,91 @@ window.location.replace("/panel/creation-blindes-init.php?act=<?php echo $numact
                                                                 <th>Date</th>
                                                                 <td><input class="form-control" id="date_depart"
                                                                         name="date_depart" type="date"
-                                                                        value="<?php echo $result['date_depart']; ?>">
+                                                                        value="<?php echo htmlspecialchars($result['date_depart']); ?>">
                                                                 </td>
                                                             </tr>
                                                             <tr>
                                                                 <th>Heure</th>
                                                                 <td><input class="form-control" id="heure_depart"
-                                                                        name="heure_depart" type="date"
-                                                                        value="<?php echo $result['heure_depart']; ?>">
+                                                                        name="heure_depart" type="time"
+                                                                        value="<?php echo htmlspecialchars($result['heure_depart']); ?>">
                                                                 </td>
                                                             </tr>
                                                             <tr>
                                                                 <th>Ville</th>
                                                                 <td><input class="form-control" id="ville" name="ville"
                                                                         type="text"
-                                                                        value="<?php echo $result['ville']; ?>"
+                                                                        value="<?php echo htmlspecialchars($result['ville']); ?>"
                                                                         required /></td>
                                                             </tr>
                                                             <tr>
                                                                 <th>Longitude</th>
                                                                 <td><input class="form-control" id="longitude"
                                                                         name="longitude" type="text"
-                                                                        value="<?php echo $result['longitude']; ?>"
+                                                                        value="<?php echo htmlspecialchars($result['longitude']); ?>"
                                                                         required /></td>
                                                             </tr>
                                                             <tr>
                                                                 <th>Latitude</th>
                                                                 <td><input class="form-control" id="latitude"
                                                                         name="latitude" type="text"
-                                                                        value="<?php echo $result['latitude']; ?>"
+                                                                        value="<?php echo htmlspecialchars($result['latitude']); ?>"
                                                                         required /></td>
                                                             </tr>
                                                             <tr>
                                                                 <th>Nb Joueurs Max</th>
                                                                 <td><input class="form-control" id="places"
                                                                         name="places" type="text"
-                                                                        value="<?php echo $result['def_nbj']; ?>"
+                                                                        value="<?php echo htmlspecialchars($result['def_nbj']); ?>"
                                                                         required /></td>
                                                             </tr>
                                                             <tr>
                                                                 <th>Buyin</th>
                                                                 <td><input class="form-control" id="buyin" name="buyin"
                                                                         type="text"
-                                                                        value="<?php echo $result['def_buy']; ?>"
+                                                                        value="<?php echo htmlspecialchars($result['def_buy']); ?>"
                                                                         required /></td>
                                                             </tr>
                                                             <tr>
                                                                 <th>Rake</th>
                                                                 <td><input class="form-control" id="rake" name="rake"
                                                                         type="text"
-                                                                        value="<?php echo $result['def_rak']; ?>"
+                                                                        value="<?php echo htmlspecialchars($result['def_rak']); ?>"
                                                                         required /></td>
                                                             </tr>
                                                             <tr>
                                                                 <th>Bounty</th>
                                                                 <td><input class="form-control" id="bounty"
                                                                         name="bounty" type="text"
-                                                                        value="<?php echo $result['def_bou']; ?>"
+                                                                        value="<?php echo htmlspecialchars($result['def_bou']); ?>"
                                                                         required /></td>
                                                             </tr>
                                                             <tr>
                                                                 <th>Nb Recave</th>
                                                                 <td><input class="form-control" id="recave"
                                                                         name="recave" type="text"
-                                                                        value="<?php echo $result['def_rec']; ?>"
+                                                                        value="<?php echo htmlspecialchars($result['def_rec']); ?>"
                                                                         required /></td>
                                                             </tr>
                                                             <tr>
                                                                 <th>Addon</th>
                                                                 <td><input class="form-control" id="addon" name="addon"
                                                                         type="text"
-                                                                        value="<?php echo $result['def_add']; ?>"
+                                                                        value="<?php echo htmlspecialchars($result['def_add']); ?>"
                                                                         required /></td>
                                                             </tr>
                                                             <tr>
                                                                 <th>Ante</th>
                                                                 <td><input class="form-control" id="ante" name="ante"
                                                                         type="text"
-                                                                        value="<?php echo $result['def_ant']; ?>"
+                                                                        value="<?php echo htmlspecialchars($result['def_ant']); ?>"
                                                                         required /></td>
                                                             </tr>
                                                             <tr>
                                                                 <th>Structure</th>
                                                                 <td><input class="form-control" id="id-structure"
                                                                         name="id-structure" type="text"
-                                                                        value="<?php echo $result['defstr']; ?>"
+                                                                        value="<?php echo htmlspecialchars($result['defstr']); ?>"
                                                                         required />
                                                                 </td>
                                                             </tr>
@@ -238,14 +239,14 @@ window.location.replace("/panel/creation-blindes-init.php?act=<?php echo $numact
                                                                 <th>Stack</th>
                                                                 <td><input class="form-control" id="jetons"
                                                                         name="jetons" type="text"
-                                                                        value="<?php echo $result['def_jet']; ?>"
+                                                                        value="<?php echo htmlspecialchars($result['def_jet']); ?>"
                                                                         required /></td>
                                                             </tr>
                                                             <tr>
                                                                 <th>Bonus</th>
                                                                 <td><input class="form-control" id="bonus" name="bonus"
                                                                         type="text"
-                                                                        value="<?php echo $result['def_bon']; ?>"
+                                                                        value="<?php echo htmlspecialchars($result['def_bon']); ?>"
                                                                         required /></td>
                                                             </tr>
                                                             <tr>

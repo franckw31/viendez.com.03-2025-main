@@ -57,10 +57,11 @@ if (isset($_POST['submitcreaj'])) {
                             
                             // Auto-register to activity if requested
                             if ($auto_register && $selected_activity_id) {
-                                $register_sql = "INSERT INTO `participation` (`id-membre`, `id-activite`, `id-table`, `id-siege`) VALUES (?, ?, 1, 1)";
+                                // Insert participation and save nom-membre (pseudo) together with id-membre
+                                $register_sql = "INSERT INTO `participation` (`id-membre`, `nom-membre`, `id-activite`, `id-table`, `id-siege`) VALUES (?, ?, ?, 1, 1)";
                                 $stmt_register = mysqli_prepare($con, $register_sql);
                                 if ($stmt_register) {
-                                    mysqli_stmt_bind_param($stmt_register, "ii", $new_player_id, $selected_activity_id);
+                                    mysqli_stmt_bind_param($stmt_register, "isi", $new_player_id, $pseudo, $selected_activity_id);
                                     if (mysqli_stmt_execute($stmt_register)) {
                                         $_SESSION['feedback'] = "<div class='alert alert-success'>Joueur créé et inscrit à l'activité : " . htmlspecialchars($pseudo) . "</div>";
                                     } else {
@@ -125,15 +126,64 @@ if (isset($_POST['submit'])) {
             // Calculate cout_in = buyin + bounty + rake + (5 if challenger)
             $initial_cout_in = $default_activity_buyin + $default_activity_bounty + $default_activity_rake + ($challenger ? 5 : 0);
 
-            $sql_quick_reg = "INSERT INTO `participation` (`id-membre`, `id-activite`, `id-table`, `id-siege`, rake, cout_in) VALUES (?, ?, ?, ?, ?, ?)";
+            // Récupérer le pseudo du membre pour remplir nom-membre dans participation
+            $pseudo = '';
+            $stmt_pseudo = mysqli_prepare($con, "SELECT `pseudo` FROM `membres` WHERE `id-membre` = ? LIMIT 1");
+            if ($stmt_pseudo) {
+                mysqli_stmt_bind_param($stmt_pseudo, "i", $membre);
+                mysqli_stmt_execute($stmt_pseudo);
+                $res_pseudo = mysqli_stmt_get_result($stmt_pseudo);
+                if ($res_pseudo && $row_p = mysqli_fetch_assoc($res_pseudo)) {
+                    $pseudo = $row_p['pseudo'];
+                }
+                mysqli_free_result($res_pseudo);
+                mysqli_stmt_close($stmt_pseudo);
+            }
+
+            // Insérer en renseignant nom-membre (pseudo) et id-membre
+            $sql_quick_reg = "INSERT INTO `participation` (`id-membre`, `nom-membre`, `id-activite`, `id-table`, `id-siege`, rake, cout_in) VALUES (?, ?, ?, ?, ?, ?, ?)";
+
             $stmt_reg = mysqli_prepare($con, $sql_quick_reg);
             if ($stmt_reg) {
-                 mysqli_stmt_bind_param($stmt_reg, "iiiidd", $membre, $acti, $tabl, $sieg, $default_activity_rake, $initial_cout_in);
+                 mysqli_stmt_bind_param($stmt_reg, "isiiidd", $membre, $pseudo, $acti, $tabl, $sieg, $default_activity_rake, $initial_cout_in);
                  if (mysqli_stmt_execute($stmt_reg)) {
-                     $_SESSION['feedback'] = "<div class='alert alert-success'>Inscription rapide réussie : Joueur ID = $membre, Activité ID = $acti, Table = $tabl, Siège = $sieg. Rake init.: " . number_format($default_activity_rake, 2) . ", Cout In init.: " . number_format($initial_cout_in, 2) . ".</div>";
-                 } else { $_SESSION['feedback'] = "<div class='alert alert-danger'>Erreur inscription rapide: " . htmlspecialchars(mysqli_stmt_error($stmt_reg)) . "</div>"; }
+                     $insert_id = mysqli_insert_id($con);
+
+                     // Si pseudo vide pour une raison quelconque, récupérer à nouveau depuis la table membres
+                     if (empty($pseudo)) {
+                         $stmt_pseudo2 = mysqli_prepare($con, "SELECT `pseudo` FROM `membres` WHERE `id-membre` = ? LIMIT 1");
+                         if ($stmt_pseudo2) {
+                             mysqli_stmt_bind_param($stmt_pseudo2, "i", $membre);
+                             mysqli_stmt_execute($stmt_pseudo2);
+                             $res_pseudo2 = mysqli_stmt_get_result($stmt_pseudo2);
+                             if ($res_pseudo2 && $row_p2 = mysqli_fetch_assoc($res_pseudo2)) {
+                                 $pseudo = $row_p2['pseudo'];
+                             }
+                             mysqli_free_result($res_pseudo2);
+                             mysqli_stmt_close($stmt_pseudo2);
+                         }
+                     }
+
+                     // Assurer que nom-membre est bien sauvegardé (mise à jour post-insert)
+                     if ($insert_id > 0 && $pseudo !== '') {
+                         $stmt_up = mysqli_prepare($con, "UPDATE `participation` SET `nom-membre` = ? WHERE `id-participation` = ?");
+                         if ($stmt_up) {
+                             mysqli_stmt_bind_param($stmt_up, "si", $pseudo, $insert_id);
+                             mysqli_stmt_execute($stmt_up);
+                             mysqli_stmt_close($stmt_up);
+                         } else {
+                             error_log("Erreur préparation update nom-membre: " . mysqli_error($con));
+                         }
+                     }
+
+                     $_SESSION['feedback'] = "<div class='alert alert-success'>Inscription rapide réussie : Joueur ID = $membre (".htmlspecialchars($pseudo)."), Activité ID = $acti, Table = $tabl, Siège = $sieg. Rake init.: " . number_format($default_activity_rake, 2) . ", Cout In init.: " . number_format($initial_cout_in, 2) . ".</div>";
+                 } else {
+                     $_SESSION['feedback'] = "<div class='alert alert-danger'>Erreur inscription rapide: " . htmlspecialchars(mysqli_stmt_error($stmt_reg)) . "</div>";
+                 }
                  mysqli_stmt_close($stmt_reg);
-            } else { $_SESSION['feedback'] = "<div class='alert alert-danger'>Erreur préparation inscription: " . htmlspecialchars(mysqli_error($con)) . "</div>"; }
+            } else {
+                $_SESSION['feedback'] = "<div class='alert alert-danger'>Erreur préparation inscription: " . htmlspecialchars(mysqli_error($con)) . "</div>";
+            }
         } else {
             mysqli_stmt_close($stmt_check);
             $_SESSION['feedback'] = "<div class='alert alert-warning'>Ce joueur est déjà inscrit à cette activité.</div>";

@@ -11,9 +11,9 @@ $nb_lignes = mysqli_num_rows($req1);
 echo " nbr activ = (" . $nb_lignes . ")";
 date_default_timezone_set('Arctic/Longyearbyen');
 $heure = date("Y-m-d H:i:s", time());
-$duree = date("H:i:s", time());
+// $duree = date("H:i:s", time());
 echo "(" . $heure . "-" . $duree . ")";
-$modif = mysqli_query($con, "INSERT INTO `blindes-live` (`id-activite`, `duree`, `ordre`,`fin` ) VALUES ('$activite', '$duree', '1', '$heure' )");
+$modif = mysqli_query($con, "INSERT INTO `blindes-live` (`id-activite`, `minutes`, `ordre`,`fin` ) VALUES ('$activite', '5', '1', '$heure' )");
 ?>
 <script language="JavaScript" type="text/javascript">
     window.location.replace("/panel/voir-activite.php?uid=<?php echo $activite ?>");
