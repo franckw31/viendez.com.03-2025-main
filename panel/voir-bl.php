@@ -232,83 +232,6 @@ if (strlen($_SESSION['id'] == 0)) {
                 color: white !important;
                 font-weight: bold !important;
             }
-            
-            /* Réduire la largeur du bandeau des onglets */
-            #bMenu {
-                max-width: 900px; /* Limiter la largeur totale */
-                margin: 0 auto; /* Centrer le bandeau */
-                display: flex;
-                justify-content: center;
-                gap: 5px; /* Réduire l'espacement entre les onglets */
-                padding: 10px;
-            }
-            
-            /* Réduire la taille des boutons d'onglets */
-            .btnnav {
-                padding: 8px 15px !important; /* Réduire le padding */
-                font-size: 16px !important; /* Réduire la taille de la police */
-                min-width: auto !important; /* Supprimer la largeur minimale */
-                white-space: nowrap; /* Empêcher le retour à la ligne */
-            }
-            .snapshot-item .btn-danger {
-    display: inline-block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
-
-.snapshot-item .btn-danger i.fa-trash {
-    display: inline !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-}
-
-/* Supprimer les règles qui masquent les boutons au hover */
-.snapshot-item:hover .btn-danger {
-    display: inline-block !important;
-}
-
-/* Forcer la visibilité des boutons dans les snapshots */
-    .snapshot-item {
-        display: flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
-    
-    .snapshot-item .btn {
-        display: inline-block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
-    
-    .snapshot-item .btn-danger,
-    .snapshot-item .btn-delete-snapshot {
-        display: inline-block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
-    }
-
-    .snapshot-item .btn-danger i.fa-trash,
-    .snapshot-item .btn i {
-        display: inline !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
-
-    /* Supprimer toutes les règles qui pourraient masquer les boutons */
-    .snapshot-item:hover .btn,
-    .snapshot-item:hover .btn-danger {
-        display: inline-block !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
-    
-    /* S'assurer que les conteneurs des boutons sont visibles */
-    .snapshot-item > div {
-        display: flex !important;
-        visibility: visible !important;
-        opacity: 1 !important;
-    }
         </style>
     </head>
 
@@ -325,230 +248,421 @@ if (strlen($_SESSION['id'] == 0)) {
                         <!-- end: PAGE TITLE -->
                         <!-- start: BASIC EXAMPLE -->
                         <div id="conteneur">
-                            <div id="contenu">
-                                <div id="auCentre">
-                                    <?php
-                                    $id = intval($_GET['uid']);
-                                    $reqnbt = mysqli_query($con, "SELECT * FROM `activite` WHERE `id-activite` = '$id' ");
-                                    $res = mysqli_fetch_array($reqnbt);
-                                    $nbt = $res["nb-tables"];
+                        <div id="contenu">
+                            <div id="auCentre">
+                                <div id="bMenu">
+                                    <a href="#" id="Timer" class="btnnav" onmouseover="afficher2('Timer')">Timer</a>
+                                    <a href="#" id="Blindes" class="btnnav" onmouseover="afficher2('Blindes')">Orga.</a>
+                                    <a href="#" id="css3" class="btnnav" onmouseover="afficher('css3')">Notifs</a>
+                                    <a href="#" id="js" class="btnnav" onmouseover="afficher('js')">Compét.</a>
+                                    <a href="#" id="php" class="btnnav" onmouseover="afficher('php')">Loisirs</a>
+                                    <a href="#" id="col" class="btnnav" onmouseover="afficher('col')">Collect.</a>
+                                    <a href="#" id="ks" class="btnnav" onmouseover="afficher('ks')">Activités</a>
+                                    <a href="#" id="portefeuille" class="btnnav" onmouseover="afficher('portefeuille')">$$$</a>
+                                </div>
+                                <div id="bSection">
+                                    
+                                        <div id="TimerE" class="rubrique">
+                                            <div class="col-md-12">
+                                                <div class="rrow margin-top-0">
+                                                    <div class="col-lg-6 col-md-12">
 
-                                    if (1) { ?>
-                                        <!-- Remplacer la section des onglets -->
-                                        <div id="bMenu">
-                                            <a href="#" id="Timer" class="btnnav" onclick="afficher2('Timer'); return false;">Timer</a>
-                                            <a href="#" id="t3" class="btnnav" onclick="afficher2('t3'); return false;">Blindes</a>
-                                            <a href="#" id="Structure" class="btnnav" onclick="afficher2('Structure'); return false;">Modèles</a>
-                                            <a href="#" id="Outils" class="btnnav" onclick="afficher2('Outils'); return false;">30 Sec</a>
-                                            <!-- <a href="#" id="t3" class="btnnav" onclick="afficher2('t3'); return false;">divers</a> -->
+                                                        <?php $id = intval($_GET['uid']);
+                                                        $_SESSION["act"] = $id; ?>
+                                                        <?php include_once('horloge-heure.php'); ?>
+                                                        <div style="color:red ; font-size: 200px ; text-align: center;"
+                                                            id="response">
+                                                        </div>
+                                                        <div style="color:green ; text-align: center">
+                                                            <form method="post">
+                                                                <table class="table table-bordered">
+                                                                    <tr>
+                                                                        <td colspan="3" style="text-align:center ;">
+                                                                            <button type="submit" id="moins"
+                                                                                class="btn btn-primaryg btn-block"
+                                                                                name="moins">
+                                                                                <<< -2 Minutes </button>
+                                                                        </td>
+                                                                        <td colspan="3" style="text-align:center ;">
+                                                                            <button type="submit"
+                                                                                class="btn btn-primary btn-block"
+                                                                                name="pauseresume">Pause
+                                                                                / Resume
+                                                                            </button>
+                                                                        </td>
+                                                                        <td colspan="3" style="text-align:center ;">
+                                                                            <button type="submit"
+                                                                                class="btn btn-primary-rouge btn-block"
+                                                                                name="plus">+2
+                                                                                Minutes >>>
+                                                                            </button>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td colspan="3" style="text-align:center ;">
+                                                                            <button type="submit" id="moins1"
+                                                                                class="btn btn-primaryg btn-block"
+                                                                                name="moins1">
+                                                                                <<< -1 Minute </button>
+                                                                        </td>
+                                                                        <td colspan="3" style="text-align:center ;">
+                                                                            <button type="submit"
+                                                                                class="btn btn-primary btn-block"
+                                                                                name="pauseresume">Reset
+                                                                                blinde
+                                                                            </button>
+                                                                        </td>
+                                                                        <td colspan="3" style="text-align:center ;">
+                                                                            <button type="submit"
+                                                                                class="btn btn-primary-rouge btn-block"
+                                                                                name="plus1">+1
+                                                                                Minute >>>
+                                                                            </button>
+                                                                        </td>
+                                                                    </tr>
+                                                                </table>
+                                                            </form>
+                                                        </div>
+                                                        <?php include_once('horloge-sb.php'); ?>
+                                                        <div style="color:orange ; font-size: 90px  ; text-align: center"
+                                                            id="response-sb"></div>
+                                                        <?php include_once('horloge-pause.php'); ?>
+                                                        <div style="color:red ; font-size: 30px ; text-align: center"
+                                                            id="car-pause"></div>
+                                                        <?php include_once('horloge-ante.php'); ?>
+                                                        <div style="color:blue ; font-size: 50px ; text-align: center"
+                                                            id="response-ante"></div>
+
+                                                        <?php include_once('horloge-estim.php'); ?>
+                                                        <div style="color:grey ; font-size: 30px ; text-align: center">
+                                                        </div>
+
+
+                                                    </div>
+                                                    <div class="col-lg-6 col-md-12">
+
+
+
+                                                        <h4 class="text-center"
+                                                            style="margin-top:8px; display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 1em;"
+                                                            panel-title>
+                                                            <span
+                                                                style="font-size: 1em; color: #0056b3; font-weight: bold;">Liste
+                                                                des Joueurs - </span>
+                                                            <span
+                                                                style="font-size: 1em; color: #0056b3; font-weight: bold;"><?php echo htmlspecialchars($res['titre-activite'], ENT_QUOTES); ?></span>
+                                                        </h4>
+                                                    </div>
+
+                                                    <table class="table table-striped table-bordered players-table"
+                                                        style="font-size:14px;">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Ordre</th>
+                                                                <th>Pseudo</th>
+                                                                <th>Recave(s)</th>
+                                                                <th>Sorti(e) Par</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="joueurs-list">
+                                                            <?php
+                                                            $id = intval($_GET['uid']);
+                                                            // Récupérer les joueurs avec leurs dates d'élimination
+                                                            $req = mysqli_query($con, "SELECT p.*, MAX(e.created_at) as last_elimination_date FROM `participation` p LEFT JOIN `eliminations` e ON p.`id-participation` = e.`id_participation` WHERE p.`id-activite` = '$id' GROUP BY p.`id-participation` ORDER BY (p.`nom-membre-vainqueur` IS NULL OR p.`nom-membre-vainqueur` = '') DESC, last_elimination_date DESC, p.`nom-membre` ASC");
+                                                            $totalRecaves = 0;
+                                                            $countJoueurs = 0;
+                                                            $rankingCounter = 1;
+
+                                                            // Récupérer le buyin, recave_montant et jetons de l'activité
+                                                            $buyinQuery = mysqli_query($con, "SELECT `recave_montant` , `jetons` , `recave_jetons` , `buyin`  FROM `activite` WHERE `id-activite` = '$id'");
+                                                            $buyinRow = mysqli_fetch_array($buyinQuery);
+                                                            $buyin = intval($buyinRow['buyin']) ?? 0;
+                                                            $jetons = intval($buyinRow['jetons']) ?? 0;
+                                                            $recave_jetons = intval($buyinRow['recave_jetons']) ?? 0;
+                                                            $recave_montant = intval($buyinRow['recave_montant']) ?? 0;
+                                                            // echo $recave_montant;
+                                                            while ($row = mysqli_fetch_array($req)) {
+                                                                $totalRecaves += intval($row['recave']);
+                                                                $countJoueurs++;
+
+                                                                // récupérer tous les éliminants enregistrés pour cette participation
+                                                                $elims_html = '';
+                                                                $isDefinitivelyEliminated = false;
+                                                                $elim_q = mysqli_query($con, "SELECT * FROM `eliminations` WHERE `id_participation` = '" . intval($row['id-participation']) . "' ORDER BY `created_at` ASC");
+                                                                if ($elim_q && mysqli_num_rows($elim_q) > 0) {
+                                                                    $names = [];
+                                                                    while ($er = mysqli_fetch_array($elim_q)) {
+                                                                        $names[] = htmlspecialchars($er['nom_membre'], ENT_QUOTES);
+                                                                        // Vérifier si l'élimination est définitive via la case coché
+                                                                        if (intval($er['is_definitive']) === 1) {
+                                                                            $isDefinitivelyEliminated = true;
+                                                                        }
+                                                                    }
+                                                                    $elims_html = implode(', ', $names);
+                                                                }
+
+                                                                // récupérer id-membre depuis table membres (pour que data-member-id soit correct)
+                                                                $membre_id = 0;
+                                                                $pseudo_clean = mysqli_real_escape_string($con, $row['nom-membre']);
+                                                                $mq = mysqli_query($con, "SELECT `id-membre` FROM `membres` WHERE `pseudo` = '$pseudo_clean' LIMIT 1");
+                                                                if ($mq && mysqli_num_rows($mq) > 0) {
+                                                                    $mr = mysqli_fetch_array($mq);
+                                                                    $membre_id = intval($mr['id-membre']);
+                                                                    $membre_nom = $mr['pseudo'];
+                                                                    echo $membre_nom;
+                                                                }
+
+                                                                // Compter le nombre de joueurs éliminés par ce pseudo
+                                                                $elimCount = 0;
+                                                                $countElimQuery = mysqli_query($con, "SELECT COUNT(*) as cnt FROM `eliminations` e JOIN `participation` p ON e.`id_participation` = p.`id-participation` WHERE p.`id-activite` = '$id' AND e.`nom_membre` = '" . mysqli_real_escape_string($con, $row['nom-membre']) . "'");
+                                                                if ($countElimQuery) {
+                                                                    $countElimRow = mysqli_fetch_array($countElimQuery);
+                                                                    $elimCount = intval($countElimRow['cnt']);
+                                                                }
+
+                                                                $eliminatedBy = isset($row['nom-membre-vainqueur']) ? $row['nom-membre-vainqueur'] : '';
+                                                                $isEliminated = !empty($eliminatedBy) || $isDefinitivelyEliminated;
+                                                                $rowStyle = $isEliminated ? 'opacity:0.5;background-color:#f0f0f0;' : '';
+                                                                $disabledAttr = $isEliminated ? 'disabled' : '';
+
+                                                                $elimCountDisplay = $elimCount > 0 ? ' <span style="color:red;">(' . $elimCount . ')</span>' : '';
+                                                                $classementDisplay = $rankingCounter == 1 ? '<i class="fa fa-trophy" style="color: gold; font-size: 1.2em;"></i>' : $rankingCounter;
+                                                                echo '<tr style="' . $rowStyle . '">
+                                                                                                                <td style="text-align:center; font-weight:bold;">' . $classementDisplay . '</td>
+                                                                                                                <td class="pseudo-cell">' . htmlspecialchars($row['nom-membre'], ENT_QUOTES) . $elimCountDisplay . '</td>
+                                                                                                <td>
+                                                                                                    <div class="input-group" style="width:100%;">
+                                                                                                        <input type="number" class="form-control recave-input" data-id="' . intval($row['id-participation']) . '" data-member-id="' . intval($membre_id) . '" value="' . intval($row['recave']) . '" ' . $disabledAttr . ' />
+                                                                                                        <button class="btn btn-success btn-sm btn-plus" type="button" data-id="' . intval($row['id-participation']) . " " . $disabledAttr . '>+</button>
+                                                                                                        <button class="btn btn-danger btn-sm btn-trash" type="button" data-id="' . intval($row['id-participation']) . '" data-member-id="' . intval($membre_id) . '" data-name="' . htmlspecialchars($row['nom-membre'], ENT_QUOTES) . '" ' . $disabledAttr . '><i class="fa fa-trash"></i></button>
+                                                                                                    </div>
+                                                                                                </td>
+                                                                                                <td><span class="eliminated-by" data-player-id="' . intval($row['id-participation']) . '" style="font-size:12px;color:' . ($isEliminated ? 'red' : 'inherit') . ';font-weight:' . ($isEliminated ? 'bold' : 'normal') . '">';
+                                                                // afficher liste d'éliminants si existante, sinon afficher nom-membre-vainqueur
+                                                                if (!empty($elims_html)) {
+                                                                    echo $elims_html;
+                                                                } elseif ($isEliminated) {
+                                                                    echo htmlspecialchars($eliminatedBy, ENT_QUOTES);
+                                                                } else {
+                                                                    echo '';
+                                                                }
+                                                                echo '</span></td></tr>';
+                                                                $rankingCounter++;
+                                                            }
+                                                            ?>
+                                                            <tr style="background-color: #f0f0f0; font-weight: bold;">
+                                                                <td></td>
+                                                                <td><?php echo $countJoueurs . ' Caves à ' . $buyin . ' €'; ?>
+                                                                </td>
+                                                                <td><?php echo $totalRecaves . ' ReCave(s) à ' . $recave_montant . ' €'; ?>
+                                                                </td>
+                                                                <td>
+                                                                    <?php
+                                                                    // Calculer le nombre de joueurs non définitivement éliminés
+                                                                    $countNotDefinitivelyEliminated = 0;
+                                                                    $reqForCounting = mysqli_query($con, "SELECT * FROM `participation` WHERE `id-activite` = '$id'");
+                                                                    while ($rowForCount = mysqli_fetch_array($reqForCounting)) {
+                                                                        $isDefElim = false;
+                                                                        $elimCheckQuery = mysqli_query($con, "SELECT * FROM `eliminations` WHERE `id_participation` = '" . intval($rowForCount['id-participation']) . "'");
+                                                                        if ($elimCheckQuery && mysqli_num_rows($elimCheckQuery) > 0) {
+                                                                            while ($ec = mysqli_fetch_array($elimCheckQuery)) {
+                                                                                if (intval($ec['is_definitive']) === 1) {
+                                                                                    $isDefElim = true;
+                                                                                    break;
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                        if (!$isDefElim) {
+                                                                            $countNotDefinitivelyEliminated++;
+                                                                        }
+                                                                    }
+                                                                    // Calculer le stack moyen
+                                                                    // $countNotDefinitivelyEliminated--;
+                                                                    if ($countNotDefinitivelyEliminated > 0) {
+                                                                        $totalJetons = ($countJoueurs * $jetons) + ($totalRecaves * $recave_jetons);
+
+                                                                        $stackMoyen = intval($totalJetons / $countNotDefinitivelyEliminated);
+                                                                        echo 'Stack Moyen ' . $stackMoyen;
+                                                                    }
+                                                                    ?>
+                                                                </td>
+                                                            </tr>
+                                                            <tr style="background-color: #e8f4f8; font-weight: bold;">
+                                                                <td></td>
+                                                                <td>Caves = <?php echo $countJoueurs * $buyin . ' €'; ?>
+                                                                </td>
+                                                                <td>
+                                                                    <?php
+                                                                    echo 'Recaves = ' . $totalRecaves * $recave_montant . ' €';
+                                                                    ?>
+                                                                </td>
+                                                                <td><?php $totalAmount = ($countJoueurs * $buyin) + ($totalRecaves * $recave_montant);
+                                                                echo 'PricePool = ' . $totalAmount . ' €'; ?></td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                    <div class="text-center"
+                                                        style="margin-top:8px; display: flex; justify-content: center; align-items: center; min-height: 50px;">
+                                                        <button class="btn btn-primary" onclick="validerRecaves()">Valider
+                                                            Modifications</button>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                    <?php }
-                                    ;
-                                    date_default_timezone_set('UTC+2');
-                                    ?>
-                                    <div id="bSection">
                                         <div id="BlindesE" class="rubrique">                                            
                                             
-                                        </div>
-                                        <div id="TimerE" class="rubrique">
-    <div style="display: flex; gap: 20px; align-items: flex-start;">
-        <!-- Colonne gauche: Horloge et contrôles -->
-        <div style="flex: 1; min-width: 400px;">
-            <?php $id = intval($_GET['uid']);
-            $_SESSION["act"] = $id; ?>
-            <?php include_once('horloge-heure.php'); ?>
-            <div style="color:red ; font-size: 200px ; text-align: center;" id="response">
-            </div>
-            <div style="color:green ; text-align: center">
-                <form method="post">
-                    <table class="table table-bordered">
-                        <tr>
-                            <td colspan="3" style="text-align:center ;">
-                                <button type="submit" id="moins" class="btn btn-primaryg btn-block" name="moins">
-                                    <<< -2 Minutes </button>
-                            </td>
-                            <td colspan="3" style="text-align:center ;">
-                                <button type="submit" class="btn btn-primary btn-block" name="pauseresume">Pause / Resume</button>
-                            </td>
-                            <td colspan="3" style="text-align:center ;">
-                                <button type="submit" class="btn btn-primary-rouge btn-block" name="plus">+2 Minutes >>></button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="3" style="text-align:center ;">
-                                <button type="submit" id="moins1" class="btn btn-primaryg btn-block" name="moins1">
-                                    <<< -1 Minute </button>
-                            </td>
-                            <td colspan="3" style="text-align:center ;">
-                                <button type="submit" class="btn btn-primary btn-block" name="pauseresume">Reset blinde</button>
-                            </td>
-                            <td colspan="3" style="text-align:center ;">
-                                <button type="submit" class="btn btn-primary-rouge btn-block" name="plus1">+1 Minute >>></button>
-                            </td>
-                        </tr>
-                    </table>
-                </form>
-            </div>
-            <?php include_once('horloge-sb.php'); ?>
-            <div style="color:orange ; font-size: 90px  ; text-align: center" id="response-sb"></div>
-            <?php include_once('horloge-pause.php'); ?>
-            <div style="color:red ; font-size: 30px ; text-align: center" id="car-pause"></div>
-            <?php include_once('horloge-ante.php'); ?>
-            <div style="color:blue ; font-size: 50px ; text-align: center" id="response-ante"></div>
-            <?php include_once('horloge-estim.php'); ?>
-            <div style="color:grey ; font-size: 30px ; text-align: center"></div>
-        </div>
+                                                <ol class="breadcrumb mb-4" style="background-color: transparent; padding: 0; margin-bottom: 15px;">
+                                                    <li class="breadcrumb-item">
+                                                        <a href="liste-membres.php" style="color: #667eea; text-decoration: none; font-weight: 500;">Blindes</a>
+                                                    </li>
+                                                    <li class="breadcrumb-item active" style="color: #999;">
+                                                        Edition
+                                                    </li>
+                                                </ol>
+                                                <div class="card mb-4" style="border: none; box-shadow: none; border-radius: 8px; overflow: hidden;">
+                                                    <div class="card-header"
+                                                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); border-bottom: 3px solid #5568d3;">
+                                                        <i class="fas fa-poker-chip"
+                                                            style="margin-right: 10px; font-size: 1.2em;"></i> <strong
+                                                            style="font-size: 1.1em;">Gestion des Blindes</strong>
+                                                    </div>
+                                                    <div class="card-body"
+                                                        style="padding: 25px; background: linear-gradient(135deg, #fafbfc 0%, #f0f4ff 100%);">
+                                                        
+                                                        <table id="example"
+                                                            class="blindes-table cell-border compact stripe hover">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th style="width: 8%;"><i class="fas fa-coins"></i>
+                                                                        Ordre
+                                                                    </th>
+                                                                    <th style="width: 12%;"><i class="fas fa-coins"></i> SB
+                                                                    </th>
+                                                                    <th style="width: 12%;"><i class="fas fa-coins"></i> BB
+                                                                    </th>
+                                                                    <th style="width: 12%;"><i class="fas fa-coins"></i>
+                                                                        Ante
+                                                                    </th>
+                                                                    <th style="width: 12%;"><i
+                                                                            class="fas fa-hourglass-half"></i> Durée</th>
+                                                                    <th style="width: 18%;"><i class="fas fa-clock"></i> Fin
+                                                                    </th>
+                                                                    <th style="width: 26%;"><i class="fas fa-cog"></i>
+                                                                        Actions
+                                                                    </th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <?php $ret = mysqli_query($con, "SELECT * FROM `blindes-live` WHERE (`id-activite` = $id ) ORDER BY ordre ASC");
+                                                                $cnt = 1;
+                                                                while ($row = mysqli_fetch_array($ret)) { ?>
+                                                                    <?php
+                                                                    $id2 = $row['id-activite'];
+                                                                    $sql2 = mysqli_query($con, "SELECT * FROM `activite` WHERE `id-activite` = '$id2' ");
+                                                                    while ($row2 = mysqli_fetch_array($sql2)) { ?>
+                                                                        <tr>
+                                                                            <td class="ordre-cell">
+                                                                                <?php echo $row['ordre']; ?>
+                                                                            </td>
+                                                                            <td>
+                                                                                <input type="number"
+                                                                                    class="form-control blinde-input"
+                                                                                    data-id="<?php echo $row['id']; ?>"
+                                                                                    data-field="sb"
+                                                                                    value="<?php echo intval($row['sb']); ?>" />
+                                                                            </td>
+                                                                            <td>
+                                                                                <input type="number"
+                                                                                    class="form-control blinde-input"
+                                                                                    data-id="<?php echo $row['id']; ?>"
+                                                                                    data-field="bb"
+                                                                                    value="<?php echo intval($row['bb']); ?>" />
+                                                                            </td>
+                                                                            <td>
+                                                                                <input type="number"
+                                                                                    class="form-control blinde-input"
+                                                                                    data-id="<?php echo $row['id']; ?>"
+                                                                                    data-field="ante"
+                                                                                    value="<?php echo intval($row['ante']); ?>" />
+                                                                            </td>
+                                                                            <td>
+                                                                                <input type="number"
+                                                                                    class="form-control duree-input"
+                                                                                    data-id="<?php echo $row['id']; ?>"
+                                                                                    value="<?php echo intval($row['minutes']); ?>"
+                                                                                    placeholder="mm" maxlength="2" min="0"
+                                                                                    max="99" />
+                                                                            </td>
+                                                                            <td class="fin-cell">
+                                                                                <?php $fi = $row['fin'];
+                                                                                $fi = strtotime($fi);
+                                                                                echo date("H:i:s", $fi); ?>
+                                                                            </td>
+                                                                        <?php } ?>
+                                                                        <td>
+                                                                            <div class="action-btns">
+                                                                                <a href="ajout-blinde-live.php?id-activite=<?php echo $id; ?>&ordre=<?php echo $row['ordre']; ?>"
+                                                                                    class="add-btn" title="Ajouter">
+                                                                                    <i class="fa fa-plus"></i>
+                                                                                </a>
+                                                                                <a href="#"
+                                                                                    onclick="deleteBlinde(<?php echo $row['id']; ?>, <?php echo $id; ?>); return false;"
+                                                                                    class="delete-btn" title="Supprimer">
+                                                                                    <i class="fa fa-trash"></i>
+                                                                                </a>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <?php $cnt = $cnt + 1;
+                                                                } ?>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
 
-        <!-- Colonne droite: Tableau des joueurs -->
-        <div style="flex: 1; min-width: 500px;">
-            <div class="ccol-lg-6 ccol-md-12">
-                <h4 class="text-center" style="margin-top:8px; display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 1em;" panel-title>
-                    <span style="font-size: 1em; color: #0056b3; font-weight: bold;">Liste des Joueurs - </span>
-                    <span style="font-size: 1em; color: #0056b3; font-weight: bold;"><?php echo htmlspecialchars($res['titre-activite'], ENT_QUOTES); ?></span>
-                </h4>
-            </div>
-
-            <table class="table table-striped table-bordered players-table" style="font-size:14px;">
-                <thead>
-                    <tr>
-                        <th>Ordre</th>
-                        <th>Pseudo</th>
-                        <th>Recave(s)</th>
-                        <th>Sorti(e) Par</th>
-                    </tr>
-                </thead>
-                <tbody id="joueurs-list">
-                    <?php
-                    $id = intval($_GET['uid']);
-                    // Récupérer les joueurs avec leurs dates d'élimination
-                    $req = mysqli_query($con, "SELECT p.*, MAX(e.created_at) as last_elimination_date FROM `participation` p LEFT JOIN `eliminations` e ON p.`id-participation` = e.`id_participation` WHERE p.`id-activite` = '$id' GROUP BY p.`id-participation` ORDER BY (p.`nom-membre-vainqueur` IS NULL OR p.`nom-membre-vainqueur` = '') DESC, last_elimination_date DESC, p.`nom-membre` ASC");
-                    $totalRecaves = 0;
-                    $countJoueurs = 0;
-                    $rankingCounter = 1;
-
-                    // Récupérer le buyin, recave_montant et jetons de l'activité
-                    $buyinQuery = mysqli_query($con, "SELECT `recave_montant` , `jetons` , `recave_jetons` , `buyin`  FROM `activite` WHERE `id-activite` = '$id'");
-                    $buyinRow = mysqli_fetch_array($buyinQuery);
-                    $buyin = intval($buyinRow['buyin']) ?? 0;
-                    $jetons = intval($buyinRow['jetons']) ?? 0;
-                    $recave_jetons = intval($buyinRow['recave_jetons']) ?? 0;
-                    $recave_montant = intval($buyinRow['recave_montant']) ?? 0;
-                    
-                    while ($row = mysqli_fetch_array($req)) {
-                        $totalRecaves += intval($row['recave']);
-                        $countJoueurs++;
-
-                        // récupérer tous les éliminants enregistrés pour cette participation
-                        $elims_html = '';
-                        $isDefinitivelyEliminated = false;
-                        $elim_q = mysqli_query($con, "SELECT * FROM `eliminations` WHERE `id_participation` = '" . intval($row['id-participation']) . "' ORDER BY `created_at` ASC");
-                        if ($elim_q && mysqli_num_rows($elim_q) > 0) {
-                            $names = [];
-                            while ($er = mysqli_fetch_array($elim_q)) {
-                                $names[] = htmlspecialchars($er['nom_membre'], ENT_QUOTES);
-                                if (intval($er['is_definitive']) === 1) {
-                                    $isDefinitivelyEliminated = true;
-                                }
-                            }
-                            $elims_html = implode(', ', $names);
-                        }
-
-                        // récupérer id-membre depuis table membres
-                        $membre_id = 0;
-                        $pseudo_clean = mysqli_real_escape_string($con, $row['nom-membre']);
-                        $mq = mysqli_query($con, "SELECT `id-membre` FROM `membres` WHERE `pseudo` = '$pseudo_clean' LIMIT 1");
-                        if ($mq && mysqli_num_rows($mq) > 0) {
-                            $mr = mysqli_fetch_array($mq);
-                            $membre_id = intval($mr['id-membre']);
-                        }
-
-                        // Compter le nombre de joueurs éliminés par ce pseudo
-                        $elimCount = 0;
-                        $countElimQuery = mysqli_query($con, "SELECT COUNT(*) as cnt FROM `eliminations` e JOIN `participation` p ON e.`id_participation` = p.`id-participation` WHERE p.`id-activite` = '$id' AND e.`nom_membre` = '" . mysqli_real_escape_string($con, $row['nom-membre']) . "'");
-                        if ($countElimQuery) {
-                            $countElimRow = mysqli_fetch_array($countElimQuery);
-                            $elimCount = intval($countElimRow['cnt']);
-                        }
-
-                        $eliminatedBy = isset($row['nom-membre-vainqueur']) ? $row['nom-membre-vainqueur'] : '';
-                        $isEliminated = !empty($eliminatedBy) || $isDefinitivelyEliminated;
-                        $rowStyle = $isEliminated ? 'opacity:0.5;background-color:#f0f0f0;' : '';
-                        $disabledAttr = $isEliminated ? 'disabled' : '';
-
-                        $elimCountDisplay = $elimCount > 0 ? ' <span style="color:red;">(' . $elimCount . ')</span>' : '';
-                        $classementDisplay = $rankingCounter == 1 ? '<i class="fa fa-trophy" style="color: gold; font-size: 1.2em;"></i>' : $rankingCounter;
-                        
-                        echo '<tr style="' . $rowStyle . '">
-                            <td style="text-align:center; font-weight:bold;">' . $classementDisplay . '</td>
-                            <td class="pseudo-cell">' . htmlspecialchars($row['nom-membre'], ENT_QUOTES) . $elimCountDisplay . '</td>
-                            <td>
-                                <div class="input-group" style="width:100%;">
-                                    <input type="number" class="form-control recave-input" data-id="' . intval($row['id-participation']) . '" data-member-id="' . intval($membre_id) . '" value="' . intval($row['recave']) . '" ' . $disabledAttr . ' />
-                                    <button class="btn btn-success btn-sm btn-plus" type="button" data-id="' . intval($row['id-participation']) . '" ' . $disabledAttr . '>+</button>
-                                    <button class="btn btn-danger btn-sm btn-trash" type="button" data-id="' . intval($row['id-participation']) . '" data-member-id="' . intval($membre_id) . '" data-name="' . htmlspecialchars($row['nom-membre'], ENT_QUOTES) . '" ' . $disabledAttr . '><i class="fa fa-trash"></i></button>
-                                </div>
-                            </td>
-                            <td><span class="eliminated-by" data-player-id="' . intval($row['id-participation']) . '" style="font-size:12px;color:' . ($isEliminated ? 'red' : 'inherit') . ';font-weight:' . ($isEliminated ? 'bold' : 'normal') . '">';
-                        
-                        if (!empty($elims_html)) {
-                            echo $elims_html;
-                        } elseif ($isEliminated) {
-                            echo htmlspecialchars($eliminatedBy, ENT_QUOTES);
-                        } else {
-                            echo '';
-                        }
-                        echo '</span></td></tr>';
-                        $rankingCounter++;
-                    }
-                    ?>
-                    <tr style="background-color: #f0f0f0; font-weight: bold;">
-                        <td></td>
-                        <td><?php echo $countJoueurs . ' Caves à ' . $buyin . ' €'; ?></td>
-                        <td><?php echo $totalRecaves . ' ReCave(s) à ' . $recave_montant . ' €'; ?></td>
-                        <td>
-                            <?php
-                            $countNotDefinitivelyEliminated = 0;
-                            $reqForCounting = mysqli_query($con, "SELECT * FROM `participation` WHERE `id-activite` = '$id'");
-                            while ($rowForCount = mysqli_fetch_array($reqForCounting)) {
-                                $isDefElim = false;
-                                $elimCheckQuery = mysqli_query($con, "SELECT * FROM `eliminations` WHERE `id_participation` = '" . intval($rowForCount['id-participation']) . "'");
-                                if ($elimCheckQuery && mysqli_num_rows($elimCheckQuery) > 0) {
-                                    while ($ec = mysqli_fetch_array($elimCheckQuery)) {
-                                        if (intval($ec['is_definitive']) === 1) {
-                                            $isDefElim = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                                if (!$isDefElim) {
-                                    $countNotDefinitivelyEliminated++;
-                                }
-                            }
-                            if ($countNotDefinitivelyEliminated > 0) {
-                                $totalJetons = ($countJoueurs * $jetons) + ($totalRecaves * $recave_jetons);
-                                $stackMoyen = intval($totalJetons / $countNotDefinitivelyEliminated);
-                                echo 'Stack Moyen ' . $stackMoyen;
-                            }
-                            ?>
-                        </td>
-                    </tr>
-                    <tr style="background-color: #e8f4f8; font-weight: bold;">
-                        <td></td>
-                        <td>Caves = <?php echo $countJoueurs * $buyin . ' €'; ?></td>
-                        <td><?php echo 'Recaves = ' . $totalRecaves * $recave_montant . ' €'; ?></td>
-                        <td><?php 
-                            $totalAmount = ($countJoueurs * $buyin) + ($totalRecaves * $recave_montant);
-                            echo 'PricePool = ' . $totalAmount . ' €'; 
-                        ?></td>
-                    </tr>
-                </tbody>
-            </table>
-            <div class="text-center" style="margin-top:8px; display: flex; justify-content: center; align-items: center; min-height: 50px;">
-                <button class="btn btn-primary" onclick="validerRecaves()">Valider Modifications</button>
-            </div>
-        </div>
-    </div>
-</div>
+                                                <!-- <script src="snapshots_management.js"></script> -->
+                                                <div class="card mb-4"
+                                                    style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); border: 1px solid #e8ecf1; overflow: hidden;">
+                                                    <div class="card-header"
+                                                        style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 18px 20px; border-radius: 8px 8px 0 0; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);">
+                                                        <i class="fas fa-save"
+                                                            style="margin-right: 10px; font-size: 1.1em;"></i> <strong
+                                                            style="font-size: 1.05em;">Gestion des Sauvegardes</strong>
+                                                    </div>
+                                                    <div class="card-body"
+                                                        style="padding: 20px; background-color: #fafbfc;">
+                                                        <h6
+                                                            style="margin: 0 0 12px 0; font-size: 13px; color: #333; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                                            <i class="fas fa-floppy-disk"
+                                                                style="margin-right: 8px; color: #28a745;"></i> Créer
+                                                            Snapshot
+                                                        </h6>
+                                                        <div class="input-group mb-3" style="margin-bottom: 18px;">
+                                                            <input type="text" id="snapshotName" class="form-control"
+                                                                placeholder="ex: V1 - Structure initiale"
+                                                                style="font-size: 12px; padding: 10px 12px; border: 2px solid #e0e6ed; border-radius: 6px; color: #333;" />
+                                                            <button class="btn btn-success" type="button"
+                                                                onclick="saveSnapshot()"
+                                                                style="font-size: 12px; padding: 8px 14px; margin-left: 8px; background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border: none; border-radius: 6px; color: white; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(40, 167, 69, 0.2);">
+                                                                <i class="fa fa-save" style="margin-right: 6px;"></i>
+                                                                Sauvegarder
+                                                            </button>
+                                                        </div>
+                                                        <h6
+                                                            style="margin: 15px 0 12px 0; font-size: 13px; color: #333; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                                                            <i class="fas fa-history"
+                                                                style="margin-right: 8px; color: #28a745;"></i> Historique
+                                                        </h6>
+                                                        <div id="snapshots-list"
+                                                            style="max-height: 380px; overflow-y: auto; border: 2px solid #e8ecf1; border-radius: 6px; padding: 12px; background-color: #ffffff;">
+                                                            <p
+                                                                style="margin: 0; color: #999; font-size: 12px; text-align: center; padding: 20px 0;">
+                                                                ⏳ Chargement en cours...</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div> </div> </div>
                                         <div id="StructureE" class="rubrique">
                                             <div id="layoutSidenav_content">
                                                 <main>
@@ -776,135 +890,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                             </div>
                                         </div>
                                         <div id="t3E" class="rubrique">
-    <div style="display: flex; gap: 20px; align-items: flex-start;">
-        <!-- Colonne gauche: Tableau des blindes -->
-        <div style="flex: 2; min-width: 600px;">
-            <!-- <ol class="breadcrumb mb-4" style="background-color: transparent; padding: 0; margin-bottom: 15px;"> -->
-                
-            </ol>
-            <div class="card mb-4" style="border: none; box-shadow: none; border-radius: 8px; overflow: hidden;">
-                <div class="card-header"
-                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); border-bottom: 3px solid #5568d3;">
-                    <i class="fas fa-poker-chip" style="margin-right: 10px; font-size: 1.2em;"></i> 
-                    <strong style="font-size: 1.1em;">Gestion des Blindes</strong>
-                </div>
-                <div class="card-body" style="padding: 25px; background: linear-gradient(135deg, #fafbfc 0%, #f0f4ff 100%);">
-                    <table id="example" class="blindes-table cell-border compact stripe hover">
-                        <thead>
-                            <tr>
-                                <th style="width: 8%;"><i class="fas fa-coins"></i> Ordre</th>
-                                <th style="width: 12%;"><i class="fas fa-coins"></i> SB</th>
-                                <th style="width: 12%;"><i class="fas fa-coins"></i> BB</th>
-                                <th style="width: 12%;"><i class="fas fa-coins"></i> Ante</th>
-                                <th style="width: 12%;"><i class="fas fa-hourglass-half"></i> Durée</th>
-                                <th style="width: 18%;"><i class="fas fa-clock"></i> Fin</th>
-                                <th style="width: 26%;"><i class="fas fa-cog"></i> Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php 
-                            $ret = mysqli_query($con, "SELECT * FROM `blindes-live` WHERE (`id-activite` = $id ) ORDER BY ordre ASC");
-                            $cnt = 1;
-                            while ($row = mysqli_fetch_array($ret)) { ?>
-                                <?php
-                                $id2 = $row['id-activite'];
-                                $sql2 = mysqli_query($con, "SELECT * FROM `activite` WHERE `id-activite` = '$id2' ");
-                                while ($row2 = mysqli_fetch_array($sql2)) { ?>
-                                    <tr>
-                                        <td class="ordre-cell"><?php echo $row['ordre']; ?></td>
-                                        <td>
-                                            <input type="number" class="form-control blinde-input"
-                                                data-id="<?php echo $row['id']; ?>"
-                                                data-field="sb"
-                                                value="<?php echo intval($row['sb']); ?>" />
-                                        </td>
-                                        <td>
-                                            <input type="number" class="form-control blinde-input"
-                                                data-id="<?php echo $row['id']; ?>"
-                                                data-field="bb"
-                                                value="<?php echo intval($row['bb']); ?>" />
-                                        </td>
-                                        <td>
-                                            <input type="number" class="form-control blinde-input"
-                                                data-id="<?php echo $row['id']; ?>"
-                                                data-field="ante"
-                                                value="<?php echo intval($row['ante']); ?>" />
-                                        </td>
-                                        <td>
-                                            <input type="number" class="form-control duree-input"
-                                                data-id="<?php echo $row['id']; ?>"
-                                                value="<?php echo intval($row['minutes']); ?>"
-                                                placeholder="mm" maxlength="2" min="0" max="99" />
-                                        </td>
-                                        <td class="fin-cell">
-                                            <?php 
-                                            $fi = $row['fin'];
-                                            $fi = strtotime($fi);
-                                            echo date("H:i:s", $fi); 
-                                            ?>
-                                        </td>
-                                    <?php } ?>
-                                        <td>
-                                            <div class="action-btns">
-                                                <a href="ajout-blinde-live.php?id-activite=<?php echo $id; ?>&ordre=<?php echo $row['ordre']; ?>"
-                                                    class="add-btn" title="Ajouter">
-                                                    <i class="fa fa-plus"></i>
-                                                </a>
-                                                <a href="#"
-                                                    onclick="deleteBlinde(<?php echo $row['id']; ?>, <?php echo $id; ?>); return false;"
-                                                    class="delete-btn" title="Supprimer">
-                                                    <i class="fa fa-trash"></i>
-                                                </a>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php 
-                                $cnt = $cnt + 1;
-                            } ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-        <!-- Colonne droite: Gestion des sauvegardes -->
-        <div style="flex: 1; min-width: 400px;">
-            <ol class="breadcrumb mb-4" style="background-color: transparent; padding: 0; margin-bottom: 15px;">
-            <script src="snapshots_management.js"></script>
-            <div class="card mb-4"
-                style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); border: 1px solid #e8ecf1; overflow: hidden;">
-                <div class="card-header"
-                    style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 18px 20px; border-radius: 8px 8px 0 0; box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);">
-                    <i class="fas fa-save" style="margin-right: 10px; font-size: 1.1em;"></i> 
-                    <strong style="font-size: 1.05em;">Gestion des Sauvegardes</strong>
-                </div>
-                <div class="card-body" style="padding: 20px; background-color: #fafbfc;">
-                    <h6 style="margin: 0 0 12px 0; font-size: 13px; color: #333; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                        <i class="fas fa-floppy-disk" style="margin-right: 8px; color: #28a745;"></i> Créer Snapshot
-                    </h6>
-                    <div style="margin-bottom: 18px;">
-        <input type="text" id="snapshotName" class="form-control"
-            placeholder="ex: V1 - Structure initiale"
-            style="font-size: 14px; padding: 12px 15px; border: 2px solid #e0e6ed; border-radius: 6px; color: #333; width: 100%; margin-bottom: 10px;" />
-        <button class="btn btn-success" type="button" onclick="saveSnapshot()"
-            style="font-size: 13px; padding: 10px 20px; width: 100%; background-color: #28a745 !important; border: none; border-radius: 6px; color: white !important; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 2px 6px rgba(40, 167, 69, 0.2); display: block !important; visibility: visible !important;">
-            <i class="fa fa-save" style="margin-right: 8px; color: white !important;"></i> Sauvegarder
-        </button>
-    </div>
-                    <h6 style="margin: 15px 0 12px 0; font-size: 13px; color: #333; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                        <i class="fas fa-history" style="margin-right: 8px; color: #28a745;"></i> Historique
-                    </h6>
-                    <div id="snapshots-list"
-                        style="max-height: 380px; overflow-y: auto; border: 2px solid #e8ecf1; border-radius: 6px; padding: 12px; background-color: #ffffff;">
-                        <p style="margin: 0; color: #999; font-size: 12px; text-align: center; padding: 20px 0;">
-                            ⏳ Chargement en cours...
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

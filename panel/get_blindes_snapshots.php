@@ -3,36 +3,46 @@ session_start();
 error_reporting(0);
 include('include/config.php');
 
-if(strlen($_SESSION['id']==0)) {
+if(strlen($_SESSION['id']) == 0) {
     header('location:logout.php');
     exit;
 }
 
-$response = array('status' => 'error', 'snapshots' => array());
+$response = array('status' => 'error', 'message' => 'Erreur inconnue', 'snapshots' => array());
 
-if(isset($_GET['id_activite'])) {
-    $id_activite = intval($_GET['id_activite']);
-    
-    // Récupérer toutes les sauvegardes pour cette activité
-    $req_snapshots = mysqli_query($con, "SELECT `id`, `snapshot_name`, `created_at` FROM `blindes_snapshots` WHERE `id_activite` = '$id_activite' ORDER BY `created_at` DESC LIMIT 10");
-    
-    if($req_snapshots && mysqli_num_rows($req_snapshots) > 0) {
-        $snapshots = array();
-        while($snapshot = mysqli_fetch_array($req_snapshots)) {
-            $snapshots[] = array(
-                'id' => intval($snapshot['id']),
-                'name' => htmlspecialchars($snapshot['snapshot_name'], ENT_QUOTES),
-                'created_at' => $snapshot['created_at']
-            );
-        }
-        $response['status'] = 'success';
-        $response['snapshots'] = $snapshots;
-    } else {
-        $response['status'] = 'success';
-        $response['snapshots'] = array();
+// Récupérer l'ID de l'utilisateur connecté
+$id_membre = intval($_SESSION['id']);
+
+// Récupérer TOUS les snapshots de l'utilisateur (pas filtré par activité)
+$query = mysqli_query($con, "SELECT bs.*, a.`titre-activite` 
+                              FROM `blindes_snapshots` bs 
+                              LEFT JOIN `activite` a ON bs.`id_activite` = a.`id-activite`
+                              WHERE bs.`id_membre` = '$id_membre' 
+                              ORDER BY bs.`created_at` DESC");
+
+if($query) {
+    $snapshots = array();
+    while($row = mysqli_fetch_array($query)) {
+        // Formater la date
+        $date = new DateTime($row['created_at']);
+        $formatted_date = $date->format('d/m/Y H:i');
+        
+        $snapshots[] = array(
+            'id' => intval($row['id']),
+            'name' => $row['snapshot_name'],
+            'created_at' => $formatted_date,
+            'id_membre' => intval($row['id_membre']),
+            'id_activite' => intval($row['id_activite']),
+            'titre_activite' => $row['titre-activite']
+        );
     }
+    
+    $response['status'] = 'success';
+    $response['snapshots'] = $snapshots;
+    $response['count'] = count($snapshots);
+    $response['user_id'] = $id_membre;
 } else {
-    $response['message'] = 'Paramètres manquants';
+    $response['message'] = 'Erreur lors de la récupération des snapshots: ' . mysqli_error($con);
 }
 
 header('Content-Type: application/json');
