@@ -244,94 +244,73 @@ if (isset($_POST['submitdup'])) {
     try {
         mysqli_begin_transaction($con);
         
-        // Debug log
-        error_log("Starting duplication for member ID: " . $id);
-        
-        // Get member default values
+        // Récupération des infos membre
         $stmt = mysqli_prepare($con, "SELECT * FROM `membres` WHERE `id-membre` = ?");
         mysqli_stmt_bind_param($stmt, 'i', $id);
         mysqli_stmt_execute($stmt);
         $member = mysqli_stmt_get_result($stmt)->fetch_array();
-        if (!$member) {
-            throw new Exception("Member not found");
-        }
+        
+        if (!$member) throw new Exception("Membre introuvable");
 
-        // Create new activity using member defaults
-        $stmt = mysqli_prepare($con, "INSERT INTO `activite` (
-            `id-membre`, `titre-activite`, `heure_depart`, `ville`, 
-            `places`, `nb-tables`, `buyin`, `rake`, `bounty`, 
-            `jetons`, `recave`, `addon`, `ante`, `bonus`, 
-            `lng`, `lat`, `commentaire`
-        ) VALUES (?, ?, NOW(), ?, ?, 2, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        // Valeurs par défaut
+        $titre = $member['def_nomact'] ?? 'Nouvelle activité';
+        $ville = $member['ville'] ?? '';
+        $lng = floatval($member['longitude'] ?? 0);
+        $lat = floatval($member['latitude'] ?? 0);
+        $places = intval($member['def_nbj'] ?? 20);
+        $nb_tables = 2;
+        $buyin = intval($member['def_buy'] ?? 10);
+        $rake = intval($member['def_rak'] ?? 5);
+        $bounty = intval($member['def_bou'] ?? 0);
+        $jetons = intval($member['def_jet'] ?? 35000);
+        $recave = intval($member['def_rec'] ?? 1);
+        $recave_montant = 10;
+        $recave_jetons = 40000;
+        $addon = intval($member['def_add'] ?? 0);
+        $ante = strval($member['def_ant'] ?? '0');
+        $bonus = intval($member['def_bon'] ?? 5000);
+        $commentaire = $member['def_com'] ?? '';
 
-        if (!$stmt) {
-            throw new Exception("Prepare failed: " . mysqli_error($con));
-        }
+        // INSERT CORRIGÉ : Ajout de id_challenge (1) et id-structure (1)
+        $query = "INSERT INTO `activite` (
+            `id_challenge`, `id-structure`, `id-membre`, `titre-activite`, `date_depart`, `heure_depart`, `ville`, 
+            `lng`, `lat`, `places`, `nb-tables`, `buyin`, `rake`, `bounty`, 
+            `jetons`, `recave`, `recave_montant`, `recave_jetons`, `addon`, `ante`, `bonus`, `commentaire`
+        ) VALUES (1, 1, ?, ?, NOW(), NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-        // Add debug values
-        $titre = $member['def_nomact'] . ' (copie)';
-        $places = intval($member['def_nbj']);
-        mysqli_stmt_bind_param($stmt, 'issiiiiiiiiidds',
-            $id,
-            $titre,
-            $member['ville'],
-            $places,
-            $member['def_buy'],
-            $member['def_rak'], 
-            $member['def_bou'],
-            $member['def_jet'],
-            $member['def_rec'],
-            $member['def_add'],
-            $member['def_ant'],
-            $member['def_bon'],
-            $member['longitude'],
-            $member['latitude'],
-            $member['def_com']
+        $stmt = mysqli_prepare($con, $query);
+        if (!$stmt) throw new Exception("Erreur préparation SQL: " . mysqli_error($con));
+
+        // Binding : 'issddiiiiiiiiiisis'
+        mysqli_stmt_bind_param($stmt, 'issddiiiiiiiiiisis',
+            $id, $titre, $ville, $lng, $lat, $places, $nb_tables, 
+            $buyin, $rake, $bounty, $jetons, $recave, $recave_montant, 
+            $recave_jetons, $addon, $ante, $bonus, $commentaire
         );
-        if (!mysqli_stmt_execute($stmt)) {
-            throw new Exception("Activity creation failed: " . mysqli_stmt_error($stmt));
-        }
-
-        $new_activity_id = mysqli_insert_id($con);
-
-        // Create participation record
-        $nom_membre = $member['pseudo'];
-        $stmt = mysqli_prepare($con, "INSERT INTO `participation` 
-            (`id-membre`, `id-activite`, `id-siege`, `id-table`, `option`, `ordre`, `valide`, `nom-membre`) 
-            VALUES (?, ?, 1, 1, 'Inscrit', 1, 'Actif', ?)");
-
-        mysqli_stmt_bind_param($stmt, 'iis', $id, $new_activity_id, $nom_membre);
         
-        if (!mysqli_stmt_execute($stmt)) {
-            throw new Exception("Failed to create participation: " . mysqli_stmt_error($stmt));
-        }
+        if (!mysqli_stmt_execute($stmt)) throw new Exception("Erreur exécution SQL: " . mysqli_stmt_error($stmt));
 
-        // Create initial blinds structure
-        $stmt = mysqli_prepare($con, "INSERT INTO `blindes-live` 
-            (`id-activite`, `ordre`, `nom`, `duree`, `fin`, `ante`) 
-            VALUES (?, 1, 'Pause', 5, DATE_ADD(CURRENT_TIMESTAMP, INTERVAL 1 YEAR), 0)");
+        $new_id = mysqli_insert_id($con);
 
-        mysqli_stmt_bind_param($stmt, 'i', $new_activity_id);
-        
-        if (!mysqli_stmt_execute($stmt)) {
-            throw new Exception("Failed to create blinds: " . mysqli_stmt_error($stmt));
-        }
+        // Création participation
+        $stmt = mysqli_prepare($con, "INSERT INTO `participation` (`id-membre`, `id-activite`, `id-siege`, `id-table`, `option`, `ordre`, `valide`) VALUES (?, ?, 1, 1, 'Inscrit', 1, 'Actif')");
+        mysqli_stmt_bind_param($stmt, 'ii', $id, $new_id);
+        mysqli_stmt_execute($stmt);
+
+        // Création blindes
+        $stmt = mysqli_prepare($con, "INSERT INTO `blindes-live` (`id-activite`, `ordre`, `nom`, `minutes`, `fin`, `ante`) VALUES (?, 1, 'Pause', 5, DATE_ADD(NOW(), INTERVAL 1 YEAR), 0)");
+        mysqli_stmt_bind_param($stmt, 'i', $new_id);
+        mysqli_stmt_execute($stmt);
 
         mysqli_commit($con);
-        $_SESSION['msg'] = "Nouvelle activité créée avec succès";
         
-        // Redirection après succès
-        header("Location: voir-membre.php?id=" . $id);
+        // Redirection JS pour éviter les erreurs de header
+        echo "<script>window.location.href='voir-activite.php?uid=" . $new_id . "';</script>";
         exit();
-        
+
     } catch (Exception $e) {
         mysqli_rollback($con);
-        error_log("Error creating activity: " . $e->getMessage());
-        $_SESSION['error'] = "Erreur: " . $e->getMessage();
-    } finally {
-        if (isset($stmt)) {
-            mysqli_stmt_close($stmt);
-        }
+        echo "<script>alert('Erreur lors de la création : " . addslashes($e->getMessage()) . "');</script>";
     }
 }
 
@@ -666,7 +645,7 @@ if (isset($_POST['submitnotif'])) {
 
                                                                             </tr>
                                                                             <tr>
-                                                                                <td style="text-align:center; display:none;">
+                                                                                <td style="text-align:center ; display:none">
                                                                                     <button type="submit" name="submit" id="submit" class="btn btn-oo btn-primary">
                                                                                         Mise à jour</button>
                                                                                 </td>
@@ -798,7 +777,7 @@ if (isset($_POST['submitnotif'])) {
 
                                                                             </tr>
                                                                             <tr>
-                                                                                <td style="text-align:center;display:none">
+                                                                                <td style="text-align:center ; display:none">
                                                                                     <button type="submit" name="submit" id="submit" class="btn btn-oo btn-primary">
                                                                                         Mise à jour</button>
                                                                                 </td>
@@ -949,9 +928,9 @@ if (isset($_POST['submitnotif'])) {
                                                                                            type="number" step="0.01" required>
                                                                                 </td>
                                                                             </tr>
-                                                                            <tr style="text-align:center; display:none;">
+                                                                            <tr style="text-align:center ; display:none">
                                                                                 <th>Date</th>
-                                                                                <td>
+                                                                                <td >
                                                                                     <input class="form-control" id="date_mvt" name="date_mvt" type="date">
                                                                                 </td>
                                                                             </tr>
@@ -1565,7 +1544,7 @@ if (isset($_POST['submitnotif'])) {
                                                                                                     while ($rjou = mysqli_fetch_array($jou)) { 
                                                                                                         $nomjou = $rjou['pseudo'];
                                                                                                         ?>
-                                                                                                        <a href="voir-membre.php?id=<?php echo $id; ?>"><?php echo $nomjou; ?></a>        
+                                                                                                                                                                                                               <a href="voir-membre.php?id=<?php echo $id; ?>"><?php echo $nomjou; ?></a>        
                                                                                                         <?php } ?>
                                                                                             </li>
                                                                                             <li class="breadcrumb-item active">
@@ -1582,49 +1561,33 @@ if (isset($_POST['submitnotif'])) {
                                                                                                 <table id="activiteTable" class="table table-hover w-100">
                                                                                                     <thead>
                                                                                                         <tr>
-                                                                                                            <th>Date
-                                                                                                            </th>
-                                                                                                            <th>Orga.
-                                                                                                            </th>
-                                                                                                            <th>Lieu
-                                                                                                            </th>
-                                                                                                            <th>Buyin
-                                                                                                            </th>
-                                                                                                            <th>Classt.
-                                                                                                            </th>
-                                                                                                            <th>Points
-                                                                                                            </th>
-                                                                                                            <th>Edit.
-                                                                                                            </th>
-                                                                                                            
-                                                                                                            
+                                                                                                            <th>Date</th>
+                                                                                                            <th>Orga.</th>
+                                                                                                            <th>Lieu</th>
+                                                                                                            <th>Buyin</th>
+                                                                                                            <th>Classt.</th>
+                                                                                                            <th>Points</th>
+                                                                                                            <th>Edit.</th>
                                                                                                         </tr>
                                                                                                     </thead>
                                                                                                     <tbody>
                                                                                                         <?php $ret = mysqli_query($con, "SELECT * FROM `participation` WHERE `id-membre` = '$id' ORDER BY 'id-participation' ASC");
                                                                                                         $cnt = 1;
-                                                                                                        while ($row = mysqli_fetch_array($ret)) { ?>
-                                                                                                            <?php
+                                                                                                        while ($row = mysqli_fetch_array($ret)) { 
                                                                                                             $id2 = $row['id-activite'];
                                                                                                             $sql2 = mysqli_query($con, "SELECT * FROM `activite` WHERE `id-activite` = '$id2' ");
                                                                                                             while ($row2 = mysqli_fetch_array($sql2)) { ?>
                                                                                                                 <tr>
-                                                                                                                    <!-- <td>
-                                                                                                                        <?php echo $row2['date_depart']; ?> -->
                                                                                                                     <td data-order="<?= strtotime($row2['date_depart']) ?>">
                                                                                                                         <?= date('d/m/Y', strtotime($row2['date_depart'])) ?>
                                                                                                                     </td>
-
-                                                                                                                                                                                    </td>
-                                                                                                                   
                                                                                                                     <td>
                                                                                                                         <?php 
-                                                                                                                        $ident=$row2['id-membre'];
+                                                                                                                        $ident = $row2['id-membre'];
                                                                                                                         $org = mysqli_query($con, "SELECT * FROM `membres` WHERE `id-membre` = $ident ");
                                                                                                                         while ($rorg = mysqli_fetch_array($org)) { 
-                                                                                                                        $nomorg = $rorg['pseudo'];
+                                                                                                                            $nomorg = $rorg['pseudo'];
                                                                                                                         } ?>
-
                                                                                                                         <a href="voir-activite.php?uid=<?php echo $row['id-activite']; ?>"><?php echo $nomorg; ?></a>
                                                                                                                     </td>
                                                                                                                     <td>
@@ -1639,15 +1602,15 @@ if (isset($_POST['submitnotif'])) {
                                                                                                                     <td>
                                                                                                                         <?php echo $row['points']; ?>
                                                                                                                     </td>
-                                                                                                                    
-                                                                                                                    
-                                                                                                                <?php } ?>
-                                                                                                                <td>
-                                                                                                                    <!-- <a href="ajout-competences.php?id=<?php echo $row['id'] ?>&del=deleteind" onClick="return confirm('Are you sure you want to delete?')" class="btn btn-transparent btn-xs" tooltip-placement="top" tooltip="Remove"><i class="fa fa-times fa fa-white"></i></a> -->
-                                                                                                                    <a href="voir-participation.php?id=<?php echo $row['id-participation']; ?>" class="btn btn-transparent btn-xs" tooltip-placement="top" tooltip="Edit"><i class="fa fa-pencil"></i></a>
-                                                                                                                </td>
+                                                                                                                    <td>
+                                                                                                                        <a href="voir-participation.php?id=<?php echo $row['id-participation']; ?>" class="btn btn-transparent btn-xs" tooltip-placement="top" tooltip="Edit">
+                                                                                                                            <i class="fa fa-pencil"></i>
+                                                                                                                        </a>
+                                                                                                                    </td>
                                                                                                                 </tr>
-                                                                                                            <?php $cnt = $cnt + 1;
+                                                                                                                <?php 
+                                                                                                                } // Fermeture du while $sql2
+                                                                                                            $cnt = $cnt + 1;
                                                                                                             } ?>
                                                                                                     </tbody>
                                                                                                 </table>

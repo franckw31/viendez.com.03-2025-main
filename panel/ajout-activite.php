@@ -1,6 +1,7 @@
 <?php
 session_start();
 error_reporting(E_ALL);
+ini_set('display_errors', 1);
 include ('include/config.php');
 if (empty($_SESSION['id'])) {
     header('location:logout.php');
@@ -8,49 +9,53 @@ if (empty($_SESSION['id'])) {
 
     
     if (isset($_POST['submit'])) {
-        $idmembre = $_SESSION['id'];
-        $titreactivite = $_POST['titre-activite'];
-        $date_depart = $_POST['date_depart'];
-        $heure_depart = $_POST['heure_depart'];
-        $ville = $_POST['ville'];
-        $places = $_POST['places'];
-        $rake = $_POST['rake'];
-        $buyin = $_POST['buyin'];
-        $bounty = $_POST['bounty'];
-        $recave = $_POST['recave'];
-        $ante = $_POST['ante'];
-        $longitude = $_POST['longitude'];
-        $latitude = $_POST['latitude'];
-        //$commentaire = $_POST['commentaire'];
-        $idstructure = $_POST['id-structure'];
-        $jetons = $_POST['jetons'];
-        $bonus = $_POST['bonus'];
-        $addon = $_POST['addon'];
+        $idmembre = (int)$_SESSION['id'];
+        $titreactivite = mysqli_real_escape_string($con, $_POST['titre-activite']);
+        $date_depart = $_POST['date_depart'] . ' ' . $_POST['heure_depart'] . ':00'; // Combine date et heure
+        $ville = mysqli_real_escape_string($con, $_POST['ville']);
+        $places = (int)$_POST['places'];
+        $rake = (int)$_POST['rake'];
+        $buyin = (int)$_POST['buyin'];
+        $bounty = (int)$_POST['bounty'];
+        $recave = (int)$_POST['recave'];
+        $ante = mysqli_real_escape_string($con, $_POST['ante']);
+        $longitude = (double)$_POST['longitude'];
+        $latitude = (float)$_POST['latitude'];
+        $idstructure = (int)$_POST['id-structure'];
+        $jetons = (int)$_POST['jetons'];
+        $bonus = (int)$_POST['bonus'];
+        $addon = (int)$_POST['addon'];
+        
         date_default_timezone_set('Arctic/Longyearbyen');
-        $departh = date("H:i:s", time());
-        $departd = date("Y-m-d", time());
-        $maintenant = date("Y-m-d H:i:s", time());
-        echo "av insert";
-        echo $longitude;
-        echo $latitude;
-        echo $departd;
-        echo $departh;
-        echo $maintenant;
-        $stmt = mysqli_prepare($con, "INSERT INTO `activite` (`id-activite`, `id-structure`, `id-membre`, `titre-activite`, `date_depart`, `heure_depart`, `ville`, `lng`, `lat`, `places`, `buyin`, `rake`, `bounty`, `jetons`, `recave`, `addon`, `ante`, `bonus`) VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-$stmt->bind_param("siiiiissiiiiiiiis", $idstructure, $idmembre, $titreactivite, $date_depart, $heure_depart, $ville, $longitude, $latitude, $places, $buyin, $rake, $bounty, $jetons, $recave, $addon, $ante, $bonus);
-$stmt->execute();
-        $_SESSION['msg'] = "Activité ajoutée avec succés !!";
-        $acti = mysqli_query($con, "SELECT `id-activite` FROM `activite` ORDER BY `id-activite` DESC");
-        $choix = mysqli_fetch_assoc($acti);
-        $numact = $choix['id-activite'];
-        ?>
-<script language="JavaScript" type="text/javascript">
-window.location.replace("/panel/creation-blindes-init.php?act=<?php echo $numact ?>");
-</script>
-<?php
-
-        //    header('location:/panel/liste-activites.php');
-        //    exit;
+        
+        // Vérifier la connexion
+        if (!$con) {
+            die("Erreur de connexion : " . mysqli_connect_error());
+        }
+        
+        // Utiliser id_challenge = 4 par défaut (comme dans vos données)
+        $id_challenge = 4;
+        
+        $stmt = mysqli_prepare($con, "INSERT INTO `activite` (`id_challenge`, `id-structure`, `id-membre`, `titre-activite`, `date_depart`, `ville`, `lng`, `lat`, `places`, `buyin`, `rake`, `bounty`, `jetons`, `recave`, `addon`, `ante`, `bonus`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        
+        if (!$stmt) {
+            die("Erreur de préparation : " . mysqli_error($con));
+        }
+        
+        // Types: i=int, s=string, d=double
+        mysqli_stmt_bind_param($stmt, "iiisdsiiiiiiiiisi", $id_challenge, $idstructure, $idmembre, $titreactivite, $date_depart, $ville, $longitude, $latitude, $places, $buyin, $rake, $bounty, $jetons, $recave, $addon, $ante, $bonus);
+        
+        if (mysqli_stmt_execute($stmt)) {
+            $_SESSION['msg'] = "Activité ajoutée avec succés !!";
+            $numact = mysqli_insert_id($con);
+            mysqli_stmt_close($stmt);
+            header("Location: /panel/creation-blindes-init.php?act=$numact");
+            exit;
+        } else {
+            $_SESSION['msg'] = "Erreur : " . mysqli_stmt_error($stmt);
+            echo "Erreur d'exécution : " . mysqli_stmt_error($stmt);
+        }
+        mysqli_stmt_close($stmt);
     }
     ;
     //Code Deletion
