@@ -61,7 +61,7 @@ if (strlen($_SESSION['id'] == 0)) {
         $addon = $_POST['addon'];
         $nb_tables = $_POST['nb-tables'];
         $idmembresession = $_SESSION['id'];
-        //echo $idmembresession."/".$idmembre."/";
+        echo $idmembresession."/".$idmembre."/";
         if (($idmembresession == $idmembre) or ($idmembresession == 265)) { echo $id;
             $msg = mysqli_query($con, "UPDATE `activite` SET 
                 `titre-activite` = '$titre_activite',
@@ -1003,7 +1003,8 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                     $reqnbt = mysqli_query($con, "SELECT * FROM `activite` WHERE `id-activite` = '$id' ");
                                     $res = mysqli_fetch_array($reqnbt);
                                     $nbt = $res["nb-tables"];
-                                    echo '--------'.$nbt.'---------';
+                                    $idmembre = $res["id-membre"];
+                                    // echo '--------'.$nbt.'--------/'.$idmembre.'/';
                                     if ($nbt == '1') { ?>
                                 <div id="bMenu">
                                     <a href="#" id="infos" class="btnnav" onmouseover="afficher1('infos')">Infos</a> 
@@ -1175,7 +1176,7 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                                                         </td>
                                                                     </tr>
                                                                     </tr>
-
+                                                                            <!--                <?php echo $row['id-membre']; ?> -->
                                                                     <tr>
                                                                         <th>Date</th>
                                                                         <td><input class="form-control" id="date_depart"
@@ -1322,6 +1323,11 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                                                         <td><input class="form-control" id="commentaire"
                                                                                 name="commentaire" type="text"
                                                                                 value="<?php echo $row['commentaire']; ?>">
+                                                                        </td>
+                                                                        <th style="display:none"; color: #fffdfdff; background-color: #9b9898ff;">membre</th>
+                                                                        <td style="display:none"><input class="form-control" id="id-membre"
+                                                                                name="id-membre" type="text"
+                                                                                value="<?php echo $row['id-membre']; ?>">
                                                                         </td>
                                                                     </tr>
                                                                     <tr>
