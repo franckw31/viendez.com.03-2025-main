@@ -338,7 +338,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                         <div id="bMenu">
                                             <a href="#" id="Timer" class="btnnav" onclick="afficher2('Timer'); return false;">Timer</a>
                                             <a href="#" id="t3" class="btnnav" onclick="afficher2('t3'); return false;">Blindes</a>
-                                            <a href="#" id="Joueurs" class="btnnav" onclick="afficher2('Joueurs'); return false;">Joueurs</a>
+                                            <a href="#" id="Structure" class="btnnav" onclick="afficher2('Structure'); return false;">Modèles</a>
                                             <a href="#" id="Outils" class="btnnav" onclick="afficher2('Outils'); return false;">30 Sec</a>
                                             <!-- <a href="#" id="t3" class="btnnav" onclick="afficher2('t3'); return false;">divers</a> -->
                                         </div>
@@ -549,9 +549,127 @@ if (strlen($_SESSION['id'] == 0)) {
         </div>
     </div>
 </div>
-                                        <div id="JoueursE" class="rubrique">
-                                            <div>
-                                                <?php echo 'Recaves = ' . $totalRecaves * $recave_montant . ' €'; ?>    
+                                        <div id="StructureE" class="rubrique">
+                                            <div id="layoutSidenav_content">
+                                                <main>
+                                                    <div class="container-fluid px-4">
+                                                        <ol class="breadcrumb mb-4">
+                                                            <li class="breadcrumb-item">
+                                                                <a href="liste-membres.php">Stuctures</a>
+                                                            </li>
+                                                            <li class="breadcrumb-item active">
+                                                                Sauvegardés
+                                                            </li>
+                                                        </ol>
+                                                        <div class="card mb-4">
+                                                            <div class="card-body">
+                                                                <table id="example2"
+                                                                    class="cell-border compact stripe hover"
+                                                                    style="width:95% ;font-size:14px;text-align: center;color:black">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th>Titre
+                                                                            </th>
+                                                                            <th>Orga
+                                                                            </th>
+                                                                            <th>Duree
+                                                                            </th>
+                                                                            <th>Début
+                                                                            </th>
+                                                                            <th>Fin Recaves
+                                                                            </th>
+                                                                            <th>Fin Partie
+                                                                            </th>
+                                                                            <th>Utiliser
+                                                                            </th>
+                                                                            <th>Infos
+                                                                            </th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <?php
+                                                                        $ret = mysqli_query($con, "SELECT * FROM `structure_modele`");
+                                                                        $cnt = 1;
+                                                                        date_default_timezone_set('Europe/paris');
+                                                                        $actu = date("Y-m-d H:i:s");
+
+                                                                        //$dur=time("H:i:s",$dur);
+                                                                        // $cptactu=strtotime($actu);
+                                                                        // $cptdeb=strtotime($debpause);
+                                                                        $finrec = strtotime($actu) + (60 * 60 * 1.5);
+                                                                        //$finpar=$finrec;
+                                                                        //$finpar=strtotime($actu)+strtotime($dur);
+                                                                        $dt = date($delta);
+                                                                        // echo strtotime($actu)."-".strtotime($debpause)."-";
+                                                                        $finrec = date("H:i:s", $finrec);
+                                                                        //$finpar= date("H:i:s",$finpar);
+                                                                        //echo $finrec;
+                                                                        while ($row = mysqli_fetch_array($ret)) { ?>
+                                                                            <?php
+                                                                            $dur = $row['duree'];
+                                                                            $parts = explode(':', $dur);
+                                                                            $seconds = 0;
+                                                                            foreach ($parts as $i => $val) {
+                                                                                $seconds += $val * pow(60, 2 - $i);
+                                                                            }
+                                                                            date_default_timezone_set('Europe/paris');
+
+                                                                            $id2 = $row['id_orga'];
+                                                                            $sql3 = mysqli_query($con, "SELECT * FROM `membres` WHERE `id-membre` =  '$id2'");
+                                                                            $sql2 = mysqli_query($con, "SELECT * FROM `activite` WHERE `id-activite` = '$id2'");
+                                                                            $row3 = mysqli_fetch_array($sql3);
+                                                                            $orga = $row3['pseudo'];
+                                                                            ?>
+                                                                            <tr>
+                                                                                <td>
+                                                                                    <?php echo $row['nom']; ?>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <?php echo $orga; ?>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <?php echo $row['duree']; ?>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <?php
+                                                                                    $dep = strtotime($actu);
+                                                                                    date_default_timezone_set('Europe/paris');
+                                                                                    echo date("H:i:s", $dep); ?>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <?php
+                                                                                    $fi2 = strtotime($finrec);
+                                                                                    date_default_timezone_set('Europe/paris');
+                                                                                    echo date("H:i:s", $fi2); ?>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <?php
+                                                                                    date_default_timezone_set('Europe/paris');
+                                                                                    $finpar = strtotime($actu) + $seconds;
+                                                                                    echo date("H:i:s", $finpar); ?>
+                                                                                </td>
+
+                                                                                <td>
+                                                                                    <a href="modif-blinde-live.php?id=<?php echo $row['id']; ?>"
+                                                                                        tooltip="Edition"><i
+                                                                                            class="fa fa-pencil"></i></a>
+                                                                                    </a>
+                                                                                </td>
+                                                                                <td>
+                                                                                    <a href="modif-blinde-live.php?id=<?php echo $row['id']; ?>"
+                                                                                        tooltip="Edition"><i
+                                                                                            class="fa fa-pencil"></i></a>
+                                                                                    </a>
+                                                                                </td>
+                                                                            </tr>
+                                                                            <?php $cnt = $cnt + 1;
+                                                                        } ?>
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </main>
                                             </div>
                                         </div>
                                         <div id="OutilsE" class="rubrique">

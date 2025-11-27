@@ -12,7 +12,7 @@ $nb_lignes = mysqli_num_rows($req1);
 echo " nbr activ = (" . $nb_lignes . ")";
 date_default_timezone_set('Etc/GMT+2');
 while ($res1 = mysqli_fetch_array($req1)) {
-    $structure = $res1['id-structure'];
+    $structure = $res1['id_structure'];
     $departh = $res1['heure_depart'];
     $departd = $res1['date_depart'];
     if ($zero == 1) {

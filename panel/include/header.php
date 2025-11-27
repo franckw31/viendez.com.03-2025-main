@@ -35,7 +35,7 @@
 				?>	
 				<li class="dropdown current-user">
 					<a href class="dropdown-toggle" data-toggle="dropdown">
-						<img src="images/<?php  echo $row['photo'];?>" width="60" height="50"  ;> <span class="username"> <?php  echo $row['pseudo'];?>
+						<img src="../images/faces/<?php  echo $row['photo'];?>" width="60" height="50"  ;> <span class="username"> <?php  echo $row['pseudo'];?>
 						<i class="ti-angle-down"></i></i></span>
 					</a>
 					<?php

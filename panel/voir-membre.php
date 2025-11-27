@@ -114,6 +114,7 @@ if (isset($_POST['submito'])) {
         $def_bon = mysqli_real_escape_string($con, $_POST['def_bon']);
         $def_add = mysqli_real_escape_string($con, $_POST['def_add']);
         $def_ant = mysqli_real_escape_string($con, $_POST['def_ant']);
+        $def_cha = mysqli_real_escape_string($con, $_POST['def_cha']);
           
         // Sanitize string fields
         $def_nomact = mysqli_real_escape_string($con, $_POST['def_nomact']);
@@ -136,10 +137,11 @@ if (isset($_POST['submito'])) {
             def_ant = ?,
             def_rdv = ?,
             def_sta = ?,
-            def_com = ?
+            def_com = ?,
+            def_cha = ?
             WHERE `id-membre` = ?");
 
-            mysqli_stmt_bind_param($stmt, 'siiiiiiiiiisssi', 
+            mysqli_stmt_bind_param($stmt, 'siiiiiiiiiisssii', 
             $def_nomact,
             $def_str,
             $def_nbj,
@@ -154,6 +156,7 @@ if (isset($_POST['submito'])) {
             $def_rdv,
             $def_sta,
             $def_com,
+            $def_cha,
             $id);
         }                
         if (!$stmt) {
@@ -253,7 +256,7 @@ if (isset($_POST['submitdup'])) {
         if (!$member) throw new Exception("Membre introuvable");
 
         // Valeurs par défaut
-        $titre = $member['def_nomact'] ?? 'Nouvelle activité';
+        $titre = $member['def_com'] ?? 'Nouvelle activité';
         $ville = $member['ville'] ?? '';
         $lng = floatval($member['longitude'] ?? 0);
         $lat = floatval($member['latitude'] ?? 0);
@@ -270,22 +273,41 @@ if (isset($_POST['submitdup'])) {
         $ante = strval($member['def_ant'] ?? '0');
         $bonus = intval($member['def_bon'] ?? 5000);
         $commentaire = $member['def_com'] ?? '';
+        $id_challenge = intval($member['def_cha'] ?? 4);
+        $id_structure = intval($member['def_str'] ?? 4);
 
-        // INSERT CORRIGÉ : Ajout de id_challenge (1) et id-structure (1)
+        // INSERT CORRIGÉ : Ajout de id_challenge (1) et id_structure (1)
         $query = "INSERT INTO `activite` (
-            `id_challenge`, `id-structure`, `id-membre`, `titre-activite`, `date_depart`, `heure_depart`, `ville`, 
+            `id_challenge`, `id_structure`, `id-membre`, `titre-activite`, `date_depart`, `heure_depart`, `ville`, 
             `lng`, `lat`, `places`, `nb-tables`, `buyin`, `rake`, `bounty`, 
             `jetons`, `recave`, `recave_montant`, `recave_jetons`, `addon`, `ante`, `bonus`, `commentaire`
-        ) VALUES (1, 1, ?, ?, NOW(), NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        ) VALUES (?, ?, ?, ?, NOW(), NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         $stmt = mysqli_prepare($con, $query);
         if (!$stmt) throw new Exception("Erreur préparation SQL: " . mysqli_error($con));
 
-        // Binding : 'issddiiiiiiiiiisis'
-        mysqli_stmt_bind_param($stmt, 'issddiiiiiiiiiisis',
-            $id, $titre, $ville, $lng, $lat, $places, $nb_tables, 
-            $buyin, $rake, $bounty, $jetons, $recave, $recave_montant, 
-            $recave_jetons, $addon, $ante, $bonus, $commentaire
+        // Binding : 'iiissddiiiiiiiiiisis' (20 params) - Correction: suppression du dernier 'i' en trop
+        mysqli_stmt_bind_param($stmt, 'iiissddiiiiiiiiiisis',
+            $id_challenge,  // 1 (i)
+            $id_structure,  // 2 (i)
+            $id,            // 3 (i)
+            $titre,         // 4 (s)
+            $ville,         // 5 (s)
+            $lng,           // 6 (d)
+            $lat,           // 7 (d)
+            $places,        // 8 (i)
+            $nb_tables,     // 9 (i)
+            $buyin,         // 10 (i)
+            $rake,          // 11 (i)
+            $bounty,        // 12 (i)
+            $jetons,        // 13 (i)
+            $recave,        // 14 (i)
+            $recave_montant,// 15 (i)
+            $recave_jetons, // 16 (i)
+            $addon,         // 17 (i)
+            $ante,          // 18 (s)
+            $bonus,         // 19 (i)
+            $commentaire    // 20 (s)
         );
         
         if (!mysqli_stmt_execute($stmt)) throw new Exception("Erreur exécution SQL: " . mysqli_stmt_error($stmt));
@@ -293,8 +315,14 @@ if (isset($_POST['submitdup'])) {
         $new_id = mysqli_insert_id($con);
 
         // Création participation
-        $stmt = mysqli_prepare($con, "INSERT INTO `participation` (`id-membre`, `id-activite`, `id-siege`, `id-table`, `option`, `ordre`, `valide`) VALUES (?, ?, 1, 1, 'Inscrit', 1, 'Actif')");
-        mysqli_stmt_bind_param($stmt, 'ii', $id, $new_id);
+        // Modification : Ajout de 'nom-membre' récupéré depuis $member['pseudo']
+        $nom_membre = $member['pseudo'];
+        
+        $stmt = mysqli_prepare($con, "INSERT INTO `participation` (`id-membre`, `id-activite`, `id-siege`, `id-table`, `nom-membre`, `option`, `ordre`, `valide`) VALUES (?, ?, 1, 1, ?, 'Inscrit', 1, 'Actif')");
+        
+        // Binding : 'iis' (integer, integer, string)
+        mysqli_stmt_bind_param($stmt, 'iis', $id, $new_id, $nom_membre);
+        
         mysqli_stmt_execute($stmt);
 
         // Création blindes
@@ -618,34 +646,33 @@ if (isset($_POST['submitnotif'])) {
                                                                     $sql = mysqli_query($con, "SELECT * FROM `membres` WHERE `id-membre` =  '$id'");
                                                                     while ($row = mysqli_fetch_array($sql)) {
                                                                     ?>
+                                                                        <!-- Formulaire Photo sorti du formulaire principal et ID uniques (1) -->
+                                                                        <form id="image_upload_form_1" enctype="multipart/form-data" method="post" class="change-pic" style="display:none;">
+                                                                            <input type="hidden" name="id" value="<?php echo $id; ?>">
+                                                                            <input type="file" name="fileToUpload" id="fileToUpload_1" accept="image/*" onchange="document.getElementById('upload-spinner_1').style.display='inline-block'; this.form.submit();">
+                                                                        </form>
+
                                                                         <form method="post">
                                                                         <table style="color: white;" class="table table-bordered current-user">
                                                                             <tr>
                                                                                 <td rowspan="3" align="center">
                                                                                     <img src="../images/faces/<?php echo $row['photo']; ?>" width="85" height="85" style="align:center">
-                                                                                    <!-- Photo upload form OUTSIDE the main form -->
-                                                                                    <form id="image_upload_form" enctype="multipart/form-data" method="post" class="change-pic" style="margin-top:10px;">
-                                                                                        <input type="hidden" name="id" value="<?php echo $id; ?>">
-                                                                                        <input type="file" name="fileToUpload" id="fileToUpload" style="display:none;" accept="image/*" onchange="showSpinner(); this.form.submit();">
-                                                                                        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('fileToUpload').click();">
+                                                                                    
+                                                                                    <div style="margin-top:10px;">
+                                                                                        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('fileToUpload_1').click();">
                                                                                             <i class="fa fa-camera"></i> Changer Photo
                                                                                         </button>
-                                                                                        <span id="upload-spinner" style="display:none; margin-left:10px;">
+                                                                                        <span id="upload-spinner_1" style="display:none; margin-left:10px;">
                                                                                             <i class="fa fa-spinner fa-spin"></i> Uploading...
                                                                                         </span>
-                                                                                    </form>
-                                                                                    <script>
-                                                                                        function showSpinner() {
-                                                                                            document.getElementById('upload-spinner').style.display = 'inline-block';
-                                                                                        }
-                                                                                    </script>
+                                                                                    </div>
                                                                                 </td>
                                                                                     <th style="color:rgb(64, 30, 235) !important;">Votre Pseudo :</th>
                                                                                     <td colspan="3"><input class="form-control" id="pseudo" name="pseudo" type="text" style="text-align:center; font-size:22px; bold" value="<?php echo $row['pseudo']; ?>"></td>
 
                                                                             </tr>
                                                                             <tr>
-                                                                                <td style="text-align:center ; display:none">
+                                                                                <td style="display : none">
                                                                                     <button type="submit" name="submit" id="submit" class="btn btn-oo btn-primary">
                                                                                         Mise à jour</button>
                                                                                 </td>
@@ -750,34 +777,33 @@ if (isset($_POST['submitnotif'])) {
                                                                     $sql = mysqli_query($con, "SELECT * FROM `membres` WHERE `id-membre` =  '$id'");
                                                                     while ($row = mysqli_fetch_array($sql)) {
                                                                     ?>
+                                                                        <!-- Formulaire Photo sorti du formulaire principal et ID uniques (2) -->
+                                                                        <form id="image_upload_form_2" enctype="multipart/form-data" method="post" class="change-pic" style="display:none;">
+                                                                            <input type="hidden" name="id" value="<?php echo $id; ?>">
+                                                                            <input type="file" name="fileToUpload" id="fileToUpload_2" accept="image/*" onchange="document.getElementById('upload-spinner_2').style.display='inline-block'; this.form.submit();">
+                                                                        </form>
+
                                                                         <form method="post">
                                                                         <table style="color: white;" class="table table-bordered current-user">
                                                                             <tr>
                                                                                 <td rowspan="3" align="center">
                                                                                     <img src="../images/faces/<?php echo $row['photo']; ?>" width="85" height="85" style="align:center">
-                                                                                    <!-- Photo upload form OUTSIDE the main form -->
-                                                                                    <form id="image_upload_form" enctype="multipart/form-data" method="post" class="change-pic" style="margin-top:10px;">
-                                                                                        <input type="hidden" name="id" value="<?php echo $id; ?>">
-                                                                                        <input type="file" name="fileToUpload" id="fileToUpload" style="display:none;" accept="image/*" onchange="showSpinner(); this.form.submit();">
-                                                                                        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('fileToUpload').click();">
+                                                                                    
+                                                                                    <div style="margin-top:10px;">
+                                                                                        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('fileToUpload_2').click();">
                                                                                             <i class="fa fa-camera"></i> Changer Photo
                                                                                         </button>
-                                                                                        <span id="upload-spinner" style="display:none; margin-left:10px;">
+                                                                                        <span id="upload-spinner_2" style="display:none; margin-left:10px;">
                                                                                             <i class="fa fa-spinner fa-spin"></i> Uploading...
                                                                                         </span>
-                                                                                    </form>
-                                                                                    <script>
-                                                                                        function showSpinner() {
-                                                                                            document.getElementById('upload-spinner').style.display = 'inline-block';
-                                                                                        }
-                                                                                    </script>
+                                                                                    </div>
                                                                                 </td>
                                                                                     <th style="color:rgb(64, 30, 235) !important;">Votre Pseudo :</th>
                                                                                     <td colspan="3"><input class="form-control" id="pseudo" name="pseudo" type="text" style="text-align:center; font-size:22px; bold" value="<?php echo $row['pseudo']; ?>"></td>
 
                                                                             </tr>
                                                                             <tr>
-                                                                                <td style="text-align:center ; display:none">
+                                                                                <td style="text-align:left ; display:none">
                                                                                     <button type="submit" name="submit" id="submit" class="btn btn-oo btn-primary">
                                                                                         Mise à jour</button>
                                                                                 </td>
@@ -850,11 +876,15 @@ if (isset($_POST['submitnotif'])) {
                                                                                 <td><input class="form-control" id="latitude" name="latitude" type="text" value="<?php echo $row['latitude']; ?>">
                                                                                 </td>
                                                                             </tr>
-                                                                            
                                                                             <tr>
-                                                                                <th style="color: #ffffff !important;">Commentaire</th>
-                                                                                <td colspan="3"><input class="form-control" id="def_com" name="def_com" type="text" value="<?php echo $row['def_com']; ?>"></td>
+                                                                                <th style="color: #ffffff !important;">Titre Activité</th>
+                                                                                <td><input class="form-control" id="def_com" name="def_com" type="text" value="<?php echo $row['def_com']; ?>">
+                                                                                </td>
+                                                                                <th style="color: #ffffff !important;">Challenge</th>
+                                                                                <td><input class="form-control" id="def_cha" name="def_cha" type="text" value="<?php echo $row['def_cha']; ?>">
+                                                                                </td>
                                                                             </tr>
+                                                                            
                                                                             <tr>
                                                                                 <td colspan="4"></td>
                                                                             </tr>
@@ -1076,26 +1106,25 @@ if (isset($_POST['submitnotif'])) {
                                                                     $sql = mysqli_query($con, "SELECT * FROM `membres` WHERE `id-membre` =  '$id'");
                                                                     while ($row = mysqli_fetch_array($sql)) {
                                                                     ?>
+                                                                        <!-- Formulaire Photo sorti du formulaire principal et ID uniques (3) -->
+                                                                        <form id="image_upload_form_3" enctype="multipart/form-data" method="post" class="change-pic" style="display:none;">
+                                                                            <input type="hidden" name="id" value="<?php echo $id; ?>">
+                                                                            <input type="file" name="fileToUpload" id="fileToUpload_3" accept="image/*" onchange="document.getElementById('upload-spinner_3').style.display='inline-block'; this.form.submit();">
+                                                                        </form>
+
                                                                         <table style="color: white;" class="table table-bordered current-user">
                                                                             <tr>
                                                                                 <td rowspan="3" align="center">
                                                                                     <img src="../images/faces/<?php echo $row['photo']; ?>" width="85" height="85" style="align:center">
-                                                                                    <!-- Photo upload form OUTSIDE the main form -->
-                                                                                    <form id="image_upload_form" enctype="multipart/form-data" method="post" class="change-pic" style="margin-top:10px;">
-                                                                                        <input type="hidden" name="id" value="<?php echo $id; ?>">
-                                                                                        <input type="file" name="fileToUpload" id="fileToUpload" style="display:none;" accept="image/*" onchange="showSpinner(); this.form.submit();">
-                                                                                        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('fileToUpload').click();">
+                                                                                    
+                                                                                    <div style="margin-top:10px;">
+                                                                                        <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('fileToUpload_3').click();">
                                                                                             <i class="fa fa-camera"></i> Changer Photo
                                                                                         </button>
-                                                                                        <span id="upload-spinner" style="display:none; margin-left:10px;">
+                                                                                        <span id="upload-spinner_3" style="display:none; margin-left:10px;">
                                                                                             <i class="fa fa-spinner fa-spin"></i> Uploading...
                                                                                         </span>
-                                                                                    </form>
-                                                                                    <script>
-                                                                                        function showSpinner() {
-                                                                                            document.getElementById('upload-spinner').style.display = 'inline-block';
-                                                                                        }
-                                                                                    </script>
+                                                                                    </div>
                                                                                 </td>
                                                                                 <form method="post">
                                                                                     <th style="color:rgb(64, 30, 235) !important;">Notifications :</th>

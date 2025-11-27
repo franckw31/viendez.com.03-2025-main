@@ -53,7 +53,7 @@ if (strlen($_SESSION['id'] == 0)) {
         $ante = $_POST['ante'];
         $idmembre = $_POST['id-membre'];
         $commentaire = $_POST['commentaire'];
-        $structure = $_POST['id-structure'];
+        $structure = $_POST['id_structure'];
         $jetons = $_POST['jetons'];
         $bonus = $_POST['bonus'];
         $lng = $_POST['lng'];
@@ -1003,8 +1003,7 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                     $reqnbt = mysqli_query($con, "SELECT * FROM `activite` WHERE `id-activite` = '$id' ");
                                     $res = mysqli_fetch_array($reqnbt);
                                     $nbt = $res["nb-tables"];
-                                    $idmembre = $res["id-membre"];
-                                    // echo '--------'.$nbt.'--------/'.$idmembre.'/';
+                                    echo '--------'.$nbt.'---------';
                                     if ($nbt == '1') { ?>
                                 <div id="bMenu">
                                     <a href="#" id="infos" class="btnnav" onmouseover="afficher1('infos')">Infos</a> 
@@ -1176,7 +1175,7 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                                                         </td>
                                                                     </tr>
                                                                     </tr>
-                                                                            <!--                <?php echo $row['id-membre']; ?> -->
+
                                                                     <tr>
                                                                         <th>Date</th>
                                                                         <td><input class="form-control" id="date_depart"
@@ -1317,17 +1316,12 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                                                         <th style="color: #fffdfdff; background-color: #9b9898ff;">structure</th>
                                                                         <td><input class="form-control" id="structure"
                                                                                 name="structure" type="text"
-                                                                                value="<?php echo $row['id-structure']; ?>">
+                                                                                value="<?php echo $row['id_structure']; ?>">
                                                                         </td>
                                                                         <th style="color: #fffdfdff; background-color: #9b9898ff;">commentaire</th>
                                                                         <td><input class="form-control" id="commentaire"
                                                                                 name="commentaire" type="text"
                                                                                 value="<?php echo $row['commentaire']; ?>">
-                                                                        </td>
-                                                                        <th style="display:none"; color: #fffdfdff; background-color: #9b9898ff;">membre</th>
-                                                                        <td style="display:none"><input class="form-control" id="id-membre"
-                                                                                name="id-membre" type="text"
-                                                                                value="<?php echo $row['id-membre']; ?>">
                                                                         </td>
                                                                     </tr>
                                                                     <tr>
