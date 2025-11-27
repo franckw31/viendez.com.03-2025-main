@@ -21,16 +21,20 @@ while ($res1 = mysqli_fetch_array($req1)) {
         $departd = date("Y-m-d", time());
     }
     ;
+    
     $heure = $departh;
+    echo "fkjdslkjfdlksj";
     $req2 = mysqli_query($con, "SELECT * FROM `structure` WHERE `id-structure` = $structure ORDER BY 'id-blinde'");
     while ($res2 = mysqli_fetch_array($req2)) {
         $blinde = $res2['id-blinde'];
         $req3 = mysqli_query($con, "SELECT * FROM `blindes` WHERE `id-blinde` =  '$blinde'");
         while ($res3 = mysqli_fetch_array($req3)) {
+
+            echo "klkmlkmlkmlmlk";
             echo "blinde = {" . $blinde . "}";
             echo "h = {" . $heure . "}";
             $minutes = $res2['duree'] / 60;
-            echo "m = {" . $minutes . "}";
+            echo "m = {" . $minutes . "}-----";
             $heure = strtotime($heure);
             $heure = strtotime("+" . $minutes . " minute", $heure);
             echo date('Y-m-d H:i:s', $heure);

@@ -31,6 +31,153 @@ if (strlen($_SESSION['id'] == 0)) {
         // header('location:http://poker31.org/panel/liste-activites.php');
         // exit;
     }
+
+    // Traitement Inscription Rapide Joueur (Intégration)
+    if (isset($_POST['submit_player_reg'])) {
+        $membre = intval($_POST['membre']);
+        $tabl = intval($_POST['table']);
+        $sieg = intval($_POST['siege']);
+        $acti = $id; // L'ID de l'activité courante est déjà défini plus haut via $_GET['uid']
+
+        // Vérifier si déjà inscrit
+        $check_sql = mysqli_query($con, "SELECT `id-participation` FROM `participation` WHERE `id-membre` = '$membre' AND `id-activite` = '$acti'");
+        
+        if (mysqli_num_rows($check_sql) == 0) {
+            // Récupérer les valeurs par défaut de l'activité
+            $defaults_sql = mysqli_query($con, "SELECT rake, buyin, bounty FROM activite WHERE `id-activite` = '$acti'");
+            $defaults_row = mysqli_fetch_array($defaults_sql);
+            
+            $default_activity_rake = floatval($defaults_row['rake']);
+            $default_activity_bounty = floatval($defaults_row['bounty']);
+            $default_activity_buyin = floatval($defaults_row['buyin']);
+            
+            // Calcul du cout_in initial
+            $initial_cout_in = $default_activity_buyin + $default_activity_bounty + $default_activity_rake;
+
+            // Récupérer le pseudo
+            $pseudo_sql = mysqli_query($con, "SELECT `pseudo` FROM `membres` WHERE `id-membre` = '$membre'");
+            $pseudo_row = mysqli_fetch_array($pseudo_sql);
+            $pseudo = mysqli_real_escape_string($con, $pseudo_row['pseudo']);
+
+            // Insertion
+            $insert_sql = "INSERT INTO `participation` (`id-membre`, `nom-membre`, `id-activite`, `id-table`, `id-siege`, `rake`, `cout_in`, `recave`) VALUES ('$membre', '$pseudo', '$acti', '$tabl', '$sieg', '$default_activity_rake', '$initial_cout_in', 0)";
+            
+            if(mysqli_query($con, $insert_sql)) {
+                 $_SESSION['msg'] = "Joueur inscrit avec succès !";
+            } else {
+                 $_SESSION['msg'] = "Erreur lors de l'inscription : " . mysqli_error($con);
+            }
+        } else {
+            $_SESSION['msg'] = "Ce joueur est déjà inscrit à cette activité.";
+        }
+        
+        // Rafraîchir la page pour voir le nouveau joueur
+        ?>
+        <script type="text/javascript">
+            window.location.replace("voir-blindes.php?uid=<?php echo $id; ?>");
+        </script>
+        <?php
+    }
+
+    // Traitement Création Rapide Joueur (Nouveau)
+    if (isset($_POST['submit_create_player'])) {
+        $pseudo = trim($_POST['pseudo']);
+        $prenom = trim($_POST['prenom']);
+        $auto_register = isset($_POST['auto_register']) ? 1 : 0;
+        $acti = $id;
+
+        if (!empty($pseudo)) {
+            // Vérifier si le pseudo existe déjà
+            $check_sql = mysqli_query($con, "SELECT `id-membre` FROM `membres` WHERE `pseudo` = '" . mysqli_real_escape_string($con, $pseudo) . "'");
+            if (mysqli_num_rows($check_sql) > 0) {
+                $_SESSION['msg'] = "Le pseudo '$pseudo' existe déjà.";
+            } else {
+                // Insertion du nouveau membre
+                // Note: Ajustez 'creationDate' selon le nom exact de votre colonne date dans la table membres (ex: regDate, creation_date, etc.)
+                $insert_sql = "INSERT INTO `membres` (`pseudo`, `prenom`, `creationDate`) VALUES ('" . mysqli_real_escape_string($con, $pseudo) . "', '" . mysqli_real_escape_string($con, $prenom) . "', NOW())";
+                
+                if (mysqli_query($con, $insert_sql)) {
+                    $new_member_id = mysqli_insert_id($con);
+                    $_SESSION['msg'] = "Joueur '$pseudo' créé avec succès.";
+
+                    // Inscription automatique à l'activité si demandée
+                    if ($auto_register == 1) {
+                        // Récupérer les valeurs par défaut
+                        $defaults_sql = mysqli_query($con, "SELECT rake, buyin, bounty FROM activite WHERE `id-activite` = '$acti'");
+                        $defaults_row = mysqli_fetch_array($defaults_sql);
+                        
+                        $default_activity_rake = floatval($defaults_row['rake']);
+                        $default_activity_bounty = floatval($defaults_row['bounty']);
+                        $default_activity_buyin = floatval($defaults_row['buyin']);
+                        $initial_cout_in = $default_activity_buyin + $default_activity_bounty + $default_activity_rake;
+
+                        // Par défaut Table 1 Siège 1 (ou le premier dispo si on complexifie, ici simple pour l'exemple)
+                        $tabl = 1;
+                        $sieg = 1;
+
+                        $insert_part_sql = "INSERT INTO `participation` (`id-membre`, `nom-membre`, `id-activite`, `id-table`, `id-siege`, `rake`, `cout_in`, `recave`) VALUES ('$new_member_id', '" . mysqli_real_escape_string($con, $pseudo) . "', '$acti', '$tabl', '$sieg', '$default_activity_rake', '$initial_cout_in', 0)";
+                        
+                        if(mysqli_query($con, $insert_part_sql)) {
+                            $_SESSION['msg'] .= " Et inscrit automatiquement.";
+                        }
+                    }
+                } else {
+                    $_SESSION['msg'] = "Erreur création : " . mysqli_error($con);
+                }
+            }
+        } else {
+            $_SESSION['msg'] = "Le pseudo est obligatoire.";
+        }
+        ?>
+        <script type="text/javascript">
+            window.location.replace("voir-blindes.php?uid=<?php echo $id; ?>");
+        </script>
+        <?php
+    }
+
+    // Traitement Suppression Rapide Participation (Nouveau)
+    if (isset($_POST['submit_quick_delete'])) {
+        $membre_del = intval($_POST['membre_del']);
+        $acti = $id;
+
+        if ($membre_del) {
+            // Suppression de la participation
+            $del_sql = "DELETE FROM `participation` WHERE `id-membre` = '$membre_del' AND `id-activite` = '$acti'";
+            
+            if (mysqli_query($con, $del_sql)) {
+                $_SESSION['msg'] = "Participation supprimée avec succès.";
+            } else {
+                $_SESSION['msg'] = "Erreur lors de la suppression : " . mysqli_error($con);
+            }
+        } else {
+            $_SESSION['msg'] = "Veuillez sélectionner un joueur.";
+        }
+        ?>
+        <script type="text/javascript">
+            window.location.replace("voir-blindes.php?uid=<?php echo $id; ?>");
+        </script>
+        <?php
+    }
+
+    // Traitement Mise à jour des Gains (Podium)
+    if (isset($_POST['submit_gains'])) {
+        $acti = $id;
+        if (isset($_POST['gains']) && is_array($_POST['gains'])) {
+            foreach ($_POST['gains'] as $part_id => $gain_val) {
+                $part_id = intval($part_id);
+                $gain_val = floatval($gain_val);
+                // Mise à jour du gain pour la participation
+                mysqli_query($con, "UPDATE `participation` SET `gain` = '$gain_val' WHERE `id-participation` = '$part_id' AND `id-activite` = '$acti'");
+            }
+            $_SESSION['msg'] = "Gains mis à jour avec succès !";
+        }
+        ?>
+        <script type="text/javascript">
+            window.location.replace("voir-blindes.php?uid=<?php echo $id; ?>");
+        </script>
+        <?php
+    }
+
     //Code Deletion
     if (isset($_POST['modele'])) {
         $modele = $_GET['modele'];
@@ -550,8 +697,270 @@ if (strlen($_SESSION['id'] == 0)) {
     </div>
 </div>
                                         <div id="JoueursE" class="rubrique">
-                                            <div>
-                                                <?php echo 'Recaves = ' . $totalRecaves * $recave_montant . ' €'; ?>    
+                                            <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
+                                                
+                                                <!-- Colonne GAUCHE : Gestion des Joueurs (Création / Inscription / Suppression) -->
+                                                <div style="flex: 1; min-width: 450px;">
+                                                    
+                                                    <!-- Bloc Création Rapide -->
+                                                    <div class="panel panel-white" style="border: none; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden;">
+                                                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-bottom: 3px solid #5568d3;">
+                                                            <h4 style="margin:0; color: white; font-size: 1.1em; font-weight: bold;">
+                                                                <i class="fa fa-user-plus" style="margin-right: 10px;"></i> Création Nouveau Joueur
+                                                            </h4>
+                                                        </div>
+                                                        <div style="padding: 15px; background: #f0f8ff;">
+                                                            <form method="post" class="form-inline" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+                                                                <div class="form-group" style="flex: 1;">
+                                                                    <label for="new_pseudo" style="display: block; margin-bottom: 5px;">Pseudo</label>
+                                                                    <input type="text" name="pseudo" id="new_pseudo" class="form-control" placeholder="Pseudo" required style="width: 100%;">
+                                                                </div>
+                                                                <div class="form-group" style="flex: 1;">
+                                                                    <label for="new_prenom" style="display: block; margin-bottom: 5px;">Prénom</label>
+                                                                    <input type="text" name="prenom" id="new_prenom" class="form-control" placeholder="Prénom" style="width: 100%;">
+                                                                </div>
+                                                                <div class="form-group" style="display: flex; align-items: center; padding-bottom: 8px;">
+                                                                    <div class="checkbox clip-check check-primary">
+                                                                        <input type="checkbox" id="auto_reg" name="auto_register" value="1" checked>
+                                                                        <label for="auto_reg"> Inscrire auto.</label>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <button type="submit" class="btn btn-success" name="submit_create_player" style="margin-bottom: 0;">
+                                                                        Créer
+                                                                    </button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Bloc Inscription Rapide (Existant) -->
+                                                    <div class="panel panel-white" style="border: none; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden;">
+                                                        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 15px; border-bottom: 3px solid #1e7e34;">
+                                                            <h4 style="margin:0; color: white; font-size: 1.1em; font-weight: bold;">
+                                                                <i class="fa fa-sign-in" style="margin-right: 10px;"></i> Inscription Rapide Joueur
+                                                            </h4>
+                                                        </div>
+                                                        
+                                                        <div style="padding: 15px; background: #f0fff4;">
+                                                            <?php
+                                                            // Récupération des sièges occupés pour le JS
+                                                            $occupied_seats_json = '[]';
+                                                            $occupied_seats_data = [];
+                                                            $occ_sql = mysqli_query($con, "SELECT `id-table`, `id-siege` FROM `participation` WHERE `id-activite` = '$id'");
+                                                            while ($occ_row = mysqli_fetch_array($occ_sql)) {
+                                                                $occupied_seats_data[] = ['table' => intval($occ_row['id-table']), 'siege' => intval($occ_row['id-siege'])];
+                                                            }
+                                                            $occupied_seats_json = json_encode($occupied_seats_data);
+                                                            ?>
+
+                                                            <form method="post" class="form-inline" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
+                                                                <div class="form-group" style="flex: 2;">
+                                                                    <label for="membre_select" style="display: block; margin-bottom: 5px;">Joueur</label>
+                                                                    <select name="membre" id="membre_select" class="form-control" required style="width: 100%;">
+                                                                        <option value="">-- Sélectionner Pseudo --</option>
+                                                                        <?php
+                                                                        $membres_reg = mysqli_query($con, "SELECT `id-membre`,`pseudo` FROM `membres` ORDER BY `pseudo` ASC");
+                                                                        while ($choix = mysqli_fetch_array($membres_reg)) {
+                                                                            echo "<option value='" . $choix["id-membre"] . "'>" . htmlspecialchars($choix["pseudo"]) . "</option>";
+                                                                        }
+                                                                        ?>
+                                                                    </select>
+                                                                </div>
+
+                                                                <!-- <div class="form-group" style="flex: 1;">
+                                                                    <label for="table_reg_select" style="display: block; margin-bottom: 5px;">Table</label>
+                                                                    <select name="table" id="table_reg_select" class="form-control" style="width: 100%;">
+                                                                        <option value="">-- T --</option>
+                                                                        <?php for ($t = 1; $t <= 10; $t++): echo "<option value='$t'>T $t</option>"; endfor; ?>
+                                                                    </select>
+                                                                </div>
+
+                                                                <div class="form-group" style="flex: 1;">
+                                                                    <label for="siege_reg_select" style="display: block; margin-bottom: 5px;">Siège</label>
+                                                                    <select name="siege" id="siege_reg_select" class="form-control" disabled style="width: 100%;">
+                                                                        <option value="">-- S --</option>
+                                                                    </select>
+                                                                </div> -->
+
+                                                                <div class="form-group">
+                                                                    <button type="submit" class="btn btn-primary" name="submit_player_reg" style="margin-bottom: 0; background-color: #28a745; border-color: #28a745;">
+                                                                        <i class="fa fa-plus"></i> Inscrire
+                                                                    </button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Bloc Suppression Rapide (Existant) -->
+                                                    <div class="panel panel-white" style="border: none; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden;">
+                                                        <div style="background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; padding: 15px; border-bottom: 3px solid #bd2130;">
+                                                            <h4 style="margin:0; color: white; font-size: 1.1em; font-weight: bold;">
+                                                                <i class="fa fa-trash" style="margin-right: 10px;"></i> Suppression Rapide Participation
+                                                            </h4>
+                                                        </div>
+                                                        <div style="padding: 15px; background: #fff0f0;">
+                                                            <form method="post" class="form-inline" style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce joueur de l\'activité ?');">
+                                                                <div class="form-group" style="flex: 2;">
+                                                                    <label for="membre_del_select" style="display: block; margin-bottom: 5px;">Joueur à supprimer</label>
+                                                                    <select name="membre_del" id="membre_del_select" class="form-control" required style="width: 100%;">
+                                                                        <option value="">-- Sélectionner Pseudo --</option>
+                                                                        <?php
+                                                                        // Sélectionner uniquement les joueurs inscrits à cette activité
+                                                                        $membres_del_q = mysqli_query($con, "SELECT p.`id-membre`, m.`pseudo` 
+                                                                                                            FROM `participation` p 
+                                                                                                            JOIN `membres` m ON p.`id-membre` = m.`id-membre` 
+                                                                                                            WHERE p.`id-activite` = '$id' 
+                                                                                                            ORDER BY m.`pseudo` ASC");
+                                                                        while ($choix_del = mysqli_fetch_array($membres_del_q)) {
+                                                                            echo "<option value='" . $choix_del["id-membre"] . "'>" . htmlspecialchars($choix_del["pseudo"]) . "</option>";
+                                                                        }
+                                                                        ?>
+                                                                    </select>
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <button type="submit" class="btn btn-danger" name="submit_quick_delete" style="margin-bottom: 0;">
+                                                                        Supprimer
+                                                                    </button>
+                                                                </div>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Colonne DROITE : Finances et Classement -->
+                                                <div style="flex: 1; min-width: 450px;">
+                                                    
+                                                    <!-- Bloc Répartition du Prize Pool -->
+                                                    <div class="panel panel-white" style="border: none; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden;">
+                                                        <div style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); color: white; padding: 15px; border-bottom: 3px solid #1e7e34;">
+                                                            <h4 style="margin:0; color: white; font-size: 1.1em; font-weight: bold;">
+                                                                <i class="fa fa-money" style="margin-right: 10px;"></i> Répartition du Prize Pool
+                                                            </h4>
+                                                        </div>
+                                                        <div style="padding: 15px; background: #e8f4f8;">
+                                                            <?php
+                                                            // Calculs pour le Prize Pool
+                                                            // On récupère les infos de l'activité
+                                                            $act_info_q = mysqli_query($con, "SELECT buyin, recave_montant, bounty, rake FROM activite WHERE `id-activite` = '$id'");
+                                                            $act_info = mysqli_fetch_array($act_info_q);
+                                                            
+                                                            $pp_buyin = floatval($act_info['buyin']);
+                                                            $pp_recave = floatval($act_info['recave_montant']);
+                                                            
+                                                            // On récupère les comptes de participations
+                                                            $stats_q = mysqli_query($con, "SELECT COUNT(*) as nb_joueurs, SUM(recave) as nb_recaves FROM participation WHERE `id-activite` = '$id'");
+                                                            $stats = mysqli_fetch_array($stats_q);
+                                                            
+                                                            $nb_joueurs = intval($stats['nb_joueurs']);
+                                                            $nb_recaves = intval($stats['nb_recaves']);
+                                                            
+                                                            $total_buyin = $nb_joueurs * $pp_buyin;
+                                                            $total_recave = $nb_recaves * $pp_recave;
+                                                            $grand_total = $total_buyin + $total_recave;
+                                                            ?>
+                                                            <div class="row text-center" style="font-size: 1.1em;">
+                                                                <div class="col-sm-4">
+                                                                    <strong>Total Buy-in</strong><br>
+                                                                    <?php echo $nb_joueurs; ?> x <?php echo $pp_buyin; ?>€ = <span style="color:blue;"><?php echo number_format($total_buyin, 2); ?> €</span>
+                                                                </div>
+                                                                <div class="col-sm-4">
+                                                                    <strong>Total Recaves</strong><br>
+                                                                    <?php echo $nb_recaves; ?> x <?php echo $pp_recave; ?>€ = <span style="color:orange;"><?php echo number_format($total_recave, 2); ?> €</span>
+                                                                </div>
+                                                                <div class="col-sm-4">
+                                                                    <strong>Prize Pool Total</strong><br>
+                                                                    <span style="color:green; font-weight:bold; font-size: 1em;"><?php echo number_format($grand_total, 2); ?> €</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    <!-- Bloc Podium des Joueurs Classés -->
+                                                    <div class="panel panel-white" style="border: none; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden;">
+                                                        <div style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; padding: 15px; border-bottom: 3px solid #004494;">
+                                                            <h4 style="margin:0; color: white; font-size: 1.1em; font-weight: bold;">
+                                                                <i class="fa fa-trophy" style="margin-right: 10px;"></i> Podium des Joueurs Classés
+                                                            </h4>
+                                                        </div>
+                                                        
+                                                        <div style="padding: 15px; background: #fff;">
+                                                            <form method="post">
+                                                                <table class="table table-striped table-hover">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th style="width: 10%;">Rang</th>
+                                                                            <th style="width: 35%;">Joueur</th>
+                                                                            <th style="width: 10%; text-align: center;">Recaves</th>
+                                                                            <th style="width: 10%; text-align: center;">Bounty</th>
+                                                                            <th style="width: 35%;">Gain</th>
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        <?php
+                                                                        // Récupérer les joueurs ayant un classement > 0 (Limité aux 9 premiers)
+                                                                        $podium_q = mysqli_query($con, "SELECT p.`id-participation`, p.`classement`, p.`nom-membre`, p.`gain`, p.`recave` 
+                                                                                                        FROM `participation` p 
+                                                                                                        WHERE p.`id-activite` = '$id' AND p.`classement` > 0 
+                                                                                                        ORDER BY p.`classement` ASC LIMIT 9");
+                                                                        
+                                                                        if (mysqli_num_rows($podium_q) > 0) {
+                                                                            while ($row_pod = mysqli_fetch_array($podium_q)) {
+                                                                                $rank = intval($row_pod['classement']);
+                                                                                $icon = '';
+                                                                                if ($rank == 1) $icon = '🥇 ';
+                                                                                elseif ($rank == 2) $icon = '🥈 ';
+                                                                                elseif ($rank == 3) $icon = '🥉 ';
+                                                                                
+                                                                                // Calcul du nombre de Bounty (joueurs éliminés par ce membre)
+                                                                                $bounty_count = 0;
+                                                                                $player_name_safe = mysqli_real_escape_string($con, $row_pod['nom-membre']);
+                                                                                $bounty_query = mysqli_query($con, "SELECT COUNT(*) as cnt FROM `eliminations` e JOIN `participation` p ON e.`id_participation` = p.`id-participation` WHERE p.`id-activite` = '$id' AND e.`nom_membre` = '$player_name_safe'");
+                                                                                if ($bounty_query) {
+                                                                                    $b_row = mysqli_fetch_array($bounty_query);
+                                                                                    $bounty_count = intval($b_row['cnt']);
+                                                                                }
+
+                                                                                echo '<tr>';
+                                                                                // Rang : Police unifiée 15px, alignement milieu
+                                                                                echo '<td style="font-weight:bold; font-size:15px; vertical-align: middle;">' . $icon . $rank . '</td>';
+                                                                                
+                                                                                // Nom : Police unifiée 15px, alignement milieu
+                                                                                echo '<td style="font-size:15px; vertical-align: middle;">' . htmlspecialchars($row_pod['nom-membre']) . '</td>';
+                                                                                
+                                                                                // Recaves : Police unifiée 15px, alignement milieu
+                                                                                echo '<td style="text-align:center; font-size:15px; vertical-align: middle;">' . intval($row_pod['recave']) . '</td>';
+                                                                                
+                                                                                // Bounty : Police unifiée 15px, alignement milieu
+                                                                                echo '<td style="text-align:center; color:#d9534f; font-weight:bold; font-size:15px; vertical-align: middle;">' . $bounty_count . ' </td>';
+                                                                                
+                                                                                // Gain : Input stylisé pour correspondre à la taille du texte (15px)
+                                                                                echo '<td style="vertical-align: middle;">
+                                                                                        <div class="input-group">
+                                                                                            <input type="number" step="1" class="form-control" name="gains[' . $row_pod['id-participation'] . ']" value="' . floatval($row_pod['gain']) . '" placeholder="00" style="font-size: 15px; height: 34px;">
+                                                                                            
+                                                                                        </div>
+                                                                                      </td>';
+                                                                                echo '</tr>';
+                                                                            }
+                                                                        } else {
+                                                                            echo '<tr><td colspan="5" class="text-center text-muted">Aucun joueur classé pour le moment. (Utilisez le tableau principal pour définir l\'ordre d\'élimination)</td></tr>';
+                                                                        }
+                                                                        ?>
+                                                                    </tbody>
+                                                                </table>
+                                                                <?php if (mysqli_num_rows($podium_q) > 0) { ?>
+                                                                    <div class="text-right">
+                                                                        <button type="submit" name="submit_gains" class="btn btn-success">
+                                                                            <i class="fa fa-save"></i> Enregistrer les Gains
+                                                                        </button>
+                                                                    </div>
+                                                                <?php } ?>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
                                             </div>
                                         </div>
                                         <div id="OutilsE" class="rubrique">
@@ -828,6 +1237,111 @@ if (strlen($_SESSION['id'] == 0)) {
         <script src="assets/js/form-elements.js"></script>
 
         <script type="text/javascript">
+            // --- CORRECTION : Fonction restoreSnapshot ---
+            // On attache explicitement à window pour éviter les problèmes de portée
+            window.restoreSnapshot = function(snapshotId, idActivite) {
+                // On force l'ID de l'activité courante via PHP
+                var currentActivityId = <?php echo isset($_GET['uid']) ? intval($_GET['uid']) : 0; ?>;
+                
+                console.log("Tentative de restauration du snapshot " + snapshotId + " pour l'activité " + currentActivityId);
+
+                if (confirm("Êtes-vous sûr de vouloir restaurer ce point de sauvegarde ? Les données actuelles seront remplacées.")) {
+                    
+                    $.ajax({
+                        url: 'restore_blindes_snapshot.php',
+                        type: 'POST',
+                        // On envoie les données sous plusieurs formats pour être sûr que le PHP les trouve
+                        data: {
+                            id: snapshotId,
+                            snapshot_id: snapshotId,
+                            activity_id: currentActivityId,
+                            id_activite: currentActivityId
+                        },
+                        // On attend une réponse texte pour pouvoir analyser les erreurs PHP éventuelles
+                        dataType: 'text',
+                        success: function(response) {
+                            console.log("Réponse serveur:", response);
+                            
+                            // 1. Vérification d'erreurs PHP visibles dans la réponse
+                            if (response.indexOf('Fatal error') !== -1 || response.indexOf('Parse error') !== -1) {
+                                alert("Erreur CRITIQUE dans le fichier PHP :\n" + response.substring(0, 300) + "...");
+                                return;
+                            }
+
+                            // 2. Essayer de détecter si c'est du JSON avec un message d'erreur
+                            try {
+                                var json = JSON.parse(response);
+                                if (json.status === 'error') {
+                                    alert("Le serveur a refusé la restauration : " + (json.message || "Raison inconnue"));
+                                    return;
+                                }
+                            } catch(e) {
+                                // Ce n'est pas du JSON, ce n'est pas grave tant qu'il n'y a pas d'erreur fatale
+                                console.log("La réponse n'est pas du JSON valide, poursuite du rechargement...");
+                            }
+
+                            // 3. Si on arrive ici, on considère que c'est bon, on recharge
+                            // On ajoute un timestamp pour forcer le navigateur à ne pas utiliser le cache
+                            window.location.href = "voir-blindes.php?uid=" + currentActivityId + "&ts=" + new Date().getTime();
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Erreur AJAX:", status, error);
+                            if (xhr.status == 404) {
+                                alert("Erreur : Le fichier 'restore_blindes_snapshot.php' est introuvable sur le serveur.");
+                            } else {
+                                alert("Une erreur technique est survenue (Code " + xhr.status + "). Vérifiez la console (F12).");
+                            }
+                        }
+                    });
+                }
+            };
+
+            // Script pour la gestion dynamique des sièges (Inscription Rapide)
+            document.addEventListener('DOMContentLoaded', function() {
+                const occupiedSeats = <?php echo $occupied_seats_json; ?>;
+                const tableSelect = document.getElementById('table_reg_select');
+                const siegeSelect = document.getElementById('siege_reg_select');
+
+                function updateSiegeOptions() {
+                    if (!tableSelect || !siegeSelect) return;
+
+                    const selectedTable = parseInt(tableSelect.value);
+                    siegeSelect.innerHTML = '<option value="">-- Siège --</option>';
+
+                    if (!selectedTable) {
+                        siegeSelect.disabled = true;
+                        return;
+                    }
+
+                    const occupiedSeatsForTable = occupiedSeats
+                        .filter(seat => seat.table === selectedTable)
+                        .map(seat => seat.siege);
+
+                    let availableSeatsFound = false;
+                    // Limiter à 10 sièges par table (comme dans voir-blindes.php original)
+                    for (let s = 1; s <= 10; s++) {
+                        if (!occupiedSeatsForTable.includes(s)) {
+                            const option = document.createElement('option');
+                            option.value = s;
+                            option.textContent = 'S ' + s;
+                            siegeSelect.appendChild(option);
+                            availableSeatsFound = true;
+                        }
+                    }
+
+                    siegeSelect.disabled = !availableSeatsFound;
+                    if (!availableSeatsFound) {
+                        siegeSelect.innerHTML = '<option value="">Plein</option>';
+                    }
+                }
+
+                if (tableSelect) {
+                    tableSelect.addEventListener('change', updateSiegeOptions);
+                }
+            });
+        </script>
+
+        <script type="text/javascript">
             function incrementRecave(button) {
                 var input = button.parentElement.querySelector('.recave-input');
                 var currentValue = parseInt(input.value) || 0;
@@ -923,6 +1437,7 @@ if (strlen($_SESSION['id'] == 0)) {
 
                     updates.push({
                         'id-participation': participationId,
+                       
                         'recave': recaveValue
                     });
 
@@ -963,7 +1478,9 @@ if (strlen($_SESSION['id'] == 0)) {
         </script>
         <script type="text/javascript">
             // Gestion par délégation : bouton + et poubelle (corrigé pour utiliser data-member-id)
+
             document.addEventListener('click', function (e) {
+               
                 // + bouton
                 var btnPlus = e.target.closest('.btn-plus');
                 if (btnPlus) {
@@ -1140,6 +1657,7 @@ if (strlen($_SESSION['id'] == 0)) {
                         console.log('Réponse mise à jour durée:', response);
                         if (response.status === 'success') {
                             // Mettre à jour le champ 'fin' dans le DOM
+
                             var row = dureeInput.closest('tr');
                             var finCell = row.querySelector('td:nth-child(6)');
                             if (finCell && response.new_fin) {
