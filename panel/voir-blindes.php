@@ -230,14 +230,22 @@ if (strlen($_SESSION['id'] == 0)) {
 
     }
     if (isset($_POST['pauseresume'])) {
-        $id = $_GET['uid'];
-        if ($_SESSION["en_pause" . $id] == "0") {
+        $id = intval($_GET['uid']);
+        
+        // CORRECTION : On vérifie l'état réel dans la BDD au lieu de la SESSION
+        // Cela évite les bugs si la session est expirée ou désynchronisée
+        $check_pause = mysqli_query($con, "SELECT `en_pause` FROM `blindes-live` WHERE `id-activite` = '$id' LIMIT 1");
+        $row_pause = mysqli_fetch_array($check_pause);
+        $etat_actuel = intval($row_pause['en_pause']);
+
+        if ($etat_actuel == 0) {
+            // Si c'est à 0 (En cours), on envoie vers en-pause.php
             ?>
             <script type="text/javascript">
                 window.location.replace("/panel/en-pause.php?act=<?php echo $id ?>&sou=/panel/voir-blindes.php?uid=");
             </script> ; <?php
-        }
-        if ($_SESSION["en_pause" . $id] == "1") {
+        } else {
+            // Si c'est à 1 (En pause), on envoie vers de-pause.php
             ?>
             <script type="text/javascript">
                 window.location.replace("/panel/de-pause.php?act=<?php echo $id ?>&sou=/panel/voir-blindes.php?uid=");
@@ -343,9 +351,8 @@ if (strlen($_SESSION['id'] == 0)) {
                 });
             }
         </script>
-        <script>
-            // var audio = new Audio("plus1_071016_Alex.WAV");
-            // var audio = new Audio("http://glpjt.s3.amazonaws.com/so/av/a12.mp3");                 
+        <!-- <script>
+                            
             var audio = new Audio("https://s3.amazonaws.com/audio-experiments/examples/elon_mono.wav");
 
             function playAudio() {
@@ -361,7 +368,7 @@ if (strlen($_SESSION['id'] == 0)) {
                 audio.currentTime = 0;
             }
             //  playAudio();
-        </script>
+        </script> -->
         <style>
             /* Masquer toutes les sections par défaut */
             .rubrique {
@@ -497,205 +504,208 @@ if (strlen($_SESSION['id'] == 0)) {
                                         <div id="BlindesE" class="rubrique">                                            
                                             
                                         </div>
+                                        <!-- Onglet Timer -->
                                         <div id="TimerE" class="rubrique">
-    <div style="display: flex; gap: 20px; align-items: flex-start;">
-        <!-- Colonne gauche: Horloge et contrôles -->
-        <div style="flex: 1; min-width: 400px;">
-            <?php $id = intval($_GET['uid']);
-            $_SESSION["act"] = $id; ?>
-            <?php include_once('horloge-heure.php'); ?>
-            <div style="color:red ; font-size: 200px ; text-align: center;" id="response">
-            </div>
-            <div style="color:green ; text-align: center">
-                <form method="post">
-                    <table class="table table-bordered">
-                        <tr>
-                            <td colspan="3" style="text-align:center ;">
-                                <button type="submit" id="moins" class="btn btn-primaryg btn-block" name="moins">
-                                    <<< -2 Minutes </button>
-                            </td>
-                            <td colspan="3" style="text-align:center ;">
-                                <button type="submit" class="btn btn-primary btn-block" name="pauseresume">Pause / Resume</button>
-                            </td>
-                            <td colspan="3" style="text-align:center ;">
-                                <button type="submit" class="btn btn-primary-rouge btn-block" name="plus">+2 Minutes >>></button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colspan="3" style="text-align:center ;">
-                                <button type="submit" id="moins1" class="btn btn-primaryg btn-block" name="moins1">
-                                    <<< -1 Minute </button>
-                            </td>
-                            <td colspan="3" style="text-align:center ;">
-                                <button type="submit" class="btn btn-primary btn-block" name="pauseresume">Reset blinde</button>
-                            </td>
-                            <td colspan="3" style="text-align:center ;">
-                                <button type="submit" class="btn btn-primary-rouge btn-block" name="plus1">+1 Minute >>></button>
-                            </td>
-                        </tr>
-                    </table>
-                </form>
-            </div>
-            <?php include_once('horloge-sb.php'); ?>
-            <div style="color:orange ; font-size: 90px  ; text-align: center" id="response-sb"></div>
-            <?php include_once('horloge-pause.php'); ?>
-            <div style="color:red ; font-size: 30px ; text-align: center" id="car-pause"></div>
-            <?php include_once('horloge-ante.php'); ?>
-            <div style="color:blue ; font-size: 50px ; text-align: center" id="response-ante"></div>
-            <?php include_once('horloge-estim.php'); ?>
-            <div style="color:grey ; font-size: 30px ; text-align: center"></div>
-        </div>
+                                            <div style="display: flex; gap: 20px; align-items: flex-start;">
+                                                <!-- Colonne gauche: Horloge et contrôles -->
+                                                <div style="flex: 1; min-width: 400px;">
+                                                    <?php $id = intval($_GET['uid']);
+                                                    $_SESSION["act"] = $id; ?>
+                                                    <?php include_once('horloge-heure.php'); ?>
+                                                    <!-- <div style="color:black ; font-size: 140px ; text-align: center;" id="rresponse"> 
+                                                    </div> -->
+                                                    <div style="color:green ; text-align: center">
+                                                        <form method="post">
+                                                            <table class="table table-bordered">
+                                                                <tr>
+                                                                    <td colspan="3" style="text-align:center ;">
+                                                                        <button type="submit" id="moins" class="btn btn-primaryg btn-block" name="moins">
+                                                                            <<< -2 Minutes </button>
+                                                                    </td>
+                                                                    <td colspan="3" style="text-align:center !important ;">
+                                                                        <button type="submit" class="btn btn-primary btn-block" name="pauseresume" style="background-color: #007bff !important; color: white !important; border-color: #007bff !important;">Pause / Resume</button>
+                                                                    </td>
+                                                                    <td colspan="3" style="text-align:center ;">
+                                                                        <button type="submit" class="btn btn-primary-rouge btn-block" name="plus">+2 Minutes >>></button>
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td colspan="3" style="text-align:center ;">
+                                                                        <button type="submit" id="moins1" class="btn btn-primaryg btn-block" name="moins1">
+                                                                            <<< -1 Minute </button>
+                                                                    </td>
+                                                                    <td colspan="3" style="text-align:center ;">
+                                                                        <button type="submit" class="btn btn-primary btn-block" name="pauseresume">Reset blinde</button>
+                                                                    </td>
+                                                                    <td colspan="3" style="text-align:center ;">
+                                                                        <button type="submit" class="btn btn-primary-rouge btn-block" name="plus1">+1 Minute >>></button>
+                                                                    </td>
+                                                                </tr>
+                                                            </table>
+                                                        </form>
+                                                    </div>
+                                                    <!-- <?php include_once('horloge-sb.php'); ?>
+                                                    <div style="color:orange ; font-size: 90px  ; text-align: center" id="response-sb"></div> -->
+                                                    <?php include_once('horloge-pause.php'); ?>
+                                                    <div style="color:red ; font-size: 30px ; text-align: center" id="car-pause"></div>
+                                                    <!-- <?php include_once('horloge-ante.php'); ?>
+                                                    <div style="color:blue ; font-size: 50px ; text-align: center" id="response-ante"></div> -->
+                                                    <?php include_once('horloge-estim.php'); ?>
+                                                    <div style="color:grey ; font-size: 90px ; text-align: center"></div>
+                                                </div>
 
-        <!-- Colonne droite: Tableau des joueurs -->
-        <div style="flex: 1; min-width: 500px;">
-            <div class="ccol-lg-6 ccol-md-12">
-                <h4 class="text-center" style="margin-top:8px; display: flex; justify-content: center; align-items: center; gap: 10px; font-size: 1em;" panel-title>
-                    <span style="font-size: 1em; color: #0056b3; font-weight: bold;">Liste des Joueurs - </span>
-                    <a href="voir-activite.php?uid=<?php echo $id; ?>" style="font-size: 1em; color: #0056b3; font-weight: bold;"><?php echo htmlspecialchars($res['titre-activite'], ENT_QUOTES); ?></a>
-                </h4>
-            </div>
+                                                <!-- Colonne droite: Tableau des joueurs (Style mis à jour) -->
+                                                <div style="flex: 1; min-width: 500px;">
+                                                    <div class="card mb-4" style="border: none; box-shadow: none; border-radius: 8px; overflow: hidden;">
+                                                        <div class="card-header"
+                                                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); border-bottom: 3px solid #5568d3;">
+                                                            <i class="fas fa-users" style="margin-right: 10px; font-size: 1.2em;"></i> 
+                                                            <strong style="font-size: 1.1em;">Liste des Joueurs - <a href="voir-activite.php?uid=<?php echo $id; ?>" style="color: white; text-decoration: underline;"><?php echo htmlspecialchars($res['titre-activite'], ENT_QUOTES); ?></a></strong>
+                                                        </div>
+                                                        <div class="card-body" style="padding: 25px; background: linear-gradient(135deg, #fafbfc 0%, #f0f4ff 100%);">
+                                                            <table class="table table-striped table-bordered players-table" style="font-size:14px;">
+                                                                <thead style="background: #667eea;">
+                                                                    <tr>
+                                                                        <th style="color: white !important;">Ordre</th>
+                                                                        <th style="color: white !important;">Pseudo</th>
+                                                                        <th style="color: white !important;">Recave(s)</th>
+                                                                        <th style="color: white !important;">Sorti(e) Par</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody id="joueurs-list">
+                                                                    <?php
+                                                                    $id = intval($_GET['uid']);
+                                                                    // Récupérer les joueurs avec leurs dates d'élimination
+                                                                    $req = mysqli_query($con, "SELECT p.*, MAX(e.created_at) as last_elimination_date FROM `participation` p LEFT JOIN `eliminations` e ON p.`id-participation` = e.`id_participation` WHERE p.`id-activite` = '$id' GROUP BY p.`id-participation` ORDER BY (p.`nom-membre-vainqueur` IS NULL OR p.`nom-membre-vainqueur` = '') DESC, last_elimination_date DESC, p.`nom-membre` ASC");
+                                                                    $totalRecaves = 0;
+                                                                    $countJoueurs = 0;
+                                                                    $rankingCounter = 1;
 
-            <table class="table table-striped table-bordered players-table" style="font-size:14px;">
-                <thead>
-                    <tr>
-                        <th>Ordre</th>
-                        <th>Pseudo</th>
-                        <th>Recave(s)</th>
-                        <th>Sorti(e) Par</th>
-                    </tr>
-                </thead>
-                <tbody id="joueurs-list">
-                    <?php
-                    $id = intval($_GET['uid']);
-                    // Récupérer les joueurs avec leurs dates d'élimination
-                    $req = mysqli_query($con, "SELECT p.*, MAX(e.created_at) as last_elimination_date FROM `participation` p LEFT JOIN `eliminations` e ON p.`id-participation` = e.`id_participation` WHERE p.`id-activite` = '$id' GROUP BY p.`id-participation` ORDER BY (p.`nom-membre-vainqueur` IS NULL OR p.`nom-membre-vainqueur` = '') DESC, last_elimination_date DESC, p.`nom-membre` ASC");
-                    $totalRecaves = 0;
-                    $countJoueurs = 0;
-                    $rankingCounter = 1;
+                                                                    // Récupérer le buyin, recave_montant et jetons de l'activité
+                                                                    $buyinQuery = mysqli_query($con, "SELECT `recave_montant` , `jetons` , `recave_jetons` , `buyin`  FROM `activite` WHERE `id-activite` = '$id'");
+                                                                    $buyinRow = mysqli_fetch_array($buyinQuery);
+                                                                    $buyin = intval($buyinRow['buyin']) ?? 0;
+                                                                    $jetons = intval($buyinRow['jetons']) ?? 0;
+                                                                    $recave_jetons = intval($buyinRow['recave_jetons']) ?? 0;
+                                                                    $recave_montant = intval($buyinRow['recave_montant']) ?? 0;
+                                                                    
+                                                                    while ($row = mysqli_fetch_array($req)) {
+                                                                        $totalRecaves += intval($row['recave']);
+                                                                        $countJoueurs++;
 
-                    // Récupérer le buyin, recave_montant et jetons de l'activité
-                    $buyinQuery = mysqli_query($con, "SELECT `recave_montant` , `jetons` , `recave_jetons` , `buyin`  FROM `activite` WHERE `id-activite` = '$id'");
-                    $buyinRow = mysqli_fetch_array($buyinQuery);
-                    $buyin = intval($buyinRow['buyin']) ?? 0;
-                    $jetons = intval($buyinRow['jetons']) ?? 0;
-                    $recave_jetons = intval($buyinRow['recave_jetons']) ?? 0;
-                    $recave_montant = intval($buyinRow['recave_montant']) ?? 0;
-                    
-                    while ($row = mysqli_fetch_array($req)) {
-                        $totalRecaves += intval($row['recave']);
-                        $countJoueurs++;
+                                                                        // récupérer tous les éliminants enregistrés pour cette participation
+                                                                        $elims_html = '';
+                                                                        $isDefinitivelyEliminated = false;
+                                                                        $elim_q = mysqli_query($con, "SELECT * FROM `eliminations` WHERE `id_participation` = '" . intval($row['id-participation']) . "' ORDER BY `created_at` ASC");
+                                                                        if ($elim_q && mysqli_num_rows($elim_q) > 0) {
+                                                                            $names = [];
+                                                                            while ($er = mysqli_fetch_array($elim_q)) {
+                                                                                $names[] = htmlspecialchars($er['nom_membre'], ENT_QUOTES);
+                                                                                if (intval($er['is_definitive']) === 1) {
+                                                                                    $isDefinitivelyEliminated = true;
+                                                                                }
+                                                                            }
+                                                                            $elims_html = implode(', ', $names);
+                                                                        }
 
-                        // récupérer tous les éliminants enregistrés pour cette participation
-                        $elims_html = '';
-                        $isDefinitivelyEliminated = false;
-                        $elim_q = mysqli_query($con, "SELECT * FROM `eliminations` WHERE `id_participation` = '" . intval($row['id-participation']) . "' ORDER BY `created_at` ASC");
-                        if ($elim_q && mysqli_num_rows($elim_q) > 0) {
-                            $names = [];
-                            while ($er = mysqli_fetch_array($elim_q)) {
-                                $names[] = htmlspecialchars($er['nom_membre'], ENT_QUOTES);
-                                if (intval($er['is_definitive']) === 1) {
-                                    $isDefinitivelyEliminated = true;
-                                }
-                            }
-                            $elims_html = implode(', ', $names);
-                        }
+                                                                        // récupérer id-membre depuis table membres
+                                                                        $membre_id = 0;
+                                                                        $pseudo_clean = mysqli_real_escape_string($con, $row['nom-membre']);
+                                                                        $mq = mysqli_query($con, "SELECT `id-membre` FROM `membres` WHERE `pseudo` = '$pseudo_clean' LIMIT 1");
+                                                                        if ($mq && mysqli_num_rows($mq) > 0) {
+                                                                            $mr = mysqli_fetch_array($mq);
+                                                                            $membre_id = intval($mr['id-membre']);
+                                                                        }
 
-                        // récupérer id-membre depuis table membres
-                        $membre_id = 0;
-                        $pseudo_clean = mysqli_real_escape_string($con, $row['nom-membre']);
-                        $mq = mysqli_query($con, "SELECT `id-membre` FROM `membres` WHERE `pseudo` = '$pseudo_clean' LIMIT 1");
-                        if ($mq && mysqli_num_rows($mq) > 0) {
-                            $mr = mysqli_fetch_array($mq);
-                            $membre_id = intval($mr['id-membre']);
-                        }
+                                                                        // Compter le nombre de joueurs éliminés par ce pseudo
+                                                                        $elimCount = 0;
+                                                                        $countElimQuery = mysqli_query($con, "SELECT COUNT(*) as cnt FROM `eliminations` e JOIN `participation` p ON e.`id_participation` = p.`id-participation` WHERE p.`id-activite` = '$id' AND e.`nom_membre` = '" . mysqli_real_escape_string($con, $row['nom-membre']) . "'");
+                                                                        if ($countElimQuery) {
+                                                                            $countElimRow = mysqli_fetch_array($countElimQuery);
+                                                                            $elimCount = intval($countElimRow['cnt']);
+                                                                        }
 
-                        // Compter le nombre de joueurs éliminés par ce pseudo
-                        $elimCount = 0;
-                        $countElimQuery = mysqli_query($con, "SELECT COUNT(*) as cnt FROM `eliminations` e JOIN `participation` p ON e.`id_participation` = p.`id-participation` WHERE p.`id-activite` = '$id' AND e.`nom_membre` = '" . mysqli_real_escape_string($con, $row['nom-membre']) . "'");
-                        if ($countElimQuery) {
-                            $countElimRow = mysqli_fetch_array($countElimQuery);
-                            $elimCount = intval($countElimRow['cnt']);
-                        }
+                                                                        $eliminatedBy = isset($row['nom-membre-vainqueur']) ? $row['nom-membre-vainqueur'] : '';
+                                                                        $isEliminated = !empty($eliminatedBy) || $isDefinitivelyEliminated;
+                                                                        $rowStyle = $isEliminated ? 'opacity:0.5;background-color:#f0f0f0;' : '';
+                                                                        $disabledAttr = $isEliminated ? 'disabled' : '';
 
-                        $eliminatedBy = isset($row['nom-membre-vainqueur']) ? $row['nom-membre-vainqueur'] : '';
-                        $isEliminated = !empty($eliminatedBy) || $isDefinitivelyEliminated;
-                        $rowStyle = $isEliminated ? 'opacity:0.5;background-color:#f0f0f0;' : '';
-                        $disabledAttr = $isEliminated ? 'disabled' : '';
-
-                        $elimCountDisplay = $elimCount > 0 ? ' <span style="color:red;">(' . $elimCount . ')</span>' : '';
-                        $classementDisplay = $rankingCounter == 1 ? '<i class="fa fa-trophy" style="color: gold; font-size: 1.2em;"></i>' : $rankingCounter;
-                        
-                        echo '<tr style="' . $rowStyle . '">
-                            <td style="text-align:center; font-weight:bold;">' . $classementDisplay . '</td>
-                            <td class="pseudo-cell">' . htmlspecialchars($row['nom-membre'], ENT_QUOTES) . $elimCountDisplay . '</td>
-                            <td>
-                                <div class="input-group" style="width:100%;">
-                                    <input type="number" class="form-control recave-input" data-id="' . intval($row['id-participation']) . '" data-member-id="' . intval($membre_id) . '" value="' . intval($row['recave']) . '" ' . $disabledAttr . ' />
-                                    <button class="btn btn-success btn-sm btn-plus" type="button" data-id="' . intval($row['id-participation']) . '" ' . $disabledAttr . '>+</button>
-                                    <button class="btn btn-danger btn-sm btn-trash" type="button" data-id="' . intval($row['id-participation']) . '" data-member-id="' . intval($membre_id) . '" data-name="' . htmlspecialchars($row['nom-membre'], ENT_QUOTES) . '" ' . $disabledAttr . '><i class="fa fa-trash"></i></button>
-                                </div>
-                            </td>
-                            <td><span class="eliminated-by" data-player-id="' . intval($row['id-participation']) . '" style="font-size:12px;color:' . ($isEliminated ? 'red' : 'inherit') . ';font-weight:' . ($isEliminated ? 'bold' : 'normal') . '">';
-                        
-                        if (!empty($elims_html)) {
-                            echo $elims_html;
-                        } elseif ($isEliminated) {
-                            echo htmlspecialchars($eliminatedBy, ENT_QUOTES);
-                        } else {
-                            echo '';
-                        }
-                        echo '</span></td></tr>';
-                        $rankingCounter++;
-                    }
-                    ?>
-                    <tr style="background-color: #f0f0f0; font-weight: bold;">
-                        <td></td>
-                        <td><?php echo $countJoueurs . ' Caves à ' . $buyin . ' €'; ?></td>
-                        <td><?php echo $totalRecaves . ' ReCave(s) à ' . $recave_montant . ' €'; ?></td>
-                        <td>
-                            <?php
-                            $countNotDefinitivelyEliminated = 0;
-                            $reqForCounting = mysqli_query($con, "SELECT * FROM `participation` WHERE `id-activite` = '$id'");
-                            while ($rowForCount = mysqli_fetch_array($reqForCounting)) {
-                                $isDefElim = false;
-                                $elimCheckQuery = mysqli_query($con, "SELECT * FROM `eliminations` WHERE `id_participation` = '" . intval($rowForCount['id-participation']) . "'");
-                                if ($elimCheckQuery && mysqli_num_rows($elimCheckQuery) > 0) {
-                                    while ($ec = mysqli_fetch_array($elimCheckQuery)) {
-                                        if (intval($ec['is_definitive']) === 1) {
-                                            $isDefElim = true;
-                                            break;
-                                        }
-                                    }
-                                }
-                                if (!$isDefElim) {
-                                    $countNotDefinitivelyEliminated++;
-                                }
-                            }
-                            if ($countNotDefinitivelyEliminated > 0) {
-                                $totalJetons = ($countJoueurs * $jetons) + ($totalRecaves * $recave_jetons);
-                                $stackMoyen = intval($totalJetons / $countNotDefinitivelyEliminated);
-                                echo 'Stack Moyen ' . $stackMoyen;
-                            }
-                            ?>
-                        </td>
-                    </tr>
-                    <tr style="background-color: #e8f4f8; font-weight: bold;">
-                        <td></td>
-                        <td>Caves = <?php echo $countJoueurs * $buyin . ' €'; ?></td>
-                        <td><?php echo 'Recaves = ' . $totalRecaves * $recave_montant . ' €'; ?></td>
-                        <td><?php 
-                            $totalAmount = ($countJoueurs * $buyin) + ($totalRecaves * $recave_montant);
-                            echo 'PricePool = ' . $totalAmount . ' €'; 
-                        ?></td>
-                    </tr>
-                </tbody>
-            </table>
-            <div class="text-center" style="margin-top:8px; display: flex; justify-content: center; align-items: center; min-height: 50px;">
-                <button class="btn btn-primary" onclick="validerRecaves()">Valider Modifications</button>
-            </div>
-        </div>
-    </div>
-</div>
+                                                                        $elimCountDisplay = $elimCount > 0 ? ' <span style="color:red;">(' . $elimCount . ')</span>' : '';
+                                                                        $classementDisplay = $rankingCounter == 1 ? '<i class="fa fa-trophy" style="color: gold; font-size: 1.2em;"></i>' : $rankingCounter;
+                                                                        
+                                                                        echo '<tr style="' . $rowStyle . '">
+                                                                            <td style="text-align:center; font-weight:bold;">' . $classementDisplay . '</td>
+                                                                            <td class="pseudo-cell">' . htmlspecialchars($row['nom-membre'], ENT_QUOTES) . $elimCountDisplay . '</td>
+                                                                            <td>
+                                                                                <div class="input-group" style="width:100%;">
+                                                                                    <input type="number" class="form-control recave-input" data-id="' . intval($row['id-participation']) . '" data-member-id="' . intval($membre_id) . '" value="' . intval($row['recave']) . '" ' . $disabledAttr . ' />
+                                                                                    <button class="btn btn-primary btn-sm btn-plus" type="button" data-id="' . intval($row['id-participation']) . '" ' . $disabledAttr . ' style="background-color: #007bff !important; color: white !important; border-color: #007bff !important;">+</button>
+                                                                                    <button class="btn btn-danger btn-sm btn-trash" type="button" data-id="' . intval($row['id-participation']) . '" data-member-id="' . intval($membre_id) . '" data-name="' . htmlspecialchars($row['nom-membre'], ENT_QUOTES) . '" ' . $disabledAttr . ' style="background-color: #dc3545 !important; color: white !important; border-color: #dc3545 !important;"><i class="fa fa-trash"></i></button>
+                                                                                </div>
+                                                                            </td>
+                                                                            <td><span class="eliminated-by" data-player-id="' . intval($row['id-participation']) . '" style="font-size:12px;color:' . ($isEliminated ? 'red' : 'inherit') . ';font-weight:' . ($isEliminated ? 'bold' : 'normal') . '">';
+                                                                        
+                                                                        if (!empty($elims_html)) {
+                                                                            echo $elims_html;
+                                                                        } elseif ($isEliminated) {
+                                                                            echo htmlspecialchars($eliminatedBy, ENT_QUOTES);
+                                                                        } else {
+                                                                            echo '';
+                                                                        }
+                                                                        echo '</span></td></tr>';
+                                                                        $rankingCounter++;
+                                                                    }
+                                                                    ?>
+                                                                    <tr style="background-color: #f0f0f0; font-weight: bold;">
+                                                                        <td></td>
+                                                                        <td><?php echo $countJoueurs . ' Caves à ' . $buyin . ' €'; ?></td>
+                                                                        <td><?php echo $totalRecaves . ' ReCave(s) à ' . $recave_montant . ' €'; ?></td>
+                                                                        <td>
+                                                                            <?php
+                                                                            $countNotDefinitivelyEliminated = 0;
+                                                                            $reqForCounting = mysqli_query($con, "SELECT * FROM `participation` WHERE `id-activite` = '$id'");
+                                                                            while ($rowForCount = mysqli_fetch_array($reqForCounting)) {
+                                                                                $isDefElim = false;
+                                                                                $elimCheckQuery = mysqli_query($con, "SELECT * FROM `eliminations` WHERE `id_participation` = '" . intval($rowForCount['id-participation']) . "'");
+                                                                                if ($elimCheckQuery && mysqli_num_rows($elimCheckQuery) > 0) {
+                                                                                    while ($ec = mysqli_fetch_array($elimCheckQuery)) {
+                                                                                        if (intval($ec['is_definitive']) === 1) {
+                                                                                            $isDefElim = true;
+                                                                                            break;
+                                                                                        }
+                                                                                    }
+                                                                                }
+                                                                                if (!$isDefElim) {
+                                                                                    $countNotDefinitivelyEliminated++;
+                                                                                }
+                                                                            }
+                                                                            if ($countNotDefinitivelyEliminated > 0) {
+                                                                                $totalJetons = ($countJoueurs * $jetons) + ($totalRecaves * $recave_jetons);
+                                                                                $stackMoyen = intval($totalJetons / $countNotDefinitivelyEliminated);
+                                                                                echo 'Stack Moyen ' . $stackMoyen;
+                                                                            }
+                                                                            ?>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr style="background-color: #e8f4f8; font-weight: bold;">
+                                                                        <td></td>
+                                                                        <td>Caves = <?php echo $countJoueurs * $buyin . ' €'; ?></td>
+                                                                        <td><?php echo 'Recaves = ' . $totalRecaves * $recave_montant . ' €'; ?></td>
+                                                                        <td><?php 
+                                                                            $totalAmount = ($countJoueurs * $buyin) + ($totalRecaves * $recave_montant);
+                                                                            echo 'PricePool = ' . $totalAmount . ' €'; 
+                                                                        ?></td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                            <div class="text-center" style="margin-top:15px; display: flex; justify-content: center; align-items: center;">
+                                                                <button class="btn btn-success" onclick="validerRecaves()" style="background-color: #28a745 !important; color: white !important; border-color: #28a745 !important;">Valider Modifications</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div id="JoueursE" class="rubrique">
                                             <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
                                                 
@@ -726,7 +736,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                     </div>
                                                                 </div>
                                                                 <div class="form-group">
-                                                                    <button type="submit" class="btn btn-success" name="submit_create_player" style="margin-bottom: 0;">
+                                                                    <button type="submit" class="btn btn-success" name="submit_create_player" style="margin-bottom: 0; background-color: #28a745 !important; color: white !important; border-color: #28a745 !important; opacity: 1 !important; visibility: visible !important;">
                                                                         Créer
                                                                     </button>
                                                                 </div>
@@ -768,23 +778,8 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                     </select>
                                                                 </div>
 
-                                                                <!-- <div class="form-group" style="flex: 1;">
-                                                                    <label for="table_reg_select" style="display: block; margin-bottom: 5px;">Table</label>
-                                                                    <select name="table" id="table_reg_select" class="form-control" style="width: 100%;">
-                                                                        <option value="">-- T --</option>
-                                                                        <?php for ($t = 1; $t <= 10; $t++): echo "<option value='$t'>T $t</option>"; endfor; ?>
-                                                                    </select>
-                                                                </div>
-
-                                                                <div class="form-group" style="flex: 1;">
-                                                                    <label for="siege_reg_select" style="display: block; margin-bottom: 5px;">Siège</label>
-                                                                    <select name="siege" id="siege_reg_select" class="form-control" disabled style="width: 100%;">
-                                                                        <option value="">-- S --</option>
-                                                                    </select>
-                                                                </div> -->
-
                                                                 <div class="form-group">
-                                                                    <button type="submit" class="btn btn-primary" name="submit_player_reg" style="margin-bottom: 0; background-color: #28a745; border-color: #28a745;">
+                                                                    <button type="submit" class="btn btn-primary" name="submit_player_reg" style="margin-bottom: 0; background-color: #28a745 !important; color: white !important; border-color: #28a745 !important; opacity: 1 !important; visibility: visible !important;">
                                                                         <i class="fa fa-plus"></i> Inscrire
                                                                     </button>
                                                                 </div>
@@ -819,7 +814,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                     </select>
                                                                 </div>
                                                                 <div class="form-group">
-                                                                    <button type="submit" class="btn btn-danger" name="submit_quick_delete" style="margin-bottom: 0;">
+                                                                    <button type="submit" class="btn btn-danger" name="submit_quick_delete" style="margin-bottom: 0; background-color: #dc3545 !important; color: white !important; border-color: #dc3545 !important; opacity: 1 !important; visibility: visible !important;">
                                                                         Supprimer
                                                                     </button>
                                                                 </div>
@@ -951,7 +946,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                 </table>
                                                                 <?php if (mysqli_num_rows($podium_q) > 0) { ?>
                                                                     <div class="text-right">
-                                                                        <button type="submit" name="submit_gains" class="btn btn-success">
+                                                                        <button type="submit" name="submit_gains" class="btn btn-success" style="background-color: #28a745 !important; color: white !important; border-color: #28a745 !important; opacity: 1 !important; visibility: visible !important;">
                                                                             <i class="fa fa-save"></i> Enregistrer les Gains
                                                                         </button>
                                                                     </div>
@@ -988,7 +983,7 @@ if (strlen($_SESSION['id'] == 0)) {
 
                                                         // Fonction pour jouer le son d'alarme
                                                         function playAlarm() {
-                                                            let alarmSound = new Audio('/newtimer/end.mp3');
+                                                            let alarmSound = new Audio('/blinde.mp3');
                                                             alarmSound.load();
                                                             alarmSound.play();
 
@@ -1293,6 +1288,7 @@ if (strlen($_SESSION['id'] == 0)) {
                             }
                         }
                     });
+
                 }
             };
 
@@ -1314,6 +1310,7 @@ if (strlen($_SESSION['id'] == 0)) {
                     }
 
                     const occupiedSeatsForTable = occupiedSeats
+
                         .filter(seat => seat.table === selectedTable)
                         .map(seat => seat.siege);
 

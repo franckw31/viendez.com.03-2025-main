@@ -20,7 +20,7 @@ if ($ecartsecondes1 < 1) {
     $_SESSION["stop"] = "1";
     ?>
 <script type="text/javascript">
-var audio2 = new Audio("/blinde.mp3");
+var audio2 = new Audio("/bblinde.mp3");
 audio2.play();
 </script>
 <?php

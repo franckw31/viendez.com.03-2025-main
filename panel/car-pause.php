@@ -36,7 +36,7 @@ if ($ecartsecondes < 1) {
     // $_SESSION["bl"]=$_SESSION["bl"]+1;    
 } else {
     if ($ecartsecondes < 36000) {
-        echo "Fin des recaves dans : " . gmdate("H", $ecartsecondes) . " H et " . gmdate("i", $ecartsecondes) . " Min";
+        echo "Pause dans : " . gmdate("H", $ecartsecondes) . " H et " . gmdate("i", $ecartsecondes) . " Min";
     }
 }
 ;
