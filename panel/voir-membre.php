@@ -1783,7 +1783,7 @@ if (isset($_POST['submitnotif'])) {
                 language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/fr-FR.json' },
                 dom: '<"row"<"col"B><"col"f>>rt<"row"<"col"i><"col"p>>',
                 buttons: ['copy', 'excel', 'pdf', 'print'],
-                pageLength: 8,
+                pageLength: 6,
                 order: [[0, 'desc']],
                 columnDefs: [
                     { targets: 0, type: 'date-eu' }

@@ -392,7 +392,7 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
 
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-16" />
-    <meta http-equiv="refresh" content="30">
+    <!-- <meta http-equiv="refresh" content="30"> -->
     <title>Admin | Edition Membre</title>
     <link
         href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic"
@@ -1003,7 +1003,7 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                     $reqnbt = mysqli_query($con, "SELECT * FROM `activite` WHERE `id-activite` = '$id' ");
                                     $res = mysqli_fetch_array($reqnbt);
                                     $nbt = $res["nb-tables"];
-                                    echo '--------'.$nbt.'---------';
+                                    /* echo '--------'.$nbt.'---------'; */
                                     if ($nbt == '1') { ?>
                                 <div id="bMenu">
                                     <a href="#" id="infos" class="btnnav" onmouseover="afficher1('infos')">Infos</a> 

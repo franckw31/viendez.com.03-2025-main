@@ -213,22 +213,182 @@ if (strlen($_SESSION['id'] == 0)) {
         </script> ; <?php
 
     }
-    if (isset($_POST['moins1'])) {
-        $id = $_GET['uid'];
+    
+    // VOUS POUVEZ SUPPRIMER LE BLOC if (isset($_POST['moins1'])) ICI CAR LE BOUTON A ÉTÉ REMPLACÉ
+    
+    // REMPLACEMENT : Logique pour avancer à la blinde suivante (au lieu de +1 min)
+    if (isset($_POST['next_blind'])) {
+        $id = intval($_GET['uid']);
+        $now = time();
+
+        // 1. Récupérer toutes les blindes
+        $q = mysqli_query($con, "SELECT * FROM `blindes-live` WHERE `id-activite` = '$id' ORDER BY `ordre` ASC");
+        $blinds = [];
+        while($b = mysqli_fetch_assoc($q)) { $blinds[] = $b; }
+
+        // 2. Trouver la blinde active
+        $currentIndex = -1;
+        foreach($blinds as $k => $b) {
+            if (strtotime($b['fin']) > $now) {
+                $currentIndex = $k;
+                break;
+            }
+        }
+
+        if ($currentIndex !== -1) {
+            // Nous sommes dans un niveau actif.
+            
+            // A. Terminer le niveau actuel immédiatement (pour qu'il ne soit plus sélectionné par le timer)
+            $currentId = $blinds[$currentIndex]['id'];
+            $pastDate = date("Y-m-d H:i:s", $now - 1); // Finir il y a 1 seconde
+            mysqli_query($con, "UPDATE `blindes-live` SET `fin` = '$pastDate' WHERE `id` = '$currentId'");
+
+            // B. Recalculer tous les niveaux SUIVANTS à partir de MAINTENANT
+            $runningTime = $now;
+            
+            for ($i = $currentIndex + 1; $i < count($blinds); $i++) {
+                $b = $blinds[$i];
+                $duration = intval($b['minutes']) * 60;
+                $runningTime += $duration;
+                $newFin = date("Y-m-d H:i:s", $runningTime);
+                $bId = $b['id'];
+                mysqli_query($con, "UPDATE `blindes-live` SET `fin` = '$newFin' WHERE `id` = '$bId'");
+            }
+            
+            // S'assurer que le jeu n'est pas en pause
+            mysqli_query($con, "UPDATE `blindes-live` SET `en_pause` = '0' WHERE `id-activite` = '$id'");
+        }
+
         ?>
         <script type="text/javascript">
-            window.location.replace("/panel/modif-horloge.php?act=<?php echo $id ?>&min=-1&sou=/panel/voir-blindes.php?uid=");
-        </script> ; <?php
-
+            window.location.replace("voir-blindes.php?uid=<?php echo $id; ?>");
+        </script>
+        <?php
     }
-    if (isset($_POST['plus1'])) {
-        $id = $_GET['uid'];
+
+    // NOUVEAU CODE : Logique pour revenir à la blinde précédente
+    if (isset($_POST['prev_blind'])) {
+        $id = intval($_GET['uid']);
+        $now = time();
+
+        // 1. Récupérer toutes les blindes triées
+        $q = mysqli_query($con, "SELECT * FROM `blindes-live` WHERE `id-activite` = '$id' ORDER BY `ordre` ASC");
+        $blinds = [];
+        while($b = mysqli_fetch_assoc($q)) { $blinds[] = $b; }
+
+        // 2. Trouver la blinde active (la première dont la fin est dans le futur)
+        $currentIndex = -1;
+        foreach($blinds as $k => $b) {
+            if (strtotime($b['fin']) > $now) {
+                $currentIndex = $k;
+                break;
+            }
+        }
+
+        // 3. Déterminer la blinde cible
+        if ($currentIndex === -1) {
+            // Si le tournoi est fini, on réactive la dernière blinde
+            $targetIndex = count($blinds) - 1;
+        } elseif ($currentIndex == 0) {
+            // Si on est au niveau 1, on le redémarre simplement
+            $targetIndex = 0;
+        } else {
+            // Sinon on recule d'un cran
+            $targetIndex = $currentIndex - 1;
+        }
+
+        // 4. Recalculer tout le planning à partir de la cible
+        if ($targetIndex >= 0 && !empty($blinds)) {
+            // Le nouveau départ est MAINTENANT
+            $runningTime = $now;
+
+            foreach($blinds as $k => $b) {
+                // On ne touche pas aux blindes déjà terminées avant la cible
+                if ($k < $targetIndex) {
+                    continue;
+                }
+
+                // On calcule la nouvelle fin : Temps courant + Durée de la blinde
+                $duration = intval($b['minutes']) * 60;
+                $runningTime += $duration;
+                $newFin = date("Y-m-d H:i:s", $runningTime);
+                $bId = $b['id'];
+
+                // Mise à jour en base
+                mysqli_query($con, "UPDATE `blindes-live` SET `fin` = '$newFin' WHERE `id` = '$bId'");
+            }
+            
+            // S'assurer que le jeu n'est pas en pause pour que le timer reparte
+            mysqli_query($con, "UPDATE `blindes-live` SET `en_pause` = '0' WHERE `id-activite` = '$id'");
+        }
+
+        // Rafraîchir la page
         ?>
         <script type="text/javascript">
-            window.location.replace("/panel/modif-horloge.php?act=<?php echo $id ?>&min=+1&sou=/panel/voir-blindes.php?uid=");
-        </script> ; <?php
-
+            window.location.replace("voir-blindes.php?uid=<?php echo $id; ?>");
+        </script>
+        <?php
     }
+
+    // NOUVEAU CODE : Logique pour RESET la blinde en cours
+    if (isset($_POST['reset_blind'])) {
+        $id = intval($_GET['uid']);
+        $now = time();
+
+        // 1. Récupérer toutes les blindes triées
+        $q = mysqli_query($con, "SELECT * FROM `blindes-live` WHERE `id-activite` = '$id' ORDER BY `ordre` ASC");
+        $blinds = [];
+        while($b = mysqli_fetch_assoc($q)) { $blinds[] = $b; }
+
+        // 2. Trouver la blinde active (celle qui est en cours ou qui vient de finir)
+        $currentIndex = -1;
+        foreach($blinds as $k => $b) {
+            if (strtotime($b['fin']) > $now) {
+                $currentIndex = $k;
+                break;
+            }
+        }
+
+        // 3. Déterminer la blinde cible à redémarrer
+        if ($currentIndex === -1) {
+            // Si le tournoi est fini (toutes les dates sont passées), on relance la dernière blinde
+            $targetIndex = count($blinds) - 1;
+        } else {
+            // Sinon on relance la blinde actuelle
+            $targetIndex = $currentIndex;
+        }
+
+        // 4. Recalculer le planning : La blinde cible redémarre MAINTENANT
+        if ($targetIndex >= 0 && !empty($blinds)) {
+            $runningTime = $now;
+
+            foreach($blinds as $k => $b) {
+                // On ne touche pas aux blindes passées avant la cible
+                if ($k < $targetIndex) {
+                    continue;
+                }
+
+                // Calcul de la nouvelle fin : Temps courant + Durée prévue
+                $duration = intval($b['minutes']) * 60;
+                $runningTime += $duration;
+                $newFin = date("Y-m-d H:i:s", $runningTime);
+                $bId = $b['id'];
+
+                // Mise à jour en base
+                mysqli_query($con, "UPDATE `blindes-live` SET `fin` = '$newFin' WHERE `id` = '$bId'");
+            }
+            
+            // On enlève la pause pour que ça reparte direct
+            mysqli_query($con, "UPDATE `blindes-live` SET `en_pause` = '0' WHERE `id-activite` = '$id'");
+        }
+
+        ?>
+        <script type="text/javascript">
+            window.location.replace("voir-blindes.php?uid=<?php echo $id; ?>");
+        </script>
+        <?php
+    }
+
     if (isset($_POST['pauseresume'])) {
         $id = intval($_GET['uid']);
         
@@ -520,25 +680,31 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                 <tr>
                                                                     <td colspan="3" style="text-align:center ;">
                                                                         <button type="submit" id="moins" class="btn btn-primaryg btn-block" name="moins">
-                                                                            <<< -2 Minutes </button>
+                                                                             -2 Minutes </button>
                                                                     </td>
                                                                     <td colspan="3" style="text-align:center !important ;">
                                                                         <button type="submit" class="btn btn-primary btn-block" name="pauseresume" style="background-color: #007bff !important; color: white !important; border-color: #007bff !important;">Pause / Resume</button>
                                                                     </td>
                                                                     <td colspan="3" style="text-align:center ;">
-                                                                        <button type="submit" class="btn btn-primary-rouge btn-block" name="plus">+2 Minutes >>></button>
+                                                                        <button type="submit" class="btn btn-primaryg btn-block" name="plus">+2 Minutes </button>
                                                                     </td>
                                                                 </tr>
                                                                 <tr>
                                                                     <td colspan="3" style="text-align:center ;">
-                                                                        <button type="submit" id="moins1" class="btn btn-primaryg btn-block" name="moins1">
-                                                                            <<< -1 Minute </button>
+                                                                        <!-- Remplacement du bouton -1 Minute par Blinde Précédente -->
+                                                                        <button type="submit" id="prev_blind" class="btn btn-warning btn-block" name="prev_blind" style="color: white !important; background-color: #ffc107 !important; border-color: #ffc107 !important;">
+                                                                            Blinde Précédente
+                                                                        </button>
                                                                     </td>
                                                                     <td colspan="3" style="text-align:center ;">
-                                                                        <button type="submit" class="btn btn-primary btn-block" name="pauseresume">Reset blinde</button>
+                                                                        <!-- CORRECTION : Changement du name="pauseresume" en name="reset_blind" -->
+                                                                        <button type="submit" class="btn btn-primary-rouge btn-block" name="reset_blind">Reset blinde</button>
                                                                     </td>
                                                                     <td colspan="3" style="text-align:center ;">
-                                                                        <button type="submit" class="btn btn-primary-rouge btn-block" name="plus1">+1 Minute >>></button>
+                                                                        <!-- Ancien bouton +1 Minute remplacé -->
+                                                                        <button type="submit" id="next_blind" class="btn btn-warning btn-block" name="next_blind" style="color: white !important; background-color: #ffc107 !important; border-color: #ffc107 !important;">
+                                                                            Blinde Suivante 
+                                                                        </button>
                                                                     </td>
                                                                 </tr>
                                                             </table>
@@ -547,7 +713,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                                     <!-- <?php include_once('horloge-sb.php'); ?>
                                                     <div style="color:orange ; font-size: 90px  ; text-align: center" id="response-sb"></div> -->
                                                     <?php include_once('horloge-pause.php'); ?>
-                                                    <div style="color:red ; font-size: 30px ; text-align: center" id="car-pause"></div>
+                                                    <div style="color:white ; font-size: 30px ; text-align: center" id="car-pause"></div>
                                                     <!-- <?php include_once('horloge-ante.php'); ?>
                                                     <div style="color:blue ; font-size: 50px ; text-align: center" id="response-ante"></div> -->
                                                     <?php include_once('horloge-estim.php'); ?>
@@ -560,7 +726,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                                         <div class="card-header"
                                                             style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); border-bottom: 3px solid #5568d3;">
                                                             <i class="fas fa-users" style="margin-right: 10px; font-size: 1.2em;"></i> 
-                                                            <strong style="font-size: 1.1em;">Liste des Joueurs - <a href="voir-activite.php?uid=<?php echo $id; ?>" style="color: white; text-decoration: underline;"><?php echo htmlspecialchars($res['titre-activite'], ENT_QUOTES); ?></a></strong>
+                                                            <strong style="font-size: 1.1em;"> <a href="voir-activite.php?uid=<?php echo $id; ?>" style="color: white; text-decoration: underline;"><?php echo htmlspecialchars($res['titre-activite'], ENT_QUOTES); ?></a></strong>
                                                         </div>
                                                         <div class="card-body" style="padding: 25px; background: linear-gradient(135deg, #fafbfc 0%, #f0f4ff 100%);">
                                                             <table class="table table-striped table-bordered players-table" style="font-size:14px;">
@@ -699,7 +865,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                 </tbody>
                                                             </table>
                                                             <div class="text-center" style="margin-top:15px; display: flex; justify-content: center; align-items: center;">
-                                                                <button class="btn btn-success" onclick="validerRecaves()" style="background-color: #28a745 !important; color: white !important; border-color: #28a745 !important;">Valider Modifications</button>
+                                                                <button class="btn btn-success" onclick="validerRecaves()" style="background-color: #28a745 !important; color: white !important; border-color: #28a745 !important;">Valider Recaves</button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -888,7 +1054,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                             <th style="width: 35%;">Joueur</th>
                                                                             <th style="width: 10%; text-align: center;">Recaves</th>
                                                                             <th style="width: 10%; text-align: center;">Bounty</th>
-                                                                            <th style="width: 35%;">Gain</th>
+                                                                            <th style="width: 35%;">Gains</th>
                                                                         </tr>
                                                                     </thead>
                                                                     <tbody>
@@ -932,7 +1098,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                                 // Gain : Input stylisé pour correspondre à la taille du texte (15px)
                                                                                 echo '<td style="vertical-align: middle;">
                                                                                         <div class="input-group">
-                                                                                            <input type="number" step="1" class="form-control" name="gains[' . $row_pod['id-participation'] . ']" value="' . floatval($row_pod['gain']) . '" placeholder="00" style="font-size: 15px; height: 34px;">
+                                                                                            <input type="number" step="1" class="form-control" name="gains[' . $row_pod['id-participation'] . ']" value="' . floatval($row_pod['gain']) . '" placeholder="000" style="font-weight:bold; font-size: 11px; height: 38px;">
                                                                                             
                                                                                         </div>
                                                                                       </td>';
@@ -962,103 +1128,123 @@ if (strlen($_SESSION['id'] == 0)) {
                                             <?php
                                             // Compte à rebours 30 secondes pour l'onglet outils
                                             ?>
-                                            <div id="countdown-container">
-                                                <div id="countdown-label">⏱️ Compte à rebours
+                                            <div id="countdown-container" style="text-align: center; padding-top: 20px;">
+                                                <div id="countdown-label" style="font-size: 50px; font-weight: bold; color: #555; margin-bottom: 10px;">
+                                                    ⏱️ Compte à rebours
                                                 </div>
-                                                <div id="countdown-timer">30
+                                                
+                                                <!-- Affichage agrandi -->
+                                                <div id="countdown-timer" style="font-size: 350px; font-weight: bold; line-height: 1; color: #333; font-family: 'Arial', sans-serif;">
+                                                    30
                                                 </div>
-                                                <div class="countdown-buttons">
-                                                    <button class="btn-countdown btn-start" id="btn-start">▶ START</button>
-                                                    <button class="btn-countdown btn-stop" id="btn-stop" disabled>⏸
-                                                        STOP</button>
-                                                    <button class="btn-countdown btn-reset" id="btn-reset">🔄 RESET</button>
-                                                    <script>
-                                                        let countdownTime = 30;
-                                                        let countdownTimer = null;
-                                                        let isRunning = false;
-                                                        const timerDisplay = document.getElementById('countdown-timer');
-                                                        const btnStart = document.getElementById('btn-start');
-                                                        const btnStop = document.getElementById('btn-stop');
-                                                        const btnReset = document.getElementById('btn-reset');
+                                                
+                                                <div class="countdown-buttons" style="margin-top: 30px; display: flex; justify-content: center; gap: 20px;">
+                                                    <button class="btn btn-success" id="btn-start" style="font-size: 30px; padding: 15px 40px; border-radius: 10px;">▶ START</button>
+                                                    <button class="btn btn-warning" id="btn-stop" disabled style="font-size: 30px; padding: 15px 40px; border-radius: 10px; color: white;">⏸ STOP</button>
+                                                    <button class="btn btn-primary" id="btn-reset" style="font-size: 30px; padding: 15px 40px; border-radius: 10px;">🔄 RESET</button>
+                                                </div>
 
-                                                        // Fonction pour jouer le son d'alarme
-                                                        function playAlarm() {
-                                                            let alarmSound = new Audio('/blinde.mp3');
-                                                            alarmSound.load();
-                                                            alarmSound.play();
+                                                <script>
+                                                    let countdownTime = 30;
+                                                    let countdownTimer = null;
+                                                    let isRunning = false;
+                                                    const timerDisplay = document.getElementById('countdown-timer');
+                                                    const btnStart = document.getElementById('btn-start');
+                                                    const btnStop = document.getElementById('btn-stop');
+                                                    const btnReset = document.getElementById('btn-reset');
 
-                                                            // Prononcé un message aussi
-                                                            if (typeof responsiveVoice !== 'undefined') {
-                                                                responsiveVoice.speak("Temps écoulé!", "French Female");
-                                                            }
+                                                    // Fonction pour jouer le son d'alarme
+                                                    function playAlarm() {
+                                                        let alarmSound = new Audio('/30s.mp3');
+                                                        alarmSound.load();
+                                                        alarmSound.play();
+
+                                                        // Prononcé un message aussi
+                                                        if (typeof responsiveVoice !== 'undefined') {
+                                                            responsiveVoice.speak("Temps écoulé!", "French Female");
+                                                        }
+                                                    }
+
+                                                    // Mettre à jour l'affichage
+                                                    function updateDisplay() {
+                                                        // Logique d'affichage : Entier si > 5s, Dixièmes si <= 5s
+                                                        if (countdownTime > 5) {
+                                                            timerDisplay.textContent = Math.ceil(countdownTime);
+                                                        } else {
+                                                            // Affiche 1 décimale (ex: 4.9)
+                                                            timerDisplay.textContent = countdownTime.toFixed(1);
                                                         }
 
-                                                        // Mettre à jour l'affichage
-                                                        function updateDisplay() {
-                                                            timerDisplay.textContent = countdownTime;
-
-                                                            // Ajouter une animation quand on approche de 0
-                                                            if (countdownTime <= 5 && countdownTime > 0) {
-                                                                timerDisplay.classList.add('warning');
-                                                            } else {
-                                                                timerDisplay.classList.remove('warning');
-                                                            }
+                                                        // Ajouter une animation et couleur rouge quand on approche de 0
+                                                        if (countdownTime <= 5) {
+                                                            timerDisplay.style.color = 'red';
+                                                        } else {
+                                                            timerDisplay.style.color = '#333';
                                                         }
+                                                    }
 
-                                                        // Démarrer le compte à rebours
-                                                        btnStart.addEventListener('click', function () {
-                                                            if (!isRunning && countdownTime > 0) {
-                                                                isRunning = true;
-                                                                btnStart.disabled = true;
-                                                                btnStop.disabled = false;
-                                                                btnReset.disabled = true;
+                                                    // Démarrer le compte à rebours
+                                                    btnStart.addEventListener('click', function () {
+                                                        if (!isRunning && countdownTime > 0) {
+                                                            isRunning = true;
+                                                            btnStart.disabled = true;
+                                                            btnStop.disabled = false;
+                                                            btnReset.disabled = true;
 
-                                                                countdownTimer = setInterval(function () {
-                                                                    countdownTime--;
+                                                            // On utilise Date.now() pour calculer le temps écoulé précisément
+                                                            let lastTime = Date.now();
+
+                                                            // Intervalle (10ms)
+                                                            countdownTimer = setInterval(function () {
+                                                                let now = Date.now();
+                                                                // Correction ici : division par 1000 pour avoir des secondes, pas des déci-secondes
+                                                                let deltaTime = (now - lastTime) / 1000; 
+                                                                lastTime = now;
+
+                                                                countdownTime -= deltaTime;
+
+                                                                if (countdownTime <= 0) {
+                                                                    countdownTime = 0;
                                                                     updateDisplay();
+                                                                    clearInterval(countdownTimer);
+                                                                    isRunning = false;
+                                                                    playAlarm();
 
-                                                                    if (countdownTime <= 0) {
-                                                                        clearInterval(countdownTimer);
-                                                                        isRunning = false;
-                                                                        timerDisplay.textContent = '0';
-                                                                        timerDisplay.classList.add('warning');
-                                                                        playAlarm();
+                                                                    btnStart.disabled = true;
+                                                                    btnStop.disabled = true;
+                                                                    btnReset.disabled = false;
+                                                                } else {
+                                                                    updateDisplay();
+                                                                }
+                                                            }, 10); // Mise à jour toutes les 10ms pour fluidité
+                                                        }
+                                                    });
 
-                                                                        btnStart.disabled = true;
-                                                                        btnStop.disabled = true;
-                                                                        btnReset.disabled = false;
-                                                                    }
-                                                                }, 1000);
-                                                            }
-                                                        });
-
-                                                        // Arrêter le compte à rebours
-                                                        btnStop.addEventListener('click', function () {
-                                                            if (isRunning) {
-                                                                clearInterval(countdownTimer);
-                                                                isRunning = false;
-                                                                btnStart.disabled = false;
-                                                                btnStop.disabled = true;
-                                                                btnReset.disabled = false;
-                                                            }
-                                                        });
-
-                                                        // Réinitialiser le compte à rebours
-                                                        btnReset.addEventListener('click', function () {
+                                                    // Arrêter le compte à rebours
+                                                    btnStop.addEventListener('click', function () {
+                                                        if (isRunning) {
                                                             clearInterval(countdownTimer);
                                                             isRunning = false;
-                                                            countdownTime = 30;
-                                                            updateDisplay();
-                                                            timerDisplay.classList.remove('warning');
                                                             btnStart.disabled = false;
                                                             btnStop.disabled = true;
                                                             btnReset.disabled = false;
-                                                        });
+                                                        }
+                                                    });
 
-                                                        // Initialisation
+                                                    // Réinitialiser le compte à rebours
+                                                    btnReset.addEventListener('click', function () {
+                                                        clearInterval(countdownTimer);
+                                                        isRunning = false;
+                                                        countdownTime = 30;
                                                         updateDisplay();
-                                                    </script>
-                                                </div>
+                                                        btnStart.disabled = false;
+                                                        btnStop.disabled = true;
+                                                        btnReset.disabled = false;
+                                                    });
+
+                                                    // Initialisation
+                                                    updateDisplay();
+                                                </script>
                                             </div>
                                         </div>
                                         <div id="t3E" class="rubrique">
@@ -1233,70 +1419,6 @@ if (strlen($_SESSION['id'] == 0)) {
 
         <script type="text/javascript">
             // --- CORRECTION : Fonction restoreSnapshot ---
-            // On attache explicitement à window pour éviter les problèmes de portée
-            window.restoreSnapshot = function(snapshotId, idActivite) {
-                // On force l'ID de l'activité courante via PHP
-                var currentActivityId = <?php echo isset($_GET['uid']) ? intval($_GET['uid']) : 0; ?>;
-                
-                console.log("Tentative de restauration du snapshot " + snapshotId + " pour l'activité " + currentActivityId);
-
-                if (confirm("Êtes-vous sûr de vouloir restaurer ce point de sauvegarde ? Les données actuelles seront remplacées.")) {
-                    
-                    $.ajax({
-                        url: 'restore_blindes_snapshot.php',
-                        type: 'POST',
-                        // On envoie les données sous plusieurs formats pour être sûr que le PHP les trouve
-                        data: {
-                            id: snapshotId,
-                            snapshot_id: snapshotId,
-                            activity_id: currentActivityId,
-                            id_activite: currentActivityId
-                        },
-                        // On attend une réponse texte pour pouvoir analyser les erreurs PHP éventuelles
-                        dataType: 'text',
-                        success: function(response) {
-                            console.log("Réponse serveur:", response);
-                            
-                            // 1. Vérification d'erreurs PHP visibles dans la réponse
-                            if (response.indexOf('Fatal error') !== -1 || response.indexOf('Parse error') !== -1) {
-                                alert("Erreur CRITIQUE dans le fichier PHP :\n" + response.substring(0, 300) + "...");
-                                return;
-                            }
-
-                            // 2. Essayer de détecter si c'est du JSON avec un message d'erreur
-                            try {
-                                var json = JSON.parse(response);
-                                if (json.status === 'error') {
-                                    alert("Le serveur a refusé la restauration : " + (json.message || "Raison inconnue"));
-                                    return;
-                                }
-                            } catch(e) {
-                                // Ce n'est pas du JSON, ce n'est pas grave tant qu'il n'y a pas d'erreur fatale
-                                console.log("La réponse n'est pas du JSON valide, poursuite du rechargement...");
-                            }
-
-                            // 3. Si on arrive ici, on considère que c'est bon, on recharge
-                            // On ajoute un timestamp pour forcer le navigateur à ne pas utiliser le cache
-                            window.location.href = "voir-blindes.php?uid=" + currentActivityId + "&ts=" + new Date().getTime();
-                        },
-                        error: function(xhr, status, error) {
-                            console.error("Erreur AJAX:", status, error);
-                            if (xhr.status == 404) {
-                                alert("Erreur : Le fichier 'restore_blindes_snapshot.php' est introuvable sur le serveur.");
-                            } else {
-                                alert("Une erreur technique est survenue (Code " + xhr.status + "). Vérifiez la console (F12).");
-                            }
-                        }
-                    });
-
-                }
-            };
-
-            // Script pour la gestion dynamique des sièges (Inscription Rapide)
-            document.addEventListener('DOMContentLoaded', function() {
-                const occupiedSeats = <?php echo $occupied_seats_json; ?>;
-                const tableSelect = document.getElementById('table_reg_select');
-                const siegeSelect = document.getElementById('siege_reg_select');
 
                 function updateSiegeOptions() {
                     if (!tableSelect || !siegeSelect) return;
@@ -1370,7 +1492,7 @@ if (strlen($_SESSION['id'] == 0)) {
                 var modal = document.createElement('div');
                 modal.innerHTML = `
         <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999;">
-            <div style="background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 400px;">
+            <div style="background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 400px;">
                 <h5 style="margin-top: 0;">Quel joueur a éliminé <strong>${playerName}</strong> ?</h5>
                 ${activePlayersHtml}
                 <div style="text-align: right; margin-top: 15px;">
