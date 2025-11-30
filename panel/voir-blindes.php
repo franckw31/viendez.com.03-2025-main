@@ -692,7 +692,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                 <tr>
                                                                     <td colspan="3" style="text-align:center ;">
                                                                         <!-- Remplacement du bouton -1 Minute par Blinde Précédente -->
-                                                                        <button type="submit" id="prev_blind" class="btn btn-warning btn-block" name="prev_blind" style="color: white !important; background-color: #ffc107 !important; border-color: #ffc107 !important;">
+                                                                        <button type="submit" id="prev_blind" class="btn btn-warning btn-block" name="prev_blind" style="color: black !important; background-color: #ffc107 !important; border-color: #ffc107 !important;">
                                                                             Blinde Précédente
                                                                         </button>
                                                                     </td>
@@ -702,7 +702,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                     </td>
                                                                     <td colspan="3" style="text-align:center ;">
                                                                         <!-- Ancien bouton +1 Minute remplacé -->
-                                                                        <button type="submit" id="next_blind" class="btn btn-warning btn-block" name="next_blind" style="color: white !important; background-color: #ffc107 !important; border-color: #ffc107 !important;">
+                                                                        <button type="submit" id="next_blind" class="btn btn-warning btn-block" name="next_blind" style="color: black !important; background-color: #ffc107 !important; border-color: #ffc107 !important;">
                                                                             Blinde Suivante 
                                                                         </button>
                                                                     </td>

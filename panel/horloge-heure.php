@@ -21,13 +21,13 @@ $_SESSION["act"] = $id;
     </div>
     
     <!-- Affichage des infos du niveau (Blindes / Ante) -->
-    <div id="level-info" style="font-size: 80px; color: orange; margin-top: 10px;">
+    <div id="level-info" style="font-size: 80px; color: #ffc107 !important; margin-top: 10px;">
         Chargement...
     </div>
 
     <!-- Élément Audio caché -->
     <audio id="blind-alert-sound" preload="auto">
-        <source src="/blinde.mp3" type="audio/mpeg">
+        <source src="/bblinde.mp3" type="audio/mpeg">
     </audio>
 </div>
 
@@ -77,7 +77,7 @@ class PokerTimer {
     playAlert() {
         if (!this.audioEnabled) return;
 
-        const defaultSound = "/blinde.mp3";
+        const defaultSound = "/bblinde.mp3";
         
         // 1. Construire le nom du fichier spécifique
         // On remplace les "/" par des "-" (ex: "100/200" devient "100-200.mp3")

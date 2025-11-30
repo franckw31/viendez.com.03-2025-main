@@ -294,9 +294,9 @@ afficher('infos');
         $_SESSION['pause' . $id] = $pau;
         // 
         ?>
-// <div class='place3-content'> <audio src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" autoplay loop
+<!-- <div class='place3-content'> <audio src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" autoplay loop
         controls></audio></div>
-// <?php
+    --> <?php
 
         // echo '<script language="JavaScript" type="text/javascript"> window.location.replace("/panel/blindes.php?uid=64.php"); </script>';
         ?>
