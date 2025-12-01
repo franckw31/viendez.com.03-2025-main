@@ -1457,7 +1457,7 @@ if (strlen($_SESSION['id'] == 0)) {
                 if (tableSelect) {
                     tableSelect.addEventListener('change', updateSiegeOptions);
                 }
-            });
+            ;
         </script>
 
         <script type="text/javascript">

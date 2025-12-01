@@ -745,8 +745,9 @@ if (isset($_POST['submitnotif'])) {
                                                                                 <td colspan="4"></td>
                                                                             </tr>
                                                                             <tr>
-                                                                                <td style="display:none;" style="text-align:center ;">
-                                                                                    <button type="submit" class="btn btn-primary btn-block" name="submit">Mise à jour</button>
+                                                                                <!-- CORRECTION LIGNE 675 : Fusion des attributs style -->
+                                                                                <td style="display:none; text-align:center;">
+                                                                                    <button type="submit" class="btn btn-primary btn-block" name="submito">Mise à jour</button>
                                                                                 </td>
                                                                                 <!-- <td colspan="2">
                                                                                     <a href="liste-membres.php">Quitter </a>
@@ -889,12 +890,10 @@ if (isset($_POST['submitnotif'])) {
                                                                                 <td colspan="4"></td>
                                                                             </tr>
                                                                             <tr>
-                                                                                <td style="display:none;" style="text-align:center ;">
-                                                                                    <button type="submit" class="btn btn-primary btn-block" name="submito">Mise à jour</button>
+                                                                                <!-- CORRECTION LIGNE 806 : Fusion des attributs style -->
+                                                                                <td style="display:none; text-align:center;">
+                                                                                    <button type="submit" class="btn btn-primary btn-block" name="submitnotif">Mise à jour</button>
                                                                                 </td>
-                                                                                <!--<td colspan="2">
-                                                                                    <a href="liste-membres.php">Quitter </a>
-                                                                                </td> -->
                                                                             </tr>
                                                                             </form>
                                                                         </table>
@@ -1141,7 +1140,7 @@ if (isset($_POST['submitnotif'])) {
                                                                             </tr>
                                                                             <tr>
                                                                                 <td style="text-align:center ; display:none">
-                                                                                    <button type="submit" name="submitnotif" id="submitnotif" class="btn btn-oo btn-primary">
+                                                                                    <button type="submit" name="submit" id="submit" class="btn btn-oo btn-primary">
                                                                                         Mise à jour</button>
                                                                                 </td>
                                                                                 <td style="text-align:center ;" colspan="4">
@@ -1185,9 +1184,13 @@ if (isset($_POST['submitnotif'])) {
                                                                                 <td colspan="4"></td>
                                                                             </tr>
                                                                             <tr>
-                                                                                <td style="display:none;" style="text-align:center ;">
-                                                                                    <button type="submit" class="btn btn-primary btn-block" name="submitnotif">Mise à jour</button>
+                                                                                <!-- CORRECTION LIGNE 675 : Fusion des attributs style -->
+                                                                                <td style="display:none; text-align:center;">
+                                                                                    <button type="submit" class="btn btn-primary btn-block" name="submito">Mise à jour</button>
                                                                                 </td>
+                                                                                <!--<td colspan="2">
+                                                                                    <a href="liste-membres.php">Quitter </a>
+                                                                                </td> -->
                                                                             </tr>
                                                                             </form>
                                                                         </table>
@@ -1299,7 +1302,6 @@ if (isset($_POST['submitnotif'])) {
                                                                                         <option value="<?php echo htmlentities($row2['id']); ?>">
                                                                                             <?php echo htmlentities($row2['nom']); ?>
                                                                                         </option>
-                                                                                        $indiv=
                                                                                     <?php } ?>
                                                                                 </select>
                                                                             </div>
@@ -1415,7 +1417,6 @@ if (isset($_POST['submitnotif'])) {
                                                                                         <option value="<?php echo htmlentities($row2['id']); ?>">
                                                                                             <?php echo htmlentities($row2['nom']); ?>
                                                                                         </option>
-                                                                                        $indiv=
                                                                                     <?php } ?>
                                                                                 </select>
                                                                             </div>
@@ -1531,7 +1532,6 @@ if (isset($_POST['submitnotif'])) {
                                                                                         <option value="<?php echo htmlentities($row2['id_collection']); ?>">
                                                                                             <?php echo htmlentities($row2['nom']); ?>
                                                                                         </option>
-                                                                                        $indiv=
                                                                                     <?php } ?>
                                                                                 </select>
                                                                             </div>
