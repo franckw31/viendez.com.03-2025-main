@@ -139,7 +139,7 @@ if (isset($_POST['submit'])) {
                 mysqli_free_result($res_pseudo);
                 mysqli_stmt_close($stmt_pseudo);
             }
-
+echo "av ins";
             // Insérer en renseignant nom-membre (pseudo) et id-membre
             $sql_quick_reg = "INSERT INTO `participation` (`id-membre`, `nom-membre`, `id-activite`, `id-table`, `id-siege`, rake, cout_in) VALUES (?, ?, ?, ?, ?, ?, ?)";
 

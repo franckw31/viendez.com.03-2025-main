@@ -27,7 +27,7 @@ $_SESSION["act"] = $id;
 
     <!-- Élément Audio caché -->
     <audio id="blind-alert-sound" preload="auto">
-        <source src="/bblinde.mp3" type="audio/mpeg">
+        <source src="/blinde.mp3" type="audio/mpeg">
     </audio>
 </div>
 

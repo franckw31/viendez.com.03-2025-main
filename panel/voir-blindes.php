@@ -94,7 +94,7 @@ if (strlen($_SESSION['id'] == 0)) {
             } else {
                 // Insertion du nouveau membre
                 // Note: Ajustez 'creationDate' selon le nom exact de votre colonne date dans la table membres (ex: regDate, creation_date, etc.)
-                $insert_sql = "INSERT INTO `membres` (`pseudo`, `prenom`, `creationDate`) VALUES ('" . mysqli_real_escape_string($con, $pseudo) . "', '" . mysqli_real_escape_string($con, $prenom) . "', NOW())";
+                $insert_sql = "INSERT INTO `membres` (`pseudo`, `fname`, `creationDate`) VALUES ('" . mysqli_real_escape_string($con, $pseudo) . "', '" . mysqli_real_escape_string($con, $prenom) . "', NOW())";
                 
                 if (mysqli_query($con, $insert_sql)) {
                     $new_member_id = mysqli_insert_id($con);
@@ -1496,8 +1496,8 @@ if (strlen($_SESSION['id'] == 0)) {
                 <h5 style="margin-top: 0;">Quel joueur a éliminé <strong>${playerName}</strong> ?</h5>
                 ${activePlayersHtml}
                 <div style="text-align: right; margin-top: 15px;">
-                    <button class="btn btn-secondary btn-sm" onclick="this.parentElement.parentElement.parentElement.remove()">Annuler</button>
-                    <button class="btn btn-primary btn-sm" onclick="confirmElimination('${playerName}', this)">Confirmer</button>
+                    <button class="btn btn-secondary btn-sm" onclick="this.parentElement.parentElement.parentElement.remove()" style="display: inline-block !important; visibility: visible !important; opacity: 1 !important;">Annuler</button>
+                    <button class="btn btn-primary btn-sm" onclick="confirmElimination('${playerName}', this)" style="display: inline-block !important; visibility: visible !important; opacity: 1 !important;">Confirmer</button>
                 </div>
             </div>
         </div>
@@ -1668,8 +1668,8 @@ if (strlen($_SESSION['id'] == 0)) {
                 </label>
             </div>
             <div style="text-align:right;margin-top:10px;">
-                <button class="btn btn-secondary btn-sm" id="elimCancel">Annuler</button>
-                <button class="btn btn-primary btn-sm" id="elimConfirm" data-victim-part-id="${victimParticipationId}">Confirmer</button>
+                <button class="btn btn-secondary btn-sm" id="elimCancel" style="display: inline-block !important; visibility: visible !important; opacity: 1 !important;">Annuler</button>
+                <button class="btn btn-secondary btn-sm" id="elimConfirm" data-victim-part-id="${victimParticipationId}" style="display: inline-block !important; visibility: visible !important; opacity: 1 !important;">Confirmer</button>
             </div>
         </div>
     `;
