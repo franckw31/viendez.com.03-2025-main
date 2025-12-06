@@ -623,6 +623,47 @@ if (strlen($_SESSION['id'] == 0)) {
         visibility: visible !important;
         opacity: 1 !important;
     }
+
+    /* --- NOUVEAU CSS POUR REDUIRE LA HAUTEUR DU TABLEAU JOUEURS --- */
+    .players-table td, .players-table th {
+        padding: 2px 5px !important; /* Réduit fortement l'espace vertical */
+        vertical-align: middle !important;
+        height: 30px !important; /* Force une hauteur minimale plus petite */
+        font-size: 16px !important; /* AUGMENTÉ DE 13px A 15px */
+    }
+
+    /* Ajuster les inputs (recaves) et boutons pour qu'ils rentrent dans les petites cellules */
+    .players-table .input-group .form-control,
+    .players-table .input-group .btn {
+        height: 26px !important; /* Légèrement augmenté pour accommoder la police plus grande */
+        padding: 0px 5px !important;
+        font-size: 16px !important; /* AUGMENTÉ DE 12px A 14px */
+        line-height: 24px !important; /* Centrage vertical du texte */
+    }
+    
+    /* Ajuster la largeur de l'input recave pour que ça fasse propre */
+    .players-table .recave-input {
+        max-width: 50px !important;
+        text-align: center;
+    }
+
+    /* --- MODIFICATION : ESPACEMENT DES BOUTONS RECAVES --- */
+    /* On transforme le input-group en flexbox avec espacement */
+    .players-table .input-group {
+        display: flex !important;
+        gap: 10px !important; /* Espace de 10px entre chaque élément */
+        align-items: center !important;
+        justify-content: center !important; /* Centrer le tout dans la cellule */
+    }
+
+    /* On rétablit les bords arrondis pour chaque élément puisqu'ils sont séparés */
+    .players-table .input-group .form-control,
+    .players-table .input-group .btn {
+        border-radius: 4px !important;
+        margin-left: 0 !important; /* Annuler les marges négatives de Bootstrap */
+    }
+    /* --------------------------------------------------------------- */
+
         </style>
     </head>
 
@@ -729,7 +770,8 @@ if (strlen($_SESSION['id'] == 0)) {
                                                             <strong style="font-size: 1.1em;"> <a href="voir-activite.php?uid=<?php echo $id; ?>" style="color: white; text-decoration: underline;"><?php echo htmlspecialchars($res['titre-activite'], ENT_QUOTES); ?></a></strong>
                                                         </div>
                                                         <div class="card-body" style="padding: 25px; background: linear-gradient(135deg, #fafbfc 0%, #f0f4ff 100%);">
-                                                            <table class="table table-striped table-bordered players-table" style="font-size:14px;">
+                                                            <!-- AUGMENTATION DE LA TAILLE DE POLICE GLOBALE DU TABLEAU DE 14px A 16px -->
+                                                            <table class="table table-striped table-bordered players-table" style="font-size:16px;">
                                                                 <thead style="background: #667eea;">
                                                                     <tr>
                                                                         <th style="color: white !important;">Ordre</th>
@@ -747,17 +789,22 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                     $countJoueurs = 0;
                                                                     $rankingCounter = 1;
 
-                                                                    // Récupérer le buyin, recave_montant et jetons de l'activité
-                                                                    $buyinQuery = mysqli_query($con, "SELECT `recave_montant` , `jetons` , `recave_jetons` , `buyin`  FROM `activite` WHERE `id-activite` = '$id'");
-                                                                    $buyinRow = mysqli_fetch_array($buyinQuery);
-                                                                    $buyin = intval($buyinRow['buyin']) ?? 0;
-                                                                    $jetons = intval($buyinRow['jetons']) ?? 0;
-                                                                    $recave_jetons = intval($buyinRow['recave_jetons']) ?? 0;
-                                                                    $recave_montant = intval($buyinRow['recave_montant']) ?? 0;
-                                                                    
-                                                                    while ($row = mysqli_fetch_array($req)) {
-                                                                        $totalRecaves += intval($row['recave']);
-                                                                        $countJoueurs++;
+                                    // Récupérer le buyin, recave_montant et jetons de l'activité
+                                    // MODIFICATION : Ajout de `recave` dans le SELECT pour connaitre le max autorisé
+                                    $buyinQuery = mysqli_query($con, "SELECT `recave`, `recave_montant` , `jetons` , `recave_jetons` , `buyin`  FROM `activite` WHERE `id-activite` = '$id'");
+                                    $buyinRow = mysqli_fetch_array($buyinQuery);
+                                    $buyin = intval($buyinRow['buyin']) ?? 0;
+                                    $jetons = intval($buyinRow['jetons']) ?? 0;
+                                    $recave_jetons = intval($buyinRow['recave_jetons']) ?? 0;
+                                    $recave_montant = intval($buyinRow['recave_montant']) ?? 0;
+                                    
+                                    // On stocke le max recave dans une variable JS pour l'utiliser plus bas
+                                    $maxRecavesAllowed = intval($buyinRow['recave']);
+                                    echo "<script>var maxRecavesAllowed = " . $maxRecavesAllowed . ";</script>";
+                                    
+                                    while ($row = mysqli_fetch_array($req)) {
+                                        $totalRecaves += intval($row['recave']);
+                                        $countJoueurs++;
 
                                                                         // récupérer tous les éliminants enregistrés pour cette participation
                                                                         $elims_html = '';
@@ -799,9 +846,19 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                         $elimCountDisplay = $elimCount > 0 ? ' <span style="color:red;">(' . $elimCount . ')</span>' : '';
                                                                         $classementDisplay = $rankingCounter == 1 ? '<i class="fa fa-trophy" style="color: gold; font-size: 1.2em;"></i>' : $rankingCounter;
                                                                         
+                                                                        // CORRECTION ICI :
+                                                                        // Avant : $isEliminated = !empty($eliminatedBy) || $isDefinitivelyEliminated;
+                                                                        // Maintenant : On ne grise QUE si l'élimination est définitive.
+                                                                        // Si le joueur a recavé (même exceptionnellement), isDefinitivelyEliminated sera faux.
+                                                                        $isEliminated = $isDefinitivelyEliminated;
+                                                                        
+                                                                        $rowStyle = $isEliminated ? 'opacity:0.5;background-color:#f0f0f0;' : '';
+                                                                        $disabledAttr = $isEliminated ? 'disabled' : '';
+
                                                                         echo '<tr style="' . $rowStyle . '">
                                                                             <td style="text-align:center; font-weight:bold;">' . $classementDisplay . '</td>
-                                                                            <td class="pseudo-cell">' . htmlspecialchars($row['nom-membre'], ENT_QUOTES) . $elimCountDisplay . '</td>
+                                                                            <!-- CORRECTION : On isole le pseudo dans un span class="actual-pseudo" pour que le JS ne prenne pas le compteur (1) avec -->
+                                                                            <td class="pseudo-cell"><span class="actual-pseudo">' . htmlspecialchars($row['nom-membre'], ENT_QUOTES) . '</span>' . $elimCountDisplay . '</td>
                                                                             <td>
                                                                                 <div class="input-group" style="width:100%;">
                                                                                     <input type="number" class="form-control recave-input" data-id="' . intval($row['id-participation']) . '" data-member-id="' . intval($membre_id) . '" value="' . intval($row['recave']) . '" ' . $disabledAttr . ' />
@@ -1275,6 +1332,8 @@ if (strlen($_SESSION['id'] == 0)) {
                         </thead>
                         <tbody>
                             <?php 
+                                                        
+
                             $ret = mysqli_query($con, "SELECT * FROM `blindes-live` WHERE (`id-activite` = $id ) ORDER BY ordre ASC");
                             $cnt = 1;
                             while ($row = mysqli_fetch_array($ret)) { ?>
@@ -1470,7 +1529,8 @@ if (strlen($_SESSION['id'] == 0)) {
             function eliminatePlayer(button) {
                 var row = button.closest('tr');
                 var playerId = button.parentElement.querySelector('.recave-input').getAttribute('data-id');
-                var playerName = row.querySelector('.pseudo-cell').textContent;
+                // CORRECTION : On cible .actual-pseudo
+                var playerName = row.querySelector('.actual-pseudo').textContent;
 
                 // Récupérer tous les joueurs actifs (non éliminés)
                 var activePlayersHtml = '<select id="eliminatorSelect" style="width:100%; padding:8px;">\n';
@@ -1481,7 +1541,8 @@ if (strlen($_SESSION['id'] == 0)) {
                     var opacity = playerRow.style.opacity;
                     // Exclure la ligne du joueur éliminé et les joueurs déjà éliminés
                     if (opacity !== '0.5' && playerRow !== row) {
-                        var pseudo = playerRow.querySelector('.pseudo-cell').textContent;
+                        // CORRECTION : On cible .actual-pseudo
+                        var pseudo = playerRow.querySelector('.actual-pseudo').textContent;
                         activePlayersHtml += '<option value="' + pseudo + '">' + pseudo + '</option>\n';
                     }
                 });
@@ -1521,7 +1582,8 @@ if (strlen($_SESSION['id'] == 0)) {
                 // Trouver et mettre à jour la ligne du joueur éliminé
                 var rows = document.querySelectorAll('#joueurs-list tr:not(.total-row)');
                 rows.forEach(function (row) {
-                    if (row.querySelector('.pseudo-cell').textContent === eliminatedPlayer) {
+                    // CORRECTION : On compare avec .actual-pseudo
+                    if (row.querySelector('.actual-pseudo').textContent === eliminatedPlayer) {
                         var statusCell = row.querySelector('.eliminated-by');
                         statusCell.textContent = eliminatorName;
                         statusCell.style.color = 'red';
@@ -1640,14 +1702,18 @@ if (strlen($_SESSION['id'] == 0)) {
                 var options = '<option value="" data-member-id="">-- Sélectionner un joueur --</option>';
                 rows.forEach(function (r) {
                     var inp = r.querySelector('.recave-input');
-                    var pseudoCell = r.querySelector('.pseudo-cell');
-                    if (!inp || !pseudoCell) return;
+                    // CORRECTION : On vérifie la présence de .actual-pseudo
+                    var pseudoSpan = r.querySelector('.actual-pseudo');
+                    if (!inp || !pseudoSpan) return;
+                    
                     var partId = inp.dataset.id; // id-participation
                     var membreId = inp.dataset.memberId; // id-membre !!
                     if (String(partId) === String(victimParticipationId)) return; // exclure victime
                     // Exclure seulement les joueurs DEFINITIVEMENT éliminés (opacity 0.5 = greyed out)
                     if (r.style.opacity === '0.5') return;
-                    var pseudo = pseudoCell.textContent.trim();
+                    
+                    // CORRECTION : On récupère le texte propre du span
+                    var pseudo = pseudoSpan.textContent.trim();
                     options += '<option value="' + pseudo + '" data-member-id="' + membreId + '">' + pseudo +
                         '</option>';
                 });
@@ -1697,54 +1763,160 @@ if (strlen($_SESSION['id'] == 0)) {
             }
 
             function applyElimination(victimParticipationId, eliminatorMemberId, eliminatorName, isDefinitiveElim) {
-                // Mettre à jour l'interface : colonne eliminated-by, griser la ligne et désactiver contrôles
+                
+                // Fonction pour griser l'interface (UI)
+                var markAsEliminatedUI = function() {
+                    var rows = document.querySelectorAll('#joueurs-list tr');
+                    rows.forEach(function (r) {
+                        var inp = r.querySelector('.recave-input');
+                        if (!inp) return;
+                        if (String(inp.dataset.id) === String(victimParticipationId)) {
+                            var statusCell = r.querySelector('.eliminated-by');
+                            if (statusCell) {
+                                statusCell.textContent = eliminatorName;
+                                statusCell.setAttribute('data-eliminator-id', eliminatorMemberId);
+                                statusCell.style.color = 'red';
+                                statusCell.style.fontWeight = 'bold';
+                            }
+                            r.style.opacity = '0.5';
+                            r.style.backgroundColor = '#f0f0f0';
+                            var controls = r.querySelectorAll('input, button');
+                            controls.forEach(function (c) { c.disabled = true; });
+                        }
+                    });
+                };
+
+                // Récupération de la valeur actuelle de recave
+                var currentRecaveVal = 0;
                 var rows = document.querySelectorAll('#joueurs-list tr');
                 rows.forEach(function (r) {
                     var inp = r.querySelector('.recave-input');
-                    if (!inp) return;
-                    if (String(inp.dataset.id) === String(victimParticipationId)) {
-                        var statusCell = r.querySelector('.eliminated-by');
-                        if (statusCell) {
-                            statusCell.textContent = eliminatorName;
-                            statusCell.setAttribute('data-eliminator-id', eliminatorMemberId);
-                            statusCell.style.color = 'red';
-                            statusCell.style.fontWeight = 'bold';
-                        }
-                        r.style.opacity = '0.5';
-                        r.style.backgroundColor = '#f0f0f0';
-                        var controls = r.querySelectorAll('input, button');
-                        controls.forEach(function (c) {
-                            c.disabled = true;
-                        });
+                    if (inp && String(inp.dataset.id) === String(victimParticipationId)) {
+                        currentRecaveVal = parseInt(inp.value) || 0;
                     }
                 });
 
-                // Enregistrer l'élimination côté serveur : envoyer id-membre (eliminatorMemberId) et id-participation (victimParticipationId)
-                $.ajax({
-                    url: 'record_elimination.php',
-                    type: 'POST',
-                    data: {
-                        victim_id: victimParticipationId,
-                        eliminator_id: eliminatorMemberId,
-                        eliminator_name: eliminatorName,
-                        is_definitive: isDefinitiveElim
-                    },
-                    dataType: 'json',
-                    success: function (resp) {
-                        console.log('Réponse élimination:', resp);
-                        if (resp && resp.status === 'success') {
-                            alert(resp.message);
-                            location.reload();
-                        } else {
-                            alert('Erreur: ' + (resp ? resp.message : 'Réponse vide'));
+                // --- COEUR DE L'ELIMINATION ---
+                var executeElimination = function() {
+                    
+                    // Fonction finale : Enregistre l'élimination (Bounty) et recharge
+                    var finalizeElimination = function() {
+                        if (isDefinitiveElim) {
+                            markAsEliminatedUI();
                         }
-                    },
-                    error: function (xhr, status, error) {
-                        console.error('AJAX Error:', error);
-                        console.error('Response:', xhr.responseText);
-                        alert('Erreur AJAX: ' + error + ' - ' + xhr.responseText);
+
+                        $.ajax({
+                            url: 'record_elimination.php',
+                            type: 'POST',
+                            data: {
+                                victim_id: victimParticipationId,
+                                eliminator_id: eliminatorMemberId,
+                                eliminator_name: eliminatorName,
+                                is_definitive: isDefinitiveElim
+                            },
+                            dataType: 'json',
+                            success: function (resp) {
+                                if (resp && resp.status === 'success') {
+                                    location.reload();
+                                } else {
+                                    alert('Erreur: ' + (resp ? resp.message : 'Réponse vide'));
+                                }
+                            },
+                            error: function (xhr, status, error) {
+                                console.error('AJAX Error:', error);
+                                alert('Erreur AJAX: ' + error);
+                            }
+                        });
+                    };
+
+                    // --- CALCUL ET SAUVEGARDE DU CLASSEMENT ---
+                    // Si l'élimination est définitive, on calcule le rang et on le sauvegarde
+                    if (isDefinitiveElim) {
+                        // 1. Compter le nombre total de joueurs
+                        var totalJoueurs = document.querySelectorAll('#joueurs-list tr').length;
+                        
+                        // 2. Compter ceux DÉJÀ éliminés (ceux qui sont grisés)
+                        var dejaElimines = 0;
+                        document.querySelectorAll('#joueurs-list tr').forEach(function(row) {
+                            if (row.style.opacity === '0.5') {
+                                dejaElimines++;
+                            }
+                        });
+
+                        // 3. Le rang = Total - Déjà Eliminés
+                        // Ex: 10 joueurs. 0 éliminé. Je sors -> Rang 10.
+                        // Ex: 10 joueurs. 1 éliminé. Je sors -> Rang 9.
+                        var rangCalcule = totalJoueurs - dejaElimines;
+
+                        // 4. Sauvegarder ce rang via update_recave.php
+                        $.ajax({
+                            url: 'update_recave.php',
+                            type: 'POST',
+                            data: {
+                                updates: JSON.stringify([]), // Pas de modif de recave ici
+                                classements: JSON.stringify([{
+                                    'id-participation': victimParticipationId,
+                                    'classement': rangCalcule
+                                }])
+                            },
+                            dataType: 'json',
+                            success: function(response) {
+                                console.log("Classement sauvegardé : " + rangCalcule);
+                                // Une fois le classement sauvé, on finalise l'élimination
+                                finalizeElimination();
+                            },
+                            error: function() {
+                                console.error("Erreur sauvegarde classement");
+                                // On continue quand même pour ne pas bloquer
+                                finalizeElimination();
+                            }
+                        });
+                    } else {
+                        // Si pas définitif (recave), pas de classement à calculer
+                        finalizeElimination();
                     }
-                });
+                };
+
+                // --- LOGIQUE AUTO-RECAVE (inchangée) ---
+                if (!isDefinitiveElim) {
+                    var proceedWithRebuy = true; 
+
+                    if (typeof maxRecavesAllowed !== 'undefined' && currentRecaveVal >= maxRecavesAllowed) {
+                        var confirmExceptional = confirm("Le joueur a atteint le nombre maximum de recaves (" + maxRecavesAllowed + ").\n\nVoulez-vous autoriser une RECAVE EXCEPTIONNELLE ?\n\n- OK : Ajoute une recave (+1) et continue le tournoi.\n- Annuler : Élimine définitivement le joueur.");
+                        
+                        if (confirmExceptional) {
+                            proceedWithRebuy = true;
+                            isDefinitiveElim = false; 
+                        } else {
+                            proceedWithRebuy = false;
+                            isDefinitiveElim = true; 
+                        }
+                    }
+
+                    if (proceedWithRebuy) {
+                        var newRecave = currentRecaveVal + 1;
+                        var updates = [{ 'id-participation': victimParticipationId, 'recave': newRecave }];
+    
+                        $.ajax({
+                            url: 'update_recave.php',
+                            type: 'POST',
+                            data: { updates: JSON.stringify(updates), classements: JSON.stringify([]) },
+                            dataType: 'json',
+                            success: function(response) {
+                                executeElimination();
+                            },
+                            error: function(xhr, status, error) {
+                                alert("Attention : L'ajout automatique de la recave a échoué.");
+                                executeElimination();
+                            }
+                        });
+                    } else {
+                    executeElimination();
+                }
+                } else {
+                    // Si élimination définitive, pas de recave, on exécute directement
+                    executeElimination();
+                }
             }
 
             // Fonction pour mettre à jour la durée d'une blinde
