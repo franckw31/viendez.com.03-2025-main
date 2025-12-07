@@ -481,60 +481,6 @@ if (strlen($_SESSION['id'] == 0)) {
         <link rel="stylesheet" href="css/mes-styles.css">
         <link rel="stylesheet" href="css/les-styles.css">
 
-        <!-- AJOUTER CE BLOC CSS POUR FORCER LES BOUTONS -->
-        <style>
-            /* Force l'interactivité et la position au-dessus des autres éléments */
-            .players-table .btn {
-                cursor: pointer !important;
-                pointer-events: auto !important;
-                position: relative !important;
-                z-index: 100 !important;
-            }
-            
-            .players-table .input-group {
-                display: flex !important;
-                gap: 5px !important;
-                align-items: center !important;
-                justify-content: center !important;
-                flex-wrap: nowrap !important;
-                width: 100% !important;
-            }
-
-            .players-table .btn i {
-                pointer-events: none;
-            }
-
-            /* --- CORRECTION : CENTRAGE DU MENU (VERSION RENFORCÉE) --- */
-            
-            /* 1. On s'assure que le conteneur parent prend toute la largeur */
-            #auCentre {
-                width: 100% !important;
-                text-align: center !important;
-                display: block !important;
-            }
-
-            /* 2. On configure le menu en Flexbox et on annule les floats existants */
-            #bMenu {
-                display: flex !important;
-                justify-content: center !important; /* Centre horizontalement */
-                align-items: center !important;
-                flex-wrap: wrap !important;
-                gap: 10px !important;
-                width: 100% !important;
-                margin: 0 auto 20px auto !important;
-                float: none !important; /* Annule le float:left de voir-blindes.css */
-                padding: 0 !important;
-            }
-
-            /* 3. On réinitialise les boutons pour qu'ils obéissent au Flexbox */
-            .btnnav {
-                float: none !important; /* Annule le float:left des boutons */
-                display: inline-block !important;
-                margin: 0 !important; /* L'espace est géré par 'gap' dans #bMenu */
-                position: static !important; /* Évite les positionnements absolus */
-            }
-        </style>
-
         <script>
             responsiveVoice.setDefaultVoice("French Female")
         </script>
@@ -565,8 +511,160 @@ if (strlen($_SESSION['id'] == 0)) {
                 });
             }
         </script>
-       
+        <!-- <script>
+                            
+            var audio = new Audio("https://s3.amazonaws.com/audio-experiments/examples/elon_mono.wav");
 
+            function playAudio() {
+                audio.play();
+            }
+
+            function pauseAudio() {
+                audio.pause();
+            }
+
+            function cancelAudio() {
+                audio.pause();
+                audio.currentTime = 0;
+            }
+            //  playAudio();
+        </script> -->
+        <style>
+            /* Masquer toutes les sections par défaut */
+            .rubrique {
+                display: none !important;
+            }
+
+            /* Afficher uniquement la section active */
+            .rubrique.montrer {
+                display: block !important;
+            }
+            
+            /* Style pour le bouton actif */
+            .btnnavA {
+                background-color: #667eea !important;
+                color: white !important;
+                font-weight: bold !important;
+            }
+            
+            /* Réduire la largeur du bandeau des onglets */
+            #bMenu {
+                max-width: 900px; /* Limiter la largeur totale */
+                margin: 0 auto; /* Centrer le bandeau */
+                display: flex;
+                justify-content: center;
+                gap: 5px; /* Réduire l'espacement entre les onglets */
+                padding: 10px;
+            }
+            
+            /* Réduire la taille des boutons d'onglets */
+            .btnnav {
+                padding: 8px 15px !important; /* Réduire le padding */
+                font-size: 16px !important; /* Réduire la taille de la police */
+                min-width: auto !important; /* Supprimer la largeur minimale */
+                white-space: nowrap; /* Empêcher le retour à la ligne */
+            }
+            .snapshot-item .btn-danger {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.snapshot-item .btn-danger i.fa-trash {
+    display: inline !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Supprimer les règles qui masquent les boutons au hover */
+.snapshot-item:hover .btn-danger {
+    display: inline-block !important;
+}
+
+/* Forcer la visibilité des boutons dans les snapshots */
+    .snapshot-item {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    .snapshot-item .btn {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    .snapshot-item .btn-danger,
+    .snapshot-item .btn-delete-snapshot {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+    }
+
+    .snapshot-item .btn-danger i.fa-trash,
+    .snapshot-item .btn i {
+        display: inline !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    /* Supprimer toutes les règles qui pourraient masquer les boutons */
+    .snapshot-item:hover .btn,
+    .snapshot-item:hover .btn-danger {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    /* S'assurer que les conteneurs des boutons sont visibles */
+    .snapshot-item > div {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    /* --- NOUVEAU CSS POUR REDUIRE LA HAUTEUR DU TABLEAU JOUEURS --- */
+    .players-table td, .players-table th {
+        padding: 2px 5px !important; /* Réduit fortement l'espace vertical */
+        vertical-align: middle !important;
+        height: 30px !important; /* Force une hauteur minimale plus petite */
+        font-size: 16px !important; /* AUGMENTÉ DE 13px A 15px */
+    }
+
+    /* Ajuster les inputs (recaves) et boutons pour qu'ils rentrent dans les petites cellules */
+    .players-table .input-group .form-control,
+    .players-table .input-group .btn {
+        height: 26px !important; /* Légèrement augmenté pour accommoder la police plus grande */
+        padding: 0px 5px !important;
+        font-size: 16px !important; /* AUGMENTÉ DE 12px A 14px */
+        line-height: 24px !important; /* Centrage vertical du texte */
+    }
+    
+    /* Ajuster la largeur de l'input recave pour que ça fasse propre */
+    .players-table .recave-input {
+        max-width: 50px !important;
+        text-align: center;
+    }
+
+    /* --- MODIFICATION : ESPACEMENT DES BOUTONS RECAVES --- */
+    /* On transforme le input-group en flexbox avec espacement */
+    .players-table .input-group {
+        display: flex !important;
+        gap: 10px !important; /* Espace de 10px entre chaque élément */
+        align-items: center !important;
+        justify-content: center !important; /* Centrer le tout dans la cellule */
+    }
+
+    /* On rétablit les bords arrondis pour chaque élément puisqu'ils sont séparés */
+    .players-table .input-group .form-control,
+    .players-table .input-group .btn {
+        border-radius: 4px !important;
+        margin-left: 0 !important; /* Annuler les marges négatives de Bootstrap */
+    }
+    /* --------------------------------------------------------------- */
+
+        </style>
     </head>
 
     <body>
@@ -686,13 +784,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                     <?php
                                                                     $id = intval($_GET['uid']);
                                                                     // Récupérer les joueurs avec leurs dates d'élimination
-                                                                    // MODIFICATION DU TRI :
-                                                                    // 1. D'abord ceux qui sont EN JEU (classement = 0 ou NULL)
-                                                                    // 2. Ensuite ceux qui sont ÉLIMINÉS, triés par classement INVERSE (le dernier éliminé en haut de la liste des éliminés) ou par classement ASC selon votre préférence.
-                                                                    // Ici : En jeu d'abord, puis par classement décroissant (le 10ème, puis le 9ème...) pour avoir l'historique de sortie.
-                                                                    
-                                                                    $req = mysqli_query($con, "SELECT p.* FROM `participation` p WHERE p.`id-activite` = '$id' ORDER BY (p.`classement` = 0 OR p.`classement` IS NULL) DESC, p.`classement` ASC, p.`nom-membre` ASC");
-                                                                    
+                                                                    $req = mysqli_query($con, "SELECT p.*, MAX(e.created_at) as last_elimination_date FROM `participation` p LEFT JOIN `eliminations` e ON p.`id-participation` = e.`id_participation` WHERE p.`id-activite` = '$id' GROUP BY p.`id-participation` ORDER BY (p.`nom-membre-vainqueur` IS NULL OR p.`nom-membre-vainqueur` = '') DESC, last_elimination_date DESC, p.`nom-membre` ASC");
                                                                     $totalRecaves = 0;
                                                                     $countJoueurs = 0;
                                                                     $rankingCounter = 1;
@@ -714,95 +806,79 @@ if (strlen($_SESSION['id'] == 0)) {
                                         $totalRecaves += intval($row['recave']);
                                         $countJoueurs++;
 
-                                        // récupérer tous les éliminants enregistrés pour cette participation
-                                        $elims_html = '';
-                                        $isDefinitivelyEliminated = false;
-                                        
-                                        // CORRECTION : On récupère toutes les éliminations
-                                        $elim_q = mysqli_query($con, "SELECT * FROM `eliminations` WHERE `id_participation` = '" . intval($row['id-participation']) . "' ORDER BY `created_at` ASC");
-                                        
-                                        if ($elim_q && mysqli_num_rows($elim_q) > 0) {
-                                            $names = [];
-                                            while ($er = mysqli_fetch_array($elim_q)) {
-                                                $names[] = htmlspecialchars($er['nom_membre'], ENT_QUOTES);
-                                                
-                                                // CORRECTION MAJEURE : Vérification stricte après conversion en entier
-                                                // Si UNE SEULE élimination est définitive, le joueur est éliminé pour de bon.
-                                                if (intval($er['is_definitive']) === 1) {
-                                                    $isDefinitivelyEliminated = true;
-                                                }
-                                            }
-                                            $elims_html = implode(', ', $names);
-                                        }
+                                                                        // récupérer tous les éliminants enregistrés pour cette participation
+                                                                        $elims_html = '';
+                                                                        $isDefinitivelyEliminated = false;
+                                                                        $elim_q = mysqli_query($con, "SELECT * FROM `eliminations` WHERE `id_participation` = '" . intval($row['id-participation']) . "' ORDER BY `created_at` ASC");
+                                                                        if ($elim_q && mysqli_num_rows($elim_q) > 0) {
+                                                                            $names = [];
+                                                                            while ($er = mysqli_fetch_array($elim_q)) {
+                                                                                $names[] = htmlspecialchars($er['nom_membre'], ENT_QUOTES);
+                                                                                if (intval($er['is_definitive']) === 1) {
+                                                                                    $isDefinitivelyEliminated = true;
+                                                                                }
+                                                                            }
+                                                                            $elims_html = implode(', ', $names);
+                                                                        }
 
-                                        // récupérer id-membre depuis table membres
-                                        $membre_id = 0;
-                                        $pseudo_clean = mysqli_real_escape_string($con, $row['nom-membre']);
-                                        $mq = mysqli_query($con, "SELECT `id-membre` FROM `membres` WHERE `pseudo` = '$pseudo_clean' LIMIT 1");
-                                        if ($mq && mysqli_num_rows($mq) > 0) {
-                                            $mr = mysqli_fetch_array($mq);
-                                            $membre_id = intval($mr['id-membre']);
-                                        }
+                                                                        // récupérer id-membre depuis table membres
+                                                                        $membre_id = 0;
+                                                                        $pseudo_clean = mysqli_real_escape_string($con, $row['nom-membre']);
+                                                                        $mq = mysqli_query($con, "SELECT `id-membre` FROM `membres` WHERE `pseudo` = '$pseudo_clean' LIMIT 1");
+                                                                        if ($mq && mysqli_num_rows($mq) > 0) {
+                                                                            $mr = mysqli_fetch_array($mq);
+                                                                            $membre_id = intval($mr['id-membre']);
+                                                                        }
 
-                                        // Compter le nombre de joueurs éliminés par ce pseudo
-                                        $elimCount = 0;
-                                        $countElimQuery = mysqli_query($con, "SELECT COUNT(*) as cnt FROM `eliminations` e JOIN `participation` p ON e.`id_participation` = p.`id-participation` WHERE p.`id-activite` = '$id' AND e.`nom_membre` = '" . mysqli_real_escape_string($con, $row['nom-membre']) . "'");
-                                        if ($countElimQuery) {
-                                            $countElimRow = mysqli_fetch_array($countElimQuery);
-                                            $elimCount = intval($countElimRow['cnt']);
-                                        }
+                                                                        // Compter le nombre de joueurs éliminés par ce pseudo
+                                                                        $elimCount = 0;
+                                                                        $countElimQuery = mysqli_query($con, "SELECT COUNT(*) as cnt FROM `eliminations` e JOIN `participation` p ON e.`id_participation` = p.`id-participation` WHERE p.`id-activite` = '$id' AND e.`nom_membre` = '" . mysqli_real_escape_string($con, $row['nom-membre']) . "'");
+                                                                        if ($countElimQuery) {
+                                                                            $countElimRow = mysqli_fetch_array($countElimQuery);
+                                                                            $elimCount = intval($countElimRow['cnt']);
+                                                                        }
 
-                                        $elimCountDisplay = $elimCount > 0 ? ' <span style="color:red;">(' . $elimCount . ')</span>' : '';
-                                        $classementDisplay = $rankingCounter == 1 ? '<i class="fa fa-trophy" style="color: gold; font-size: 1.2em;"></i>' : $rankingCounter;
-                                        
-                                        // --- LOGIQUE D'ELIMINATION ---
-                                        // Si éliminé définitivement, on active le statut éliminé
-                                        $isEliminated = $isDefinitivelyEliminated;
-                                        
-                                        // CORRECTION CSS : Ajout de !important pour forcer le gris par dessus le style "striped" du tableau
-                                        $rowStyle = $isEliminated ? 'opacity:0.6; background-color:#dcdcdc !important;' : '';
-                                        $disabledAttr = $isEliminated ? 'disabled' : '';
+                                                                        $eliminatedBy = isset($row['nom-membre-vainqueur']) ? $row['nom-membre-vainqueur'] : '';
+                                                                        $isEliminated = !empty($eliminatedBy) || $isDefinitivelyEliminated;
+                                                                        $rowStyle = $isEliminated ? 'opacity:0.5;background-color:#f0f0f0;' : '';
+                                                                        $disabledAttr = $isEliminated ? 'disabled' : '';
 
-                                        // --- Restriction Recave (User 265 uniquement) ---
-                                        $recaveDisabledAttr = $disabledAttr; // Par défaut, suit l'état d'élimination
-                                        if ($_SESSION['id'] != 265) {
-                                            $recaveDisabledAttr = 'disabled'; // Désactivé si ce n'est pas l'admin 265
-                                        }
+                                                                        $elimCountDisplay = $elimCount > 0 ? ' <span style="color:red;">(' . $elimCount . ')</span>' : '';
+                                                                        $classementDisplay = $rankingCounter == 1 ? '<i class="fa fa-trophy" style="color: gold; font-size: 1.2em;"></i>' : $rankingCounter;
+                                                                        
+                                                                        // CORRECTION ICI :
+                                                                        // Avant : $isEliminated = !empty($eliminatedBy) || $isDefinitivelyEliminated;
+                                                                        // Maintenant : On ne grise QUE si l'élimination est définitive.
+                                                                        // Si le joueur a recavé (même exceptionnellement), isDefinitivelyEliminated sera faux.
+                                                                        $isEliminated = $isDefinitivelyEliminated;
+                                                                        
+                                                                        $rowStyle = $isEliminated ? 'opacity:0.5;background-color:#f0f0f0;' : '';
+                                                                        $disabledAttr = $isEliminated ? 'disabled' : '';
 
-                                        // Préparation du bouton PLUS (Caché si pas admin 265)
-                                        $btnPlusDisplay = '';
-                                        if ($_SESSION['id'] == 265) {
-                                            $btnPlusDisplay = '<button class="btn btn-primary btn-sm btn-plus" type="button" onclick="addRecave(this)" data-id="' . intval($row['id-participation']) . '" ' . $recaveDisabledAttr . ' style="background-color: #007bff !important; color: white !important; border-color: #007bff !important;">+</button>';
-                                        }
-
-                                        echo '<tr style="' . $rowStyle . '">
-                                            <td style="text-align:center; font-weight:bold;">' . $classementDisplay . '</td>
-                                            <td class="pseudo-cell"><span class="actual-pseudo">' . htmlspecialchars($row['nom-membre'], ENT_QUOTES) . '</span>' . $elimCountDisplay . '</td>
-                                            <td>
-                                                <div class="input-group" style="width:100%;">
-                                                    <!-- Input Recave -->
-                                                    <input type="number" class="form-control recave-input" data-id="' . intval($row['id-participation']) . '" data-member-id="' . intval($membre_id) . '" value="' . intval($row['recave']) . '" ' . $recaveDisabledAttr . ' />
-                                                    
-                                                    <!-- Bouton Plus -->
-                                                    ' . $btnPlusDisplay . '
-                                                    
-                                                    <!-- Bouton Sortie (Porte) -->
-                                                    <button class="btn btn-danger btn-sm btn-trash" type="button" onclick="confirmDeletePlayer(this)" data-id="' . intval($row['id-participation']) . '" data-member-id="' . intval($membre_id) . '" data-name="' . htmlspecialchars($row['nom-membre'], ENT_QUOTES) . '" ' . $disabledAttr . ' style="background-color: #dc3545 !important; color: white !important; border-color: #dc3545 !important;">
-                                                        <i class="fa fa-sign-out"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                            <td><span class="eliminated-by" data-player-id="' . intval($row['id-participation']) . '" style="font-size:12px;color:' . ($isEliminated ? 'red' : 'inherit') . ';font-weight:' . ($isEliminated ? 'bold' : 'normal') . '">';
-                                        
-                                        if (!empty($elims_html)) {
-                                            echo $elims_html;
-                                        } else {
-                                            echo '';
-                                        }
-                                        echo '</span></td></tr>';
-                                        $rankingCounter++;
-                                    }
-                                    ?>
+                                                                        echo '<tr style="' . $rowStyle . '">
+                                                                            <td style="text-align:center; font-weight:bold;">' . $classementDisplay . '</td>
+                                                                            <!-- CORRECTION : On isole le pseudo dans un span class="actual-pseudo" pour que le JS ne prenne pas le compteur (1) avec -->
+                                                                            <td class="pseudo-cell"><span class="actual-pseudo">' . htmlspecialchars($row['nom-membre'], ENT_QUOTES) . '</span>' . $elimCountDisplay . '</td>
+                                                                            <td>
+                                                                                <div class="input-group" style="width:100%;">
+                                                                                    <input type="number" class="form-control recave-input" data-id="' . intval($row['id-participation']) . '" data-member-id="' . intval($membre_id) . '" value="' . intval($row['recave']) . '" ' . $disabledAttr . ' />
+                                                                                    <button class="btn btn-primary btn-sm btn-plus" type="button" data-id="' . intval($row['id-participation']) . '" ' . $disabledAttr . ' style="background-color: #007bff !important; color: white !important; border-color: #007bff !important;">+</button>
+                                                                                    <button class="btn btn-danger btn-sm btn-trash" type="button" data-id="' . intval($row['id-participation']) . '" data-member-id="' . intval($membre_id) . '" data-name="' . htmlspecialchars($row['nom-membre'], ENT_QUOTES) . '" ' . $disabledAttr . ' style="background-color: #dc3545 !important; color: white !important; border-color: #dc3545 !important;"><i class="fa fa-trash"></i></button>
+                                                                                </div>
+                                                                            </td>
+                                                                            <td><span class="eliminated-by" data-player-id="' . intval($row['id-participation']) . '" style="font-size:12px;color:' . ($isEliminated ? 'red' : 'inherit') . ';font-weight:' . ($isEliminated ? 'bold' : 'normal') . '">';
+                                                                        
+                                                                        if (!empty($elims_html)) {
+                                                                            echo $elims_html;
+                                                                        } elseif ($isEliminated) {
+                                                                            echo htmlspecialchars($eliminatedBy, ENT_QUOTES);
+                                                                        } else {
+                                                                            echo '';
+                                                                        }
+                                                                        echo '</span></td></tr>';
+                                                                        $rankingCounter++;
+                                                                    }
+                                                                    ?>
                                                                     <tr style="background-color: #f0f0f0; font-weight: bold;">
                                                                         <td></td>
                                                                         <td><?php echo $countJoueurs . ' Caves à ' . $buyin . ' €'; ?></td>
@@ -845,23 +921,9 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                     </tr>
                                                                 </tbody>
                                                             </table>
-                                                            
-                                                            <?php 
-                                                            // DEBUG : On convertit l'ID en entier pour être sûr que la comparaison fonctionne
-                                                            // (Ex: "265" devient 265)
-                                                            $currentUserId = isset($_SESSION['id']) ? intval($_SESSION['id']) : 0;
-                                                            
-                                                            if ($currentUserId === 265) { 
-                                                            ?>
-                                                                <div class="row">
-                                                                    <div class="col-md-12 text-center" style="margin-top: 20px; margin-bottom: 20px; text-align: center;">
-                                                                        <button type="button" class="btn btn-success btn-lg ;color: black !important;" onclick="validerRecaves()" style="cursor: pointer; z-index: 999; position: relative; font-size: 16px; padding: 10px 30px;background-color: #11a527ff !important; color: white !important">
-                                                                            <i class="fa fa-check"></i> Valider Recaves
-                                                                        </button>
-                                                                    </div>
-                                                                </div>
-                                                            <?php } ?>
-
+                                                            <div class="text-center" style="margin-top:15px; display: flex; justify-content: center; align-items: center;">
+                                                                <button class="btn btn-success" onclick="validerRecaves()" style="background-color: #28a745 !important; color: white !important; border-color: #28a745 !important;">Valider Recaves</button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1325,28 +1387,20 @@ if (strlen($_SESSION['id'] == 0)) {
                                                     <i class="fa fa-trash"></i>
                                                 </a>
                                             </div>
-                                                                               </td>
+                                        </td>
                                     </tr>
                                 <?php 
                                 $cnt = $cnt + 1;
                             } ?>
                         </tbody>
                     </table>
-                    
-                    <!-- MODIFICATION : On affiche le bouton SEULEMENT si c'est l'utilisateur 265 -->
-                    <?php if ($_SESSION['id'] == 265) { ?>
-                        <div class="text-center" style="margin-top:15px; display: flex; justify-content: center; align-items: center;">
-                            <button class="btn btn-success" onclick="validerRecaves()" style="background-color: #28a745 !important; color: white !important; border-color: #28a745 !important;">Valider Recaves</button>
-                        </div>
-                    <?php } ?>
-
                 </div>
             </div>
         </div>
 
         <!-- Colonne droite: Gestion des sauvegardes -->
         <div style="flex: 1; min-width: 400px;">
-            <ol class="breadcrumb mb-4" style="background-color: transparent; padding:  0; margin-bottom: 15px;">
+            <ol class="breadcrumb mb-4" style="background-color: transparent; padding: 0; margin-bottom: 15px;">
             <script src="snapshots_management.js"></script>
             <div class="card mb-4"
                 style="border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); border: 1px solid #e8ecf1; overflow: hidden;">
@@ -1398,9 +1452,7 @@ if (strlen($_SESSION['id'] == 0)) {
             <!-- end: SETTINGS -->
         </div>
         <!-- start: MAIN JAVASCRIPTS -->
-        <!-- SUPPRIMER LA LIGNE CI-DESSOUS SI ELLE EXISTE DEJA DANS LE HEAD -->
-        <!-- <script src="vendor/jquery/jquery.min.js"></script> -->
-        
+        <script src="vendor/jquery/jquery.min.js"></script>
         <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
         <script src="vendor/modernizr/modernizr.js"></script>
         <script src="vendor/jquery-cookie/jquery.cookie.js"></script>
@@ -1409,7 +1461,6 @@ if (strlen($_SESSION['id'] == 0)) {
         <!-- <script src="https://code.jquery.com/jquery-3.7.0.js"></script> -->
         <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
         <!-- end: MAIN JAVASCRIPTS -->
-        
         <!-- start: JAVASCRIPTS REQUIRED FOR THIS PAGE ONLY -->
         <script src="vendor/maskedinput/jquery.maskedinput.min.js"></script>
         <script src="vendor/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js"></script>
@@ -1424,10 +1475,7 @@ if (strlen($_SESSION['id'] == 0)) {
         <script src="assets/js/main.js"></script>
         <!-- start: JavaScript Event Handlers for this page -->
         <script src="assets/js/form-elements.js"></script>
-        
-        <!-- INCLUSION DU FICHIER JS AVEC TIMESTAMP ANTI-CACHE -->
-        <!-- IMPORTANT : Doit être APRES jQuery et APRES main.js -->
-        <script src="voir-blindes.js?v=<?php echo time(); ?>"></script>
+        <script src="voir-blindes.js"></script>
 
         <script>
             jQuery(document).ready(function () {
@@ -1522,5 +1570,6 @@ if (strlen($_SESSION['id'] == 0)) {
             });
         </script>
     </body>
-</html>
+
+    </html>
 <?php } ?>

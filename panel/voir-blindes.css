@@ -1,3 +1,138 @@
+            /* Masquer toutes les sections par défaut */
+            .rubrique {
+                display: none !important;
+            }
+
+            /* Afficher uniquement la section active */
+            .rubrique.montrer {
+                display: block !important;
+            }
+            
+            /* Style pour le bouton actif */
+            .btnnavA {
+                background-color: #667eea !important;
+                color: white !important;
+                font-weight: bold !important;
+            }
+            
+            /* Réduire la largeur du bandeau des onglets */
+            #bMenu {
+                max-width: 900px; /* Limiter la largeur totale */
+                margin: 0 auto; /* Centrer le bandeau */
+                display: flex;
+                justify-content: center;
+                gap: 5px; /* Réduire l'espacement entre les onglets */
+                padding: 10px;
+            }
+            
+            /* Réduire la taille des boutons d'onglets */
+            .btnnav {
+                padding: 8px 15px !important; /* Réduire le padding */
+                font-size: 16px !important; /* Réduire la taille de la police */
+                min-width: auto !important; /* Supprimer la largeur minimale */
+                white-space: nowrap; /* Empêcher le retour à la ligne */
+            }
+            .snapshot-item .btn-danger {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.snapshot-item .btn-danger i.fa-trash {
+    display: inline !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Supprimer les règles qui masquent les boutons au hover */
+.snapshot-item:hover .btn-danger {
+    display: inline-block !important;
+}
+
+/* Forcer la visibilité des boutons dans les snapshots */
+    .snapshot-item {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    .snapshot-item .btn {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    .snapshot-item .btn-danger,
+    .snapshot-item .btn-delete-snapshot {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+    }
+
+    .snapshot-item .btn-danger i.fa-trash,
+    .snapshot-item .btn i {
+        display: inline !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    /* Supprimer toutes les règles qui pourraient masquer les boutons */
+    .snapshot-item:hover .btn,
+    .snapshot-item:hover .btn-danger {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+    
+    /* S'assurer que les conteneurs des boutons sont visibles */
+    .snapshot-item > div {
+        display: flex !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    /* --- NOUVEAU CSS POUR REDUIRE LA HAUTEUR DU TABLEAU JOUEURS --- */
+    .players-table td, .players-table th {
+        padding: 2px 5px !important; /* Réduit fortement l'espace vertical */
+        vertical-align: middle !important;
+        height: 30px !important; /* Force une hauteur minimale plus petite */
+        font-size: 16px !important; /* AUGMENTÉ DE 13px A 15px */
+    }
+
+    /* Ajuster les inputs (recaves) et boutons pour qu'ils rentrent dans les petites cellules */
+    .players-table .input-group .form-control,
+    .players-table .input-group .btn {
+        height: 26px !important; /* Légèrement augmenté pour accommoder la police plus grande */
+        padding: 0px 5px !important;
+        font-size: 16px !important; /* AUGMENTÉ DE 12px A 14px */
+        line-height: 24px !important; /* Centrage vertical du texte */
+    }
+    
+    /* Ajuster la largeur de l'input recave pour que ça fasse propre */
+    .players-table .recave-input {
+        max-width: 50px !important;
+        text-align: center;
+    }
+
+    /* --- MODIFICATION : ESPACEMENT DES BOUTONS RECAVES --- */
+    /* On transforme le input-group en flexbox avec espacement */
+    .players-table .input-group {
+        display: flex !important;
+        gap: 10px !important; /* Espace de 10px entre chaque élément */
+        align-items: center !important;
+        justify-content: center !important; /* Centrer le tout dans la cellule */
+    }
+
+    /* On rétablit les bords arrondis pour chaque élément puisqu'ils sont séparés */
+    .players-table .input-group .form-control,
+    .players-table .input-group .btn {
+        border-radius: 4px !important;
+        margin-left: 0 !important; /* Annuler les marges négatives de Bootstrap */
+    }
+    /* --------------------------------------------------------------- */
+
+
 /* Réduire hauteur des lignes du tableau "Liste des Joueurs" */
 .ppanel-body .players-table th,
 .ppanel-body .players-table td {
@@ -570,3 +705,4 @@
 .snapshot-item:hover .btn-danger {
     display: inline-block !important;
 }
+    
