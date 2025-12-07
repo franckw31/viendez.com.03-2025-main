@@ -1,4 +1,4 @@
-console.log("%c[voir-blindes.js] Chargement du script (Mode Direct Clean v3)", "color: green; font-weight: bold; font-size: 14px;");
+console.log("%c[voir-blindes.js] Chargement du script (Mode Direct Clean v4)", "color: green; font-weight: bold; font-size: 14px;");
 
 // --- 1. FONCTIONS D'ACTION DIRECTE (Appelées par onclick="") ---
 
@@ -19,9 +19,9 @@ window.addRecave = function(button) {
     }
 };
 
-// Action du bouton POUBELLE
+// Action du bouton POUBELLE / SORTIE
 window.confirmDeletePlayer = function(button) {
-    console.log("%c[Action] Clic sur bouton POUBELLE", "color: red; font-weight: bold;");
+    console.log("%c[Action] Clic sur bouton SORTIE", "color: red; font-weight: bold;");
     var participationId = button.getAttribute('data-id');
     var memberId = button.getAttribute('data-member-id');
     var name = button.getAttribute('data-name');
@@ -96,7 +96,9 @@ window.openEliminationModal = function(victimParticipationId, victimName) {
         var membreId = inp.dataset.memberId; 
         
         if (String(partId) === String(victimParticipationId)) return; 
-        if (r.style.opacity === '0.5') return; // Ignorer les joueurs déjà éliminés
+        
+        // Vérification robuste : si l'input est désactivé, le joueur est déjà éliminé
+        if (inp.disabled) return; 
         
         var pseudo = pseudoSpan.textContent.trim();
         options += '<option value="' + pseudo + '" data-member-id="' + membreId + '">' + pseudo + '</option>';
@@ -116,13 +118,13 @@ window.openEliminationModal = function(victimParticipationId, victimName) {
             <div style="margin-top:12px;padding:10px;border:1px solid #ddd;border-radius:4px;background-color:#f9f9f9;">
                 <label style="display:flex;align-items:center;margin:0;cursor:pointer;">
                     <input type="checkbox" id="definitiveElimination" style="margin-right:8px;cursor:pointer;" />
-                    <span style="font-size:13px;color: #b12a08ff !important">Éliminé définitivement (Sortie du tournoi)</span>
+                    <span style="font-size:13px;">Éliminé définitivement (Sortie du tournoi)</span>
                 </label>
             </div>
             
             <div style="text-align:right;margin-top:10px;">
                 <button class="btn btn-secondary btn-sm" id="elimCancel" style="margin-right:5px;">Annuler</button>
-                <button class="btn btn-primary btn-sm" style="background-color: #11a527ff !important" id="elimConfirm">Confirmer</button>
+                <button class="btn btn-primary btn-sm" id="elimConfirm">Confirmer</button>
             </div>
         </div>
     `;
@@ -172,8 +174,9 @@ window.applyElimination = function(victimParticipationId, eliminatorMemberId, el
                     statusCell.style.color = 'red';
                     statusCell.style.fontWeight = 'bold';
                 }
-                r.style.opacity = '0.5';
-                r.style.backgroundColor = '#f0f0f0';
+                // CORRECTION : On utilise les mêmes styles que le PHP (0.6 et #dcdcdc)
+                r.style.opacity = '0.6';
+                r.style.backgroundColor = '#dcdcdc';
                 var controls = r.querySelectorAll('input, button');
                 controls.forEach(function (c) { c.disabled = true; });
             }
@@ -196,8 +199,7 @@ window.applyElimination = function(victimParticipationId, eliminatorMemberId, el
             }
 
             console.log(" -> Envoi AJAX record_elimination.php");
-            console.log(" -> Data: is_definitive = " + (isDefinitiveElim ? 1 : 0));
-
+            
             $.ajax({
                 url: 'record_elimination.php',
                 type: 'POST',
@@ -205,7 +207,6 @@ window.applyElimination = function(victimParticipationId, eliminatorMemberId, el
                     victim_id: victimParticipationId,
                     eliminator_id: eliminatorMemberId,
                     eliminator_name: eliminatorName,
-                    // CORRECTION ICI : On convertit le booléen en entier (1 ou 0) pour SQL
                     is_definitive: isDefinitiveElim ? 1 : 0
                 },
                 dataType: 'json',
@@ -228,14 +229,20 @@ window.applyElimination = function(victimParticipationId, eliminatorMemberId, el
             console.log(" -> Calcul du classement pour élimination définitive");
             var totalJoueurs = document.querySelectorAll('#joueurs-list tr .recave-input').length;
             var dejaElimines = 0;
+            
+            // CORRECTION : Compter les joueurs déjà éliminés en vérifiant l'attribut DISABLED
+            // C'est beaucoup plus fiable que de vérifier l'opacité ou la couleur
             document.querySelectorAll('#joueurs-list tr').forEach(function(row) {
-                if (row.querySelector('.recave-input') && row.style.opacity === '0.5') {
+                var input = row.querySelector('.recave-input');
+                if (input && input.disabled) {
                     dejaElimines++;
                 }
             });
 
             var rangCalcule = totalJoueurs - dejaElimines;
-            console.log(" -> Rang calculé: " + rangCalcule);
+            console.log(" -> Total Joueurs: " + totalJoueurs);
+            console.log(" -> Déjà éliminés: " + dejaElimines);
+            console.log(" -> Rang calculé pour ce joueur: " + rangCalcule);
             
             $.ajax({
                 url: 'update_recave.php',
