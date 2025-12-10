@@ -1,4 +1,4 @@
-console.log("%c[voir-blindes.js] Chargement du script (Mode Direct Clean v4)", "color: green; font-weight: bold; font-size: 14px;");
+console.log("%c[voir-blindes.js] Chargement du script (Mode Direct Clean v6 - Fix Classement)", "color: green; font-weight: bold; font-size: 14px;");
 
 // --- 1. FONCTIONS D'ACTION DIRECTE (Appelées par onclick="") ---
 
@@ -89,6 +89,7 @@ window.openEliminationModal = function(victimParticipationId, victimName) {
     rows.forEach(function (r) {
         var inp = r.querySelector('.recave-input');
         var pseudoSpan = r.querySelector('.actual-pseudo');
+        var elimSpan = r.querySelector('.eliminated-by'); // On regarde si le joueur est déjà éliminé
         
         if (!inp || !pseudoSpan) return;
         
@@ -97,8 +98,8 @@ window.openEliminationModal = function(victimParticipationId, victimName) {
         
         if (String(partId) === String(victimParticipationId)) return; 
         
-        // Vérification robuste : si l'input est désactivé, le joueur est déjà éliminé
-        if (inp.disabled) return; 
+        // Si le span "eliminated-by" contient du texte, le joueur est déjà éliminé, on ne l'affiche pas dans la liste des tueurs
+        if (elimSpan && elimSpan.textContent.trim().length > 0) return;
         
         var pseudo = pseudoSpan.textContent.trim();
         options += '<option value="' + pseudo + '" data-member-id="' + membreId + '">' + pseudo + '</option>';
@@ -118,13 +119,13 @@ window.openEliminationModal = function(victimParticipationId, victimName) {
             <div style="margin-top:12px;padding:10px;border:1px solid #ddd;border-radius:4px;background-color:#f9f9f9;">
                 <label style="display:flex;align-items:center;margin:0;cursor:pointer;">
                     <input type="checkbox" id="definitiveElimination" style="margin-right:8px;cursor:pointer;" />
-                    <span style="font-size:13px;">Éliminé définitivement (Sortie du tournoi)</span>
+                    <span style="color:red; font-size:13px;">Éliminé définitivement (Sortie du tournoi)</span>
                 </label>
             </div>
             
             <div style="text-align:right;margin-top:10px;">
                 <button class="btn btn-secondary btn-sm" id="elimCancel" style="margin-right:5px;">Annuler</button>
-                <button class="btn btn-primary btn-sm" id="elimConfirm">Confirmer</button>
+                <button class="btn btn-primary btn-sm" style="color:white; background:green !important" id="elimConfirm">CONFIRMER</button>
             </div>
         </div>
     `;
@@ -174,7 +175,6 @@ window.applyElimination = function(victimParticipationId, eliminatorMemberId, el
                     statusCell.style.color = 'red';
                     statusCell.style.fontWeight = 'bold';
                 }
-                // CORRECTION : On utilise les mêmes styles que le PHP (0.6 et #dcdcdc)
                 r.style.opacity = '0.6';
                 r.style.backgroundColor = '#dcdcdc';
                 var controls = r.querySelectorAll('input, button');
@@ -230,11 +230,12 @@ window.applyElimination = function(victimParticipationId, eliminatorMemberId, el
             var totalJoueurs = document.querySelectorAll('#joueurs-list tr .recave-input').length;
             var dejaElimines = 0;
             
-            // CORRECTION : Compter les joueurs déjà éliminés en vérifiant l'attribut DISABLED
-            // C'est beaucoup plus fiable que de vérifier l'opacité ou la couleur
+            // CORRECTION MAJEURE : Compter les joueurs déjà éliminés
+            // On vérifie si la colonne "eliminated-by" contient du texte.
+            // C'est la méthode la plus fiable car elle ne dépend pas du CSS ou de l'état disabled.
             document.querySelectorAll('#joueurs-list tr').forEach(function(row) {
-                var input = row.querySelector('.recave-input');
-                if (input && input.disabled) {
+                var elimSpan = row.querySelector('.eliminated-by');
+                if (elimSpan && elimSpan.textContent.trim().length > 0) {
                     dejaElimines++;
                 }
             });
@@ -244,11 +245,12 @@ window.applyElimination = function(victimParticipationId, eliminatorMemberId, el
             console.log(" -> Déjà éliminés: " + dejaElimines);
             console.log(" -> Rang calculé pour ce joueur: " + rangCalcule);
             
+            // On envoie le classement à update_recave.php
             $.ajax({
                 url: 'update_recave.php',
                 type: 'POST',
                 data: {
-                    updates: JSON.stringify([]),
+                    updates: JSON.stringify([]), // Pas de mise à jour de recave
                     classements: JSON.stringify([{
                         'id-participation': victimParticipationId,
                         'classement': rangCalcule
@@ -256,11 +258,12 @@ window.applyElimination = function(victimParticipationId, eliminatorMemberId, el
                 },
                 dataType: 'json',
                 success: function(response) {
-                    console.log(" -> Classement sauvegardé.");
+                    console.log(" -> Classement sauvegardé avec succès.");
                     finalizeElimination();
                 },
                 error: function(xhr, status, error) {
                     console.error("Erreur sauvegarde classement:", error);
+                    // On continue quand même pour enregistrer l'élimination
                     finalizeElimination();
                 }
             });
