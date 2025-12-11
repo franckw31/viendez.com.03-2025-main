@@ -214,6 +214,7 @@ if (strlen($_SESSION['id']) == 0) {
                 // Tri initial côté client : date décroissante
                 order: [[2, 'desc']],
                 columnDefs: [
+                    { targets: 1, orderable: false },
                     { targets: 2, type: 'date-eu' },
                     { targets: [4, 5], className: 'points-cell' }
                 ],

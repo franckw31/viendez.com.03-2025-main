@@ -25,9 +25,12 @@ window.confirmDeletePlayer = function(button) {
     var participationId = button.getAttribute('data-id');
     var memberId = button.getAttribute('data-member-id');
     var name = button.getAttribute('data-name');
+    // AJOUT : Récupération de l'ID activité
+    var activityId = button.getAttribute('data-activity-id');
     
     console.log(" -> Joueur ciblé: " + name + " (ID Part: " + participationId + ")");
-    openEliminationModal(participationId, name);
+    // AJOUT : Passage de l'ID activité à la modale
+    openEliminationModal(participationId, name, activityId);
 };
 
 // Action du bouton VALIDER (Vert)
@@ -75,7 +78,8 @@ window.deleteBlinde = function(id, activiteId) {
 
 // --- 2. LOGIQUE D'ELIMINATION ET MODALE ---
 
-window.openEliminationModal = function(victimParticipationId, victimName) {
+// AJOUT : Paramètre activityId dans la signature
+window.openEliminationModal = function(victimParticipationId, victimName, activityId) {
     console.log("[Modale] Ouverture pour éliminer: " + victimName);
     
     // Nettoyage ancienne modale
@@ -98,8 +102,13 @@ window.openEliminationModal = function(victimParticipationId, victimName) {
         
         if (String(partId) === String(victimParticipationId)) return; 
         
-        // Si le span "eliminated-by" contient du texte, le joueur est déjà éliminé, on ne l'affiche pas dans la liste des tueurs
-        if (elimSpan && elimSpan.textContent.trim().length > 0) return;
+        // --- CORRECTION ICI ---
+        // Cette ligne empêchait les joueurs éliminés d'apparaître dans la liste.
+        // On la commente pour autoriser tout le monde (même les éliminés) à être le "tueur".
+        
+        // if (elimSpan && elimSpan.textContent.trim().length > 0) return;
+        
+        // ----------------------
         
         var pseudo = pseudoSpan.textContent.trim();
         options += '<option value="' + pseudo + '" data-member-id="' + membreId + '">' + pseudo + '</option>';
@@ -154,11 +163,13 @@ window.openEliminationModal = function(victimParticipationId, victimName) {
         }
 
         document.body.removeChild(overlay);
-        applyElimination(victimParticipationId, eliminatorMemberId, eliminatorName, isDefinitive);
+        // AJOUT : Passage de activityId à la fonction d'application
+        applyElimination(victimParticipationId, eliminatorMemberId, eliminatorName, isDefinitive, activityId);
     };
 };
 
-window.applyElimination = function(victimParticipationId, eliminatorMemberId, eliminatorName, isDefinitiveElim) {
+// AJOUT : Paramètre activityId dans la signature
+window.applyElimination = function(victimParticipationId, eliminatorMemberId, eliminatorName, isDefinitiveElim, activityId) {
     console.log("%c[Process] Application de l'élimination...", "color: purple; font-weight: bold;");
     
     var markAsEliminatedUI = function() {
@@ -207,7 +218,8 @@ window.applyElimination = function(victimParticipationId, eliminatorMemberId, el
                     victim_id: victimParticipationId,
                     eliminator_id: eliminatorMemberId,
                     eliminator_name: eliminatorName,
-                    is_definitive: isDefinitiveElim ? 1 : 0
+                    is_definitive: isDefinitiveElim ? 1 : 0,
+                    activity_id: activityId // AJOUT : Envoi de l'ID activité au PHP
                 },
                 dataType: 'json',
                 success: function (resp) {
@@ -315,3 +327,103 @@ window.applyElimination = function(victimParticipationId, eliminatorMemberId, el
         executeElimination();
     }
 };
+
+// --- 3. GESTION DES BLINDES (Restoration) ---
+
+// Mise à jour unitaire (SB, BB, Ante)
+window.updateBlindeValue = function(input) {
+    var blindeId = input.getAttribute('data-id');
+    var field = input.getAttribute('data-field'); // 'sb', 'bb', 'ante'
+    var newValue = input.value.trim();
+
+    if (newValue === '') return;
+
+    $.ajax({
+        url: 'update_blindes_values.php',
+        type: 'POST',
+        data: {
+            id: blindeId,
+            field: field,
+            value: newValue
+        },
+        dataType: 'json',
+        success: function (response) {
+            if (response.status === 'success') {
+                input.style.borderColor = 'green';
+                console.log("[Blindes] " + field + " mis à jour (ID: " + blindeId + ")");
+            } else {
+                input.style.borderColor = 'red';
+                console.error("[Blindes] Erreur update " + field + ": " + response.message);
+            }
+        },
+        error: function () {
+            input.style.borderColor = 'red';
+        }
+    });
+};
+
+// Mise à jour unitaire (Durée)
+window.updateDureBlinde = function(input) {
+    var blindeId = input.getAttribute('data-id');
+    var newDuree = input.value.trim();
+
+    if (newDuree === '') return;
+
+    $.ajax({
+        url: 'update_duree_blinde.php',
+        type: 'POST',
+        data: {
+            id: blindeId,
+            duree: newDuree
+        },
+        dataType: 'json',
+        success: function(response) {
+            if (response.status === 'success') {
+                input.style.borderColor = 'green';
+                console.log("[Blindes] Durée mise à jour (ID: " + blindeId + ")");
+            } else {
+                input.style.borderColor = 'red';
+                console.error("[Blindes] Erreur update durée: " + response.message);
+            }
+        },
+        error: function() {
+            input.style.borderColor = 'red';
+        }
+    });
+};
+
+// Fonction globale pour le bouton "Valider Blindes"
+window.validerBlindes = function() {
+    console.log("[Action] Validation manuelle de toutes les blindes");
+    var count = 0;
+    
+    // Mettre à jour SB, BB, Ante
+    var inputs = document.querySelectorAll('.blinde-input');
+    inputs.forEach(function(inp) { 
+        updateBlindeValue(inp); 
+        count++;
+    });
+    
+    // Mettre à jour Durée
+    var durees = document.querySelectorAll('.duree-input');
+    durees.forEach(function(inp) { 
+        updateDureBlinde(inp); 
+        count++;
+    });
+    
+    if(count > 0) {
+        alert("Validation lancée pour " + count + " champs.");
+    } else {
+        alert("Aucun champ de blinde trouvé.");
+    }
+};
+
+// Auto-save sur changement (Blur / Enter géré par le navigateur sur 'change')
+document.addEventListener('change', function(e) {
+    if (e.target.classList.contains('blinde-input')) {
+        updateBlindeValue(e.target);
+    }
+    if (e.target.classList.contains('duree-input')) {
+        updateDureBlinde(e.target);
+    }
+});

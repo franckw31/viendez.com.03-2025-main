@@ -53,7 +53,7 @@ if (strlen($_SESSION['id'] == 0)) {
         $ante = $_POST['ante'];
         $idmembre = $_POST['id-membre'];
         $commentaire = $_POST['commentaire'];
-        $structure = $_POST['id_structure'];
+        $structure = $_POST['structure'];
         $jetons = $_POST['jetons'];
         $bonus = $_POST['bonus'];
         $lng = $_POST['lng'];
@@ -71,6 +71,7 @@ if (strlen($_SESSION['id'] == 0)) {
                 `places` = '$places',
                 `nb-tables` = '$nb_tables',
                 `commentaire` = '$commentaire',
+                `id_structure` = '$structure',
                 `buyin` = '$buyin',
                 `rake` = '$rake',
                 `bounty` = '$bounty',
@@ -1625,6 +1626,7 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                                             </button>
                                                     </div>
                                                 </div>
+
                                             </div>
 
                                             <div class='square-box' opacity:0.85>

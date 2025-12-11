@@ -1,18 +1,26 @@
 <?php
-session_start();
-$_SESSION["estimfin"] = '0';
-error_reporting(0);
-include_once('include/config.php');
+// filepath: c:\Users\MSI\Desktop\www\panel\horloge-estim.php
 
-if ($_SESSION["estimfin"] == '0') { ?> 
-    <script type="text/javascript">
-        let nIntervId2;
-        function compteure() { if (!nIntervId2) { nIntervId2 = setInterval(decomptee, 1000);}}
-        function decomptee() { var xmlhttp=new XMLHttpRequest(); xmlhttp.open("GET","horloge-estim.php",false); xmlhttp.send(null);                     
-            if (xmlhttp.responseText == 0) {stopcompteure();compteure()} else {document.getElementById("horloge-estim").innerHTML=xmlhttp.responseText;}}
-        function stopcompteure() { clearInterval(nIntervId2); nIntervId2 = null; }
-        stopcompteure();
-        compteure();
-    </script>
-<?php ; }
-?> 
+// Sécurité : Si la variable $id n'existe pas (cas d'un appel direct), on la récupère
+if (!isset($id) && isset($_GET['uid'])) {
+    $id = intval($_GET['uid']);
+}
+
+// Sécurité : Si la connexion DB n'est pas là, on l'ouvre
+if (!isset($con)) {
+    include('include/config.php');
+}
+
+if (isset($id) && $id > 0) {
+    // On récupère la date de fin du TOUT DERNIER niveau configuré pour ce tournoi
+    $q_estim = mysqli_query($con, "SELECT `fin` FROM `blindes-live` WHERE `id-activite` = '$id' ORDER BY `ordre` DESC LIMIT 1");
+    
+    if ($q_estim && $r_estim = mysqli_fetch_assoc($q_estim)) {
+        $timestamp_fin = strtotime($r_estim['fin']);
+        // Affiche l'heure au format H:i (ex: 23:45)
+        echo "Fin estimée : " . date("H:i", $timestamp_fin);
+    } else {
+        echo "Fin : --:--";
+    }
+}
+?>

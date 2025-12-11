@@ -1,70 +1,98 @@
 <?php
+// filepath: c:\Users\MSI\Desktop\www\panel\timer-api.php
+ob_start();
 session_start();
+error_reporting(0);
 include('include/config.php');
-date_default_timezone_set('Arctic/Longyearbyen'); // Garder votre timezone actuelle
+ob_clean();
 
 header('Content-Type: application/json');
-
-$id_activite = isset($_GET['uid']) ? intval($_GET['uid']) : 0;
-
-if ($id_activite === 0 && isset($_SESSION['act'])) {
-    $id_activite = $_SESSION['act'];
-}
+date_default_timezone_set('Europe/Paris');
 
 $response = [
     'status' => 'error',
+    'message' => 'Init',
     'seconds_remaining' => 0,
-    'is_paused' => false,
-    'blinds_text' => 'Terminé',
-    'ante_text' => '',
-    'level_id' => 0
+    'blinds_text' => 'Chargement...',
+    'next_pause' => ''
 ];
 
-if ($id_activite > 0) {
-    // 1. Vérifier si le tournoi est en pause globalement (basé sur le niveau 1 ou une config générale)
-    // On regarde le niveau 1 pour l'état de pause global comme dans votre ancien script
-    $reqPause = mysqli_query($con, "SELECT en_pause FROM `blindes-live` WHERE `id-activite` = '$id_activite' LIMIT 1");
-    $rowPause = mysqli_fetch_assoc($reqPause);
-    $is_paused = ($rowPause && $rowPause['en_pause'] == 1);
+try {
+    if (!isset($con)) throw new Exception("DB Connection failed");
 
-    if ($is_paused) {
-        $response['status'] = 'success';
-        $response['is_paused'] = true;
-        $response['blinds_text'] = 'PAUSE';
-    } else {
-        // 2. Trouver le niveau en cours (celui dont la date de fin est dans le futur)
-        $now = date("Y-m-d H:i:s");
-        $query = "SELECT * FROM `blindes-live` WHERE `id-activite` = '$id_activite' AND `fin` > '$now' ORDER BY `ordre` ASC LIMIT 1";
-        $result = mysqli_query($con, $query);
+    $id = isset($_GET['uid']) ? intval($_GET['uid']) : 0;
+    $now = time();
 
-        if ($row = mysqli_fetch_assoc($result)) {
-            $fin = strtotime($row['fin']);
-            $maintenant = time();
-            $diff = $fin - $maintenant;
-
-            $nom = $row['nom']; // ex: Level 1
-            $nom = $row['sb']."/".$row['bb']; 
-            $ante = ($row['ante'] != '0' && $row['ante'] != '') ? " + " . $row['ante'] : "";
+    // 1. Niveau en cours
+    // On cherche un niveau où : (Fin - Minutes) <= Maintenant < Fin
+    $sql = "SELECT * FROM `blindes-live` WHERE `id-activite` = '$id' 
+            AND DATE_SUB(fin, INTERVAL minutes MINUTE) <= FROM_UNIXTIME($now) 
+            AND fin > FROM_UNIXTIME($now) LIMIT 1";
             
-            // Formater le texte des blindes (ex: 100/200)
-            $blinds_display = $nom; 
+    $q = mysqli_query($con, $sql);
+    if (!$q) throw new Exception("Erreur SQL Current: " . mysqli_error($con));
+    
+    $current = mysqli_fetch_assoc($q);
 
-            $response['status'] = 'success';
-            $response['is_paused'] = false;
-            $response['seconds_remaining'] = $diff;
-            $response['blinds_text'] = $blinds_display;
-            
-            // AJOUT : Nom brut pour le fichier audio (ex: "100/200")
-            $response['blinds_raw'] = $row['nom']; 
-            
-            $response['ante_text'] = $ante;
-            $response['level_id'] = $row['id']; // Utile pour détecter le changement de niveau
-        } else {
-            // Aucun niveau futur trouvé, c'est fini
-            $response['status'] = 'finished';
-            $response['blinds_text'] = 'Tournoi Terminé';
+    // 2. Pause globale (Tableau activite ou blindes-live ?)
+    // D'après votre SQL, 'en_pause' est bien dans 'blindes-live'
+    $q_pause = mysqli_query($con, "SELECT `en_pause` FROM `blindes-live` WHERE `id-activite` = '$id' LIMIT 1");
+    $r_pause = ($q_pause) ? mysqli_fetch_assoc($q_pause) : null;
+    $is_paused = ($r_pause && $r_pause['en_pause'] == 1);
+
+    // 3. Prochaine pause
+    $next_pause_text = "";
+    // On cherche dans la colonne 'nom' le texte 'ause' (pour Pause)
+    $sql_np = "SELECT * FROM `blindes-live` WHERE `id-activite` = '$id' 
+               AND `nom` LIKE '%ause%' 
+               AND DATE_SUB(fin, INTERVAL minutes MINUTE) > FROM_UNIXTIME($now) 
+               ORDER BY fin ASC LIMIT 1";
+               
+    $q_np = mysqli_query($con, $sql_np);
+    
+    if ($q_np && $r_np = mysqli_fetch_assoc($q_np)) {
+        // Calcul du début : Fin - Minutes
+        $start_timestamp = strtotime($r_np['fin']) - ($r_np['minutes'] * 60);
+        $diff = $start_timestamp - $now;
+        
+        if ($diff > 0) {
+            $h = floor($diff / 3600);
+            $m = floor(($diff % 3600) / 60);
+            $next_pause_text = "Pause dans " . ($h > 0 ? $h."h " : "") . $m . "m";
         }
     }
+
+    $response['status'] = 'success';
+    $response['is_paused'] = $is_paused;
+    $response['next_pause'] = $next_pause_text;
+
+    if ($current) {
+        $response['seconds_remaining'] = strtotime($current['fin']) - $now;
+        // CORRECTION : Utilisation de 'sb' et 'bb' au lieu de small_blind/big_blind
+        $response['blinds_text'] = $current['sb'] . " / " . $current['bb'];
+        $response['ante_text'] = !empty($current['ante']) ? "Ante " . $current['ante'] : "";
+        $response['level_id'] = $current['id'];
+        $response['blinds_raw'] = $current['sb'] . "-" . $current['bb'];
+    } else {
+        // Pas de niveau actif -> On cherche le prochain niveau à venir
+        $sql_next = "SELECT * FROM `blindes-live` WHERE `id-activite` = '$id' 
+                     AND DATE_SUB(fin, INTERVAL minutes MINUTE) > FROM_UNIXTIME($now) 
+                     ORDER BY fin ASC LIMIT 1";
+        $q_next = mysqli_query($con, $sql_next);
+        
+        if ($q_next && $next = mysqli_fetch_assoc($q_next)) {
+            $response['blinds_text'] = "Prochain: " . $next['sb'] . "/" . $next['bb'];
+            $response['status'] = 'waiting';
+        } else {
+            $response['blinds_text'] = "Terminé ou Non Configuré";
+            $response['status'] = 'finished';
+        }
+    }
+
+} catch (Exception $e) {
+    $response['message'] = $e->getMessage();
+    // On affiche l'erreur SQL dans le texte des blindes pour que vous la voyiez
+    $response['blinds_text'] = "Erreur SQL : " . $e->getMessage();
 }
 
 echo json_encode($response);

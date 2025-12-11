@@ -1,204 +1,242 @@
 <?php
-// On garde juste la session et l'ID, le reste est géré par JS/API
-session_start();
-$id = intval($_GET['uid']);
-$_SESSION["act"] = $id;
+// IMPORTANT : PAS DE session_start() ICI !
+// Ce fichier est inclus dans une page qui a déjà démarré la session.
+// Le remettre provoquerait une Erreur 500 immédiate.
+
+if(isset($_GET['uid'])) {
+    $id = intval($_GET['uid']);
+}
 ?>
 
-<!-- Conteneur du Timer -->
-<div class="timer-container" style="position: relative; text-align: center; padding: 20px;">
-    
-    <!-- Bouton pour activer l'audio (obligatoire sur les navigateurs modernes) -->
-    <div id="audio-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 100; display: flex; justify-content: center; align-items: center; border-radius: 8px; cursor: pointer;">
-        <button class="btn btn-success btn-lg">
-            <i class="fa fa-volume-up"></i> Activer le Son & Démarrer
-        </button>
-    </div>
-
-    <!-- Affichage du Temps -->
-    <div id="timer-display" style="color: red; font-size: 160px; font-weight: normal; line-height: 1;">
+<!-- Conteneur propre -->
+<div id="clock-wrapper" style="position: relative; text-align: center; width: 100%;">
+    <!-- HEURE -->
+    <div id="timer-display">
         --:--
     </div>
     
-    <!-- Affichage des infos du niveau (Blindes / Ante) -->
-    <div id="level-info" style="font-size: 80px; color: #ffc107 !important; margin-top: 10px;">
+    <!-- BLINDES -->
+    <div id="level-info">
         Chargement...
     </div>
 
-    <!-- Élément Audio caché -->
+    <!-- INFO PAUSE (Style géré par fullscreen-timer.php désormais) -->
+    <div id="car-pause"></div>
+
+    <!-- BOUTONS DE TEST (Visibles uniquement pour debug) -->
+    <div style="margin-top: 5px; opacity: 0.7;">
+        <!-- <button onclick="forceTestSound()" style="cursor:pointer; font-size:10px;">
+            🔊 Test Fichier
+        </button> -->
+        <button onclick="manualTrigger()" style="cursor:pointer; font-size:10px; color:red;">
+            🚨 Ecouter Blindes
+        </button>
+    </div>
+
+    <!-- Lecteur Audio par DÉFAUT (Son générique si le spécifique n'existe pas) -->
     <audio id="blind-alert-sound" preload="auto">
+        <!-- On essaie plusieurs chemins possibles pour trouver le fichier -->
+        
         <source src="/blinde.mp3" type="audio/mpeg">
+        <source src="blinde.mp3" type="audio/mpeg">
+        
     </audio>
 </div>
 
 <script>
-class PokerTimer {
-    constructor(activityId) {
-        this.activityId = activityId;
-        this.displayElement = document.getElementById('timer-display');
-        this.infoElement = document.getElementById('level-info');
-        this.audioElement = document.getElementById('blind-alert-sound');
-        this.audioOverlay = document.getElementById('audio-overlay');
-        
-        this.secondsRemaining = 0;
-        this.isPaused = false;
-        this.lastLevelId = null;
-        this.audioEnabled = false;
-        this.currentBlindsRaw = ""; // Pour stocker "100/200"
-        
-        this.syncInterval = null;
-        this.countdownInterval = null;
-
-        this.init();
-    }
-
-    init() {
-        // Gestion du clic pour activer l'audio (Politique Autoplay Navigateur)
-        this.audioOverlay.addEventListener('click', () => {
-            this.enableAudio();
-            this.audioOverlay.style.display = 'none';
-            this.start();
-        });
-
-        // Premier chargement visuel
-        this.syncWithServer();
-    }
-
-    enableAudio() {
-        // On joue un son vide ou on met en pause immédiatement pour "débloquer" l'audio context
-        this.audioElement.play().then(() => {
-            this.audioElement.pause();
-            this.audioElement.currentTime = 0;
-            this.audioEnabled = true;
-            console.log("Audio activé avec succès");
-        }).catch(e => console.error("Erreur activation audio:", e));
-    }
-
-    playAlert() {
-        if (!this.audioEnabled) return;
-
-        const defaultSound = "/bblinde.mp3";
-        
-        // 1. Construire le nom du fichier spécifique
-        // On remplace les "/" par des "-" (ex: "100/200" devient "100-200.mp3")
-        let cleanName = this.currentBlindsRaw ? this.currentBlindsRaw.replace(/\//g, '-').trim() : "default";
-        let specificSound = "/" + cleanName + ".mp3";
-
-        console.log("Tentative de lecture : " + specificSound);
-
-        // 2. Gestionnaire d'erreur : Si le son spécifique n'existe pas, on joue le défaut
-        this.audioElement.onerror = () => {
-            // Eviter une boucle infinie si le son par défaut plante aussi
-            if (this.audioElement.src.includes(defaultSound)) {
-                console.error("Impossible de lire le son par défaut.");
-                return;
-            }
-            console.log("Fichier spécifique non trouvé, repli sur : " + defaultSound);
-            this.audioElement.src = defaultSound;
-            this.audioElement.play();
-        };
-
-        // 3. Essayer de jouer le son spécifique
-        this.audioElement.src = specificSound;
-        this.audioElement.play().catch(e => {
-            console.error("Erreur lecture:", e);
-        });
-    }
-
-    start() {
-        // Synchroniser avec le serveur toutes les 5 secondes
-        this.syncInterval = setInterval(() => this.syncWithServer(), 5000);
-        
-        // Décompte local chaque seconde pour la fluidité
-        this.countdownInterval = setInterval(() => this.tick(), 1000);
-        
-        this.syncWithServer(); // Appel immédiat
-    }
-
-    async syncWithServer() {
-        try {
-            const response = await fetch(`timer-api.php?uid=${this.activityId}`);
-            const data = await response.json();
-
-            if (data.status === 'success') {
-                this.isPaused = data.is_paused;
-                this.currentBlindsRaw = data.blinds_raw || data.blinds_text; // Récupérer le nom brut
-                
-                if (!this.isPaused) {
-                    if (Math.abs(this.secondsRemaining - data.seconds_remaining) > 2) {
-                        this.secondsRemaining = data.seconds_remaining;
-                    }
-                }
-
-                let infoText = data.blinds_text;
-                if (data.ante_text) infoText += ` <span style="color:blue">${data.ante_text}</span>`;
-                this.infoElement.innerHTML = infoText;
-
-                // Détection changement de niveau pour le son
-                if (this.lastLevelId !== null && this.lastLevelId !== data.level_id && data.level_id !== 0) {
-                    this.playAlert();
-                }
-                this.lastLevelId = data.level_id;
-
-            } else if (data.status === 'finished') {
-                this.secondsRemaining = 0;
-                this.infoElement.innerHTML = "Tournoi Terminé";
-                this.stop();
-            }
-
-            this.updateDisplay();
-
-        } catch (error) {
-            console.error("Erreur de sync:", error);
-        }
-    }
-
-    tick() {
-        if (!this.isPaused && this.secondsRemaining > 0) {
-            this.secondsRemaining--;
-            
-            // Alerte sonore quand on arrive à 0
-            if (this.secondsRemaining === 0) {
-                // On force une synchro serveur immédiate pour récupérer le NOUVEAU niveau
-                // et donc jouer le son du nouveau niveau
-                setTimeout(() => {
-                    this.syncWithServer().then(() => {
-                        // playAlert sera déclenché par syncWithServer via la détection de changement d'ID
-                    });
-                }, 500); 
-            }
-        }
-        this.updateDisplay();
-    }
-
-    updateDisplay() {
-        if (this.isPaused) {
-            this.displayElement.innerHTML = "PAUSE";
-            this.displayElement.style.color = "orange";
-            return;
-        }
-
-        this.displayElement.style.color = "red";
-        
-        if (this.secondsRemaining < 0) this.secondsRemaining = 0;
-
-        const minutes = Math.floor(this.secondsRemaining / 60);
-        const seconds = this.secondsRemaining % 60;
-
-        const fmtMin = minutes.toString().padStart(2, '0');
-        const fmtSec = seconds.toString().padStart(2, '0');
-
-        this.displayElement.innerHTML = `${fmtMin}:${fmtSec}`;
-    }
-
-    stop() {
-        clearInterval(this.syncInterval);
-        clearInterval(this.countdownInterval);
-    }
+// Test simple du fichier par défaut
+function forceTestSound() {
+    const audio = document.getElementById('blind-alert-sound');
+    audio.volume = 1.0;
+    audio.currentTime = 0;
+    audio.play().then(() => console.log("Test OK")).catch(e => alert("Erreur lecture: " + e));
 }
 
-// Démarrage
+// Simulation manuelle d'un changement de niveau
+function manualTrigger() {
+    console.log("Simulation alerte...");
+    // On appelle la fonction interne via un événement personnalisé ou on la rend globale
+    // Ici on va tricher en accédant à la fonction définie dans le scope
+    document.dispatchEvent(new CustomEvent('trigger-alert'));
+}
+
 document.addEventListener('DOMContentLoaded', () => {
-    const timer = new PokerTimer(<?php echo $id; ?>);
+    // Récupération ID
+    let uid = "<?php echo isset($id) ? $id : ''; ?>";
+    if (!uid) uid = new URLSearchParams(window.location.search).get('uid');
+    
+    if (!uid) {
+        document.getElementById('level-info').innerHTML = "Erreur ID";
+        return;
+    }
+
+    const display = document.getElementById('timer-display');
+    const info = document.getElementById('level-info');
+    const pauseInfo = document.getElementById('car-pause');
+    const audio = document.getElementById('blind-alert-sound');
+    
+    let seconds = 0;
+    let isPaused = false;
+    let lastLevelId = null;
+    let audioEnabled = false;
+    let currentBlindsName = "";
+
+    // 1. DÉBLOCAGE AUDIO
+    function unlockAudio() {
+        if(!audioEnabled) {
+            // On joue et on coupe tout de suite pour "chauffer" le moteur audio
+            audio.volume = 1.0;
+            audio.play().then(() => {
+                audio.pause();
+                audio.currentTime = 0;
+                audioEnabled = true;
+            }).catch((e) => {});
+        }
+    }
+    document.addEventListener('click', unlockAudio);
+    document.addEventListener('touchstart', unlockAudio);
+
+    // 2. FONCTION INTELLIGENTE
+    function playAlert() {
+        // Nom du fichier espéré : /200-400.mp3
+        let cleanName = currentBlindsName.replace('/', '-');
+        let specificSound = "/" + cleanName + ".mp3";
+        
+        console.log("ALERTE ! Tentative lecture : " + specificSound);
+
+        let tempAudio = new Audio(specificSound);
+        tempAudio.volume = 1.0;
+        
+        tempAudio.play().then(() => {
+            console.log("--> Son spécifique trouvé et joué !");
+        }).catch((e) => {
+            console.log("--> Son spécifique introuvable, lecture du son par défaut.");
+            audio.volume = 1.0;
+            audio.currentTime = 0;
+            audio.play().catch(err => console.error("Erreur totale : ", err));
+        });
+    }
+
+    // Ecouteur pour le bouton de test manuel
+    document.addEventListener('trigger-alert', playAlert);
+
+    function updateTimer() {
+        if (!isPaused && seconds > 0) {
+            seconds--;
+            let m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            let s = (seconds % 60).toString().padStart(2, '0');
+            display.innerText = `${m}:${s}`;
+        } else if (isPaused) {
+            display.innerText = "PAUSE";
+            display.classList.add('paused');
+        }
+    }
+
+    async function sync() {
+        try {
+            const res = await fetch(`timer-api.php?uid=${uid}`);
+            if (!res.ok) return;
+            const data = await res.json();
+            
+            if (data.status === 'error') return;
+
+            isPaused = data.is_paused;
+            currentBlindsName = data.blinds_raw || "default";
+
+            if (!isPaused && Math.abs(seconds - data.seconds_remaining) > 2) {
+                seconds = data.seconds_remaining;
+            } else if (isPaused) {
+                seconds = data.seconds_remaining;
+            }
+
+            let txt = data.blinds_text;
+            if (data.ante_text) txt += ` <span class="ante-text">${data.ante_text}</span>`;
+            info.innerHTML = txt;
+
+            if (pauseInfo) {
+                let pVal = data.next_pause || "";
+                let displayText = "";
+
+                // Si on est en pause (blindes 0/0), on affiche l'heure de reprise calculée via le timer
+                let isBreak = (data.blinds_raw === "0/0" || data.blinds_raw === "0-0" || data.blinds_text === "PAUSE");
+                
+                if (isBreak && seconds > 0) {
+                    let d = new Date();
+                    d.setSeconds(d.getSeconds() + seconds);
+                    let endH = d.getHours().toString().padStart(2, '0');
+                    let endM = d.getMinutes().toString().padStart(2, '0');
+                    displayText = `Reprise du jeu : ${endH}:${endM}`;
+                } 
+                else if (pVal) {
+                    // 1. Essai format absolu HH:MM au début
+                    let matchAbs = pVal.match(/^(\d{1,2}):(\d{2})/);
+                    
+                    // 2. Essai format relatif "Pause dans Xh Ym"
+                    let isRelative = pVal.toLowerCase().includes("dans");
+
+                    if (matchAbs) {
+                        let h = parseInt(matchAbs[1]);
+                        let m = parseInt(matchAbs[2]);
+                        
+                        let d = new Date();
+                        d.setHours(h);
+                        d.setMinutes(m + 10);
+                        
+                        let endH = d.getHours().toString().padStart(2, '0');
+                        let endM = d.getMinutes().toString().padStart(2, '0');
+                        
+                        displayText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')} (+ 3 Mains = ${endH}:${endM})`;
+                    } 
+                    else if (isRelative) {
+                        // Extraction des heures et minutes restantes dans le texte "Pause dans..."
+                        let matchH = pVal.match(/(\d+)\s*h/);
+                        let matchM = pVal.match(/(\d+)\s*m/);
+                        
+                        let addH = matchH ? parseInt(matchH[1]) : 0;
+                        let addM = matchM ? parseInt(matchM[1]) : 0;
+
+                        // Calcul de l'heure de la pause
+                        let d = new Date();
+                        d.setHours(d.getHours() + addH);
+                        d.setMinutes(d.getMinutes() + addM);
+                        
+                        let pauseH = d.getHours().toString().padStart(2, '0');
+                        let pauseM = d.getMinutes().toString().padStart(2, '0');
+
+                        // Calcul de l'heure de reprise (+10 min)
+                        d.setMinutes(d.getMinutes() + 10);
+                        let endH = d.getHours().toString().padStart(2, '0');
+                        let endM = d.getMinutes().toString().padStart(2, '0');
+
+                        displayText = `Pause à ${pauseH}:${pauseM} (+ 3 Mains = ${endH}:${endM})`;
+                    } else {
+                        displayText = pVal;
+                    }
+                }
+                pauseInfo.innerText = displayText;
+            }
+
+            // --- DETECTION CHANGEMENT DE NIVEAU ---
+            // On ne joue le son que si l'ID change ET que ce n'est pas le premier chargement (lastLevelId != null)
+            if (lastLevelId !== null && lastLevelId !== data.level_id && data.level_id !== 0) {
+                playAlert();
+            }
+            
+            lastLevelId = data.level_id;
+            // --------------------------------------
+
+            if (isPaused) display.classList.add('paused');
+            else display.classList.remove('paused');
+
+            let m = Math.floor(seconds / 60).toString().padStart(2, '0');
+            let s = (seconds % 60).toString().padStart(2, '0');
+            if (!isPaused) display.innerText = `${m}:${s}`;
+
+        } catch (e) { console.error(e); }
+    }
+
+    setInterval(updateTimer, 1000);
+    setInterval(sync, 5000);
+    sync();
 });
 </script>
