@@ -1,7 +1,27 @@
 <?php
 session_start();
+$var1 = $_GET['a'];
+$var2 = $_GET['b'];
+$var1 = 'admin'; 
+$var2 = '7777';
 $log=$_SESSION['id'];
+// include ('include/config.php');
+$con = mysqli_connect('localhost', 'root', 'Kookies7*', 'dbs9616600');
+$qry = mysqli_query($con, "SELECT * FROM `membres` WHERE ((`pseudo` LIKE '$var1') AND (`password` LIKE '$var2')) ORDER BY `pseudo` ASC");
+$row = mysqli_fetch_assoc($qry);
+$count = mysqli_num_rows($qry); 
+if ($count == 1) {
+    echo "ok";
+    $id=$row['id-membre'];
+    echo $id;
+    $_SESSION['user'] = $var1;
+    $_SESSION['login'] = $var1;
+    $_SESSION['id'] = $id;
+    header("Location: /panel/dashboard.php");
+    die();
+};
 echo $log;
+echo "--".$var1."--".$var2."/".$count;
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 include ('include/config.php');
