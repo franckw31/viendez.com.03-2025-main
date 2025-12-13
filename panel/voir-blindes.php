@@ -882,7 +882,7 @@ if (strlen($_SESSION['id'] == 0)) {
 
 
                                                                         $elimCountDisplay = $elimCount > 0 ? ' <span style="color:red;">(' . $elimCount . ')</span>' : '';
-                                                                        $classementDisplay = $rankingCounter == 1 ? '<i class="fa fa-trophy" style="color: gold; font-size: 1.2em;"></i>' : $rankingCounter;
+                                                                        $classementDisplay = $rankingCounter == 99 ? '<i class="fa fa-trophy" style="color: gold; font-size: 1.2em;"></i>' : $rankingCounter;
                                                                         
                                                                         // --- LOGIQUE D'ELIMINATION ---
                                                                         // Si éliminé définitivement, on active le statut éliminé
@@ -931,7 +931,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                                     ' . $btnPlusDisplay . '
                                                                                     
                                                                                     <!-- Bouton Sortie (Porte) -->
-                                                                                    <button class="btn btn-danger btn-sm" 
+                                                                                    <button class="btn btn-danger btn-sm" style="color: red !important; font-size:22px !important ;background-color: #f0f0f0 !important; font-weight: bold;"
                                                                                             onclick="confirmDeletePlayer(this)" 
                                                                                             data-id="' . intval($row['id-participation']) . '" 
                                                                                             data-member-id="' . intval($row['id-membre']) . '" 

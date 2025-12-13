@@ -12,6 +12,36 @@ if (strlen($_SESSION['id']) == 0) {
 $id = intval($_GET['uid']);
 $_SESSION["act"] = $id;
 
+// --- CALCUL DES STATS JOUEURS (STACK MOYEN & JOUEURS RESTANTS) ---
+$act_query = mysqli_query($con, "SELECT jetons, recave_jetons FROM activite WHERE `id-activite` = '$id'");
+$act_row = mysqli_fetch_array($act_query);
+$start_chips = intval($act_row['jetons']);
+$rebuy_chips = intval($act_row['recave_jetons']);
+
+$part_query = mysqli_query($con, "SELECT `id-participation`, `recave`, `addon` FROM `participation` WHERE `id-activite` = '$id'");
+$total_players = 0;
+$total_rebuys = 0;
+$total_addons = 0;
+$active_players = 0;
+
+while ($row = mysqli_fetch_array($part_query)) {
+    $total_players++;
+    $total_rebuys += intval($row['recave']);
+    $total_addons += intval($row['addon']);
+    
+    $pid = $row['id-participation'];
+    // Check definitive elimination
+    $elim_query = mysqli_query($con, "SELECT is_definitive FROM eliminations WHERE id_participation = '$pid' AND is_definitive = 1");
+    if (mysqli_num_rows($elim_query) == 0) {
+        $active_players++;
+    }
+}
+
+// On suppose que l'Addon donne le même montant que la Recave (à défaut d'info contraire)
+$total_chips = ($total_players * $start_chips) + ($total_rebuys * $rebuy_chips) + ($total_addons * $rebuy_chips);
+$avg_stack = ($active_players > 0) ? floor($total_chips / $active_players) : 0;
+// ---------------------------------------------------------------
+
 // --- LOGIQUE PHP ---
 if (isset($_POST['moins'])) { ?> <script>window.location.replace("/panel/modif-horloge.php?act=<?php echo $id ?>&min=-2&sou=/panel/fullscreen-timer.php?uid=");</script> <?php }
 if (isset($_POST['plus'])) { ?> <script>window.location.replace("/panel/modif-horloge.php?act=<?php echo $id ?>&min=+2&sou=/panel/fullscreen-timer.php?uid=");</script> <?php }
@@ -245,6 +275,11 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
         <!-- <div id="zone-message">
             <div id="car-pause"></div>
         </div> -->
+
+        <!-- ZONE STATS JOUEURS -->
+        <div id="zone-stats" style="font-size: 3vw; color: yellow; margin-top: 20px; font-weight: bold;">
+            <?php echo $active_players; ?> Joueurs / <?php echo $total_players; ?> &nbsp;, &nbsp; Stack Moyen: <?php echo number_format($avg_stack, 0, ',', ' '); ?>
+        </div>
 
         <!-- ZONE ESTIMATION -->
         <!-- <div id="zone-estim">
