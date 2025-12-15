@@ -144,6 +144,48 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
     <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700|Raleway:300,400,700" rel="stylesheet">
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=RTEc1M0w"></script>
+    <script>
+        // Fallback iOS amélioré (V4 - Debug & Specific Names)
+        if (typeof responsiveVoice !== 'undefined') {
+            responsiveVoice.OnVoiceReady = function() {
+                var voice = "French Female"; // Par défaut
+                var voices = responsiveVoice.getVoices();
+                var debugMsg = "Voices found: " + voices.length;
+                
+                var foundMale = false;
+                var foundThomas = null;
+                var foundAmelie = null;
+                var foundFrench = null;
+                
+                for (var i = 0; i < voices.length; i++) {
+                    var v = voices[i];
+                    var name = v.name || "";
+                    var lang = v.lang || "";
+                    
+                    if (name === "French Male") foundMale = true;
+                    if (name.indexOf("Thomas") !== -1) foundThomas = name;
+                    if (name.indexOf("Amelie") !== -1) foundAmelie = name;
+                    
+                    if (!foundFrench && (lang.indexOf("fr") === 0 || name.indexOf("French") !== -1)) {
+                        foundFrench = name;
+                    }
+                }
+                
+                if (foundMale) voice = "French Male";
+                else if (foundThomas) voice = foundThomas;
+                else if (foundAmelie) voice = foundAmelie;
+                else if (foundFrench) voice = foundFrench;
+                
+                // Affichage debug discret en bas de page
+                var d = document.getElementById('debug-voice');
+                if(d) d.innerHTML = debugMsg + " | Active: " + voice;
+                
+                console.log("Default Voice set to: " + voice);
+                responsiveVoice.setDefaultVoice(voice);
+            };
+        }
+    </script>
 
     <style>
         /* ==========================================================================
@@ -156,8 +198,8 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
             --size-estim: 2vw;
             
             /* --- CONFIGURATION LIGNE PAUSE --- */
-            --size-pause: 4vw;     /* Taille du texte */
-            --color-pause: #ffffff; /* Couleur (blanc) */
+            --size-pause: 5vmin;     /* Taille du texte */
+            --color-pause: #ff0000; /* Couleur (rouge) */
             --font-pause: 'Raleway', sans-serif; /* Police */
         }
 
@@ -174,6 +216,22 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
             justify-content: center;
             align-items: center;
             font-family: 'Raleway', sans-serif;
+            position: relative;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('bg.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            opacity: 0.2; /* Opacité réduite pour la lisibilité */
+            z-index: -1;
         }
 
         .timer-container {
@@ -188,33 +246,33 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
         /* --- CIBLAGE PRECIS DES ELEMENTS DE L'HORLOGE --- */
         
         /* 1. L'HEURE (ID défini dans horloge-heure.php) */
-        #timer-display {
+        /* #timer-display {
             font-size: var(--size-clock) !important;
-            color: #ff3333 !important; /* Rouge */
+            color: #ff3333 !important; 
             line-height: 1 !important;
             font-weight: bold;
             text-shadow: 0 0 40px rgba(255, 0, 0, 0.4);
-        }
+        } */
         
         /* Style spécifique quand en pause (ajouté par JS) */
-        #timer-display.paused {
+        /* #timer-display.paused {
             color: orange !important;
-        }
+        } */
 
         /* 2. LES BLINDES (ID défini dans horloge-heure.php) */
-        #level-info {
+        /* #level-info {
             font-size: var(--size-blinds) !important;
-            color: #ffc107 !important; /* Jaune */
+            color: #ffc107 !important; 
             line-height: 1.2 !important;
             font-weight: bold;
             margin-top: 10px;
-        }
+        } */
         
         /* Style pour les Ante (si présents) */
-        .ante-text {
-            color: #4a90e2 !important; /* Bleu */
-            font-size: 0.8em; /* Un peu plus petit que les blindes */
-        }
+        /* .ante-text {
+            color: #4a90e2 !important; 
+            font-size: 0.8em; 
+        } */
 
         /* 3. MESSAGES */
         #zone-message {
@@ -236,39 +294,113 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
 
         #zone-estim {
             font-size: var(--size-estim) !important;
-            color: grey !important;
+            color: #ff0000 !important; /* Rouge pour l'heure de pause */
             margin-top: 5px;
         }
 
         /* CONTROLES */
         .controls-area {
             margin-top: 30px;
-            background: rgba(255, 255, 255, 0.1);
+            background: transparent;
             padding: 20px;
             border-radius: 15px;
-            width: 80%;
-            max-width: 1200px;
+            width: 50%;
+            max-width: 800px;
         }
-        .controls-area .btn { font-size: 24px !important; padding: 15px; }
-        .btn-block { font-weight: bold; text-transform: uppercase; margin-bottom: 10px; }
+        .controls-area .btn { font-size: 16px !important; padding: 8px; }
+        .btn-block { font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
         .btn-primaryg { background-color: #4a90e2; color: white; border: none; }
         .btn-primary-rouge { background-color: #e74c3c; color: white; border: none; }
         
         .back-btn { position: absolute; top: 20px; left: 20px; opacity: 0.3; transition: opacity 0.3s; z-index: 999; }
         .back-btn:hover { opacity: 1; }
+        
+        /* Style pour l'heure en haut à droite */
+        .top-right-clock {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 66px;
+            color: white;
+            opacity: 0.5;
+            font-weight: bold;
+            z-index: 999;
+        }
+
+        /* Effet au survol du conteneur (Identique à horloge-heure.php) */
+        .timer-circle-container:hover #timer-display {
+            transform: scale(1.1); /* Agrandissement */
+            cursor: pointer;
+        }
+
+        /* Overlay pour les boutons -2/+2 */
+        .timer-buttons-overlay {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70vmin;
+            height: 70vmin;
+            pointer-events: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            z-index: 100;
+            padding-bottom: 10px; /* Petit espacement du bas */
+        }
+        
+        @media (orientation: portrait) {
+            .timer-buttons-overlay {
+                width: 90vmin;
+                height: 90vmin;
+            }
+        }
+
+        .timer-control-btn {
+            pointer-events: auto;
+            background-color: #00d2ff; /* Même bleu que le cercle */
+            color: #1a1a1a; /* Texte foncé pour contraste */
+            border: none;
+            font-weight: bold;
+            border-radius: 50px;
+            padding: 5px 15px;
+            font-size: 2vmin;
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .timer-control-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.8);
+            color: white;
+        }
     </style>
 </head>
 <body>
 
-    <a href="voir-blindes.php?uid=<?php echo $id; ?>" class="btn btn-default back-btn">
-        <i class="fa fa-arrow-left"></i> Retour Admin
+    <a href="voir-blindes.php?uid=<?php echo $id; ?>" class="back-btn">
+        <img src="assets/images/logo.png" alt="Retour Admin" style="height: 100px;">
     </a>
+    
+    <!-- Heure en haut à droite -->
+    <div class="top-right-clock" id="real-time-clock">Il est --:--</div>
+    
+    <!-- Debug Voice (Temporaire) -->
+    <div id="debug-voice" style="position:fixed; bottom:0; left:0; width:100%; background:rgba(0,0,0,0.7); color:#00ff00; font-size:14px; z-index:9999; text-align:center; padding:5px; pointer-events:none;">
+        Chargement voix...
+    </div>
 
     <div class="timer-container">
         
         <!-- ZONE HORLOGE & BLINDES -->
-        <div id="zone-clock-container">
+        <div id="zone-clock-container" style="position: relative;">
             <?php include('horloge-heure.php'); ?>
+            
+            <!-- Boutons -2 / +2 positionnés sur le cercle -->
+            <form method="post" class="timer-buttons-overlay">
+                <button type="submit" name="moins" class="timer-control-btn"><i class="fa fa-minus"></i> 2</button>
+                <button type="submit" name="plus" class="timer-control-btn"><i class="fa fa-plus"></i> 2</button>
+            </form>
         </div>
 
         <!-- ZONE MESSAGE -->
@@ -277,8 +409,8 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
         </div> -->
 
         <!-- ZONE STATS JOUEURS -->
-        <div id="zone-stats" style="font-size: 3vw; color: yellow; margin-top: 20px; font-weight: bold;">
-            <?php echo $active_players; ?> Joueurs / <?php echo $total_players; ?> &nbsp;, &nbsp; Stack Moyen: <?php echo number_format($avg_stack, 0, ',', ' '); ?>
+        <div id="zone-stats" style="font-size: 3vw; color: rgba(11, 245, 65, 0.83); margin-top: 20px; font-weight: bold;">
+            <?php echo $active_players; ?> <span style="color:white">Joueurs</span> / <?php echo $total_players; ?> &nbsp;, &nbsp; <span style="color:white">Stack Moyen </span> <?php echo number_format($avg_stack, 0, ',', ' '); ?>
         </div>
 
         <!-- ZONE ESTIMATION -->
@@ -287,21 +419,8 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
             <div style="color:inherit"></div>
         </div> -->
 
-        <!-- CONTROLES -->
-        <div class="controls-area">
-            <form method="post">
-                <div class="row">
-                    <div class="col-md-4"><button type="submit" id="moins" class="btn btn-primaryg btn-block" name="moins"><i class="fa fa-minus"></i> 2 Min</button></div>
-                    <div class="col-md-4"><button type="submit" class="btn btn-primary btn-block" name="pauseresume" style="background-color: #007bff !important;"><i class="fa fa-play"></i> / <i class="fa fa-pause"></i></button></div>
-                    <div class="col-md-4"><button type="submit" class="btn btn-primaryg btn-block" name="plus"><i class="fa fa-plus"></i> 2 Min</button></div>
-                </div>
-                <!--<div class="row" style="margin-top: 15px;">
-                     <div class="col-md-4"><button type="submit" id="prev_blind" class="btn btn-warning btn-block" name="prev_blind" style="color: black !important; background-color: #ffc107 !important;"><i class="fa fa-backward"></i> Blinde Préc.</button></div>
-                    <div class="col-md-4"><button type="submit" class="btn btn-primary-rouge btn-block" name="reset_blind"><i class="fa fa-refresh"></i> Reset Blinde</button></div>
-                    <div class="col-md-4"><button type="submit" id="next_blind" class="btn btn-warning btn-block" name="next_blind" style="color: black !important; background-color: #ffc107 !important;">Blinde Suiv. <i class="fa fa-forward"></i></button></div>
-                </div> -->
-            </form>
-        </div>
+        <!-- CONTROLES (Supprimés car déplacés sur le cercle) -->
+        <!-- <div class="controls-area"></div> -->
 
         <!-- Remplacer l'include de la pause par ce bloc complet -->
         <!-- <div style="display: flex; justify-content: center; align-items: center; gap: 30px; margin-top: 20px;">
@@ -376,6 +495,19 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
 
     <script src="vendor/jquery/jquery.min.js"></script>
     <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
+
+    <script>
+        function updateRealTimeClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('real-time-clock').innerText = `Il est ${hours}:${minutes}`;
+        }
+        
+        // Update immediately and then every second (to be accurate when minute changes)
+        updateRealTimeClock();
+        setInterval(updateRealTimeClock, 1000);
+    </script>
 
 </body>
 </html>

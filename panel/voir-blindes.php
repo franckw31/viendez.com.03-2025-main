@@ -438,6 +438,7 @@ if (strlen($_SESSION['id'] == 0)) {
         <link rel="stylesheet" href="assets/css/styles.css">
         <link rel="stylesheet" href="assets/css/plugins.css">
         <link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
+        <script src="https://code.responsivevoice.org/responsivevoice.js?key=RTEc1M0w"></script>
         <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
         <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
         <link href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" />
@@ -483,6 +484,12 @@ if (strlen($_SESSION['id'] == 0)) {
 
         <!-- AJOUTER CE BLOC CSS POUR FORCER LES BOUTONS -->
         <style>
+            /* REDUCTION TAILLE TIMER DANS L'ONGLET ADMIN */
+            #TimerE .timer-circle-container {
+                width: 55vmin !important;
+                height: 55vmin !important;
+            }
+
             /* Force l'interactivité et la position au-dessus des autres éléments */
             .players-table .btn {
                 cursor: pointer !important;
@@ -536,7 +543,40 @@ if (strlen($_SESSION['id'] == 0)) {
         </style>
 
         <script>
-            responsiveVoice.setDefaultVoice("French Female")
+            // Fallback iOS amélioré (V4)
+            if (typeof responsiveVoice !== 'undefined') {
+                responsiveVoice.OnVoiceReady = function() {
+                    var voice = "French Female"; // Par défaut
+                    var voices = responsiveVoice.getVoices();
+                    
+                    var foundMale = false;
+                    var foundThomas = null;
+                    var foundAmelie = null;
+                    var foundFrench = null;
+                    
+                    for (var i = 0; i < voices.length; i++) {
+                        var v = voices[i];
+                        var name = v.name || "";
+                        var lang = v.lang || "";
+                        
+                        if (name === "French Male") foundMale = true;
+                        if (name.indexOf("Thomas") !== -1) foundThomas = name;
+                        if (name.indexOf("Amelie") !== -1) foundAmelie = name;
+                        
+                        if (!foundFrench && (lang.indexOf("fr") === 0 || name.indexOf("French") !== -1)) {
+                            foundFrench = name;
+                        }
+                    }
+                    
+                    if (foundMale) voice = "French Male";
+                    else if (foundThomas) voice = foundThomas;
+                    else if (foundAmelie) voice = foundAmelie;
+                    else if (foundFrench) voice = foundFrench;
+                    
+                    console.log("Default Voice set to: " + voice);
+                    responsiveVoice.setDefaultVoice(voice);
+                };
+            }
         </script>
         <!-- <script>responsiveVoice.speak("menu activite")</script> -->
 
@@ -601,9 +641,9 @@ if (strlen($_SESSION['id'] == 0)) {
         /* Ajustement du conteneur pour qu'il s'intègre bien */
         #clock-wrapper {
             background: rgba(0, 0, 0, 0.2);
-            padding: 20px;
+            padding: 10px;
             border-radius: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
     </style>
     </head>
@@ -664,31 +704,31 @@ if (strlen($_SESSION['id'] == 0)) {
                                                     </div> -->
                                                     <div style="color:green ; text-align: center">
                                                         <form method="post">
-                                                            <table class="table table-bordered">
+                                                            <table class="table" style="border: none;">
                                                                 <tr>
-                                                                    <td colspan="3" style="text-align:center ;">
+                                                                    <td colspan="3" style="text-align:center; border: none;">
                                                                         <button type="submit" id="moins" class="btn btn-primaryg btn-block" name="moins">
                                                                              -2 Minutes </button>
                                                                     </td>
-                                                                    <td colspan="3" style="text-align:center !important ;">
+                                                                    <td colspan="3" style="text-align:center !important; border: none;">
                                                                         <button type="submit" class="btn btn-primary btn-block" name="pauseresume" style="background-color: #007bff !important; color: white !important; border-color: #007bff !important;">Pause / Resume</button>
                                                                     </td>
-                                                                    <td colspan="3" style="text-align:center ;">
+                                                                    <td colspan="3" style="text-align:center; border: none;">
                                                                         <button type="submit" class="btn btn-primaryg btn-block" name="plus">+2 Minutes </button>
                                                                     </td>
                                                                 </tr>
                                                                 <tr>
-                                                                    <td colspan="3" style="text-align:center ;">
+                                                                    <td colspan="3" style="text-align:center; border: none;">
                                                                         <!-- Remplacement du bouton -1 Minute par Blinde Précédente -->
                                                                         <button type="submit" id="prev_blind" class="btn btn-warning btn-block" name="prev_blind" style="color: black !important; background-color: #ffc107 !important; border-color: #ffc107 !important;">
                                                                             Blinde Précédente
                                                                         </button>
                                                                     </td>
-                                                                    <td colspan="3" style="text-align:center ;">
+                                                                    <td colspan="3" style="text-align:center; border: none;">
                                                                         <!-- CORRECTION : Changement du name="pauseresume" en name="reset_blind" -->
                                                                         <button type="submit" class="btn btn-primary-rouge btn-block" name="reset_blind">Reset blinde</button>
                                                                     </td>
-                                                                    <td colspan="3" style="text-align:center ;">
+                                                                    <td colspan="3" style="text-align:center; border: none;">
                                                                         <!-- Ancien bouton +1 Minute remplacé -->
                                                                         <button type="submit" id="next_blind" class="btn btn-warning btn-block" name="next_blind" style="color: black !important; background-color: #ffc107 !important; border-color: #ffc107 !important;">
                                                                             Blinde Suivante 
@@ -1356,8 +1396,36 @@ if (strlen($_SESSION['id'] == 0)) {
 
                                                         // Prononcé un message aussi
                                                         if (typeof responsiveVoice !== 'undefined') {
-                                                            responsiveVoice.speak("Temps écoulé!", "French Female");
-                                                                                                               }
+                                                            // Fallback iOS amélioré (V4)
+                                                            var voice = "French Female"; // Par défaut
+                                                            var voices = responsiveVoice.getVoices();
+                                                            
+                                                            var foundMale = false;
+                                                            var foundThomas = null;
+                                                            var foundAmelie = null;
+                                                            var foundFrench = null;
+                                                            
+                                                            for (var i = 0; i < voices.length; i++) {
+                                                                var v = voices[i];
+                                                                var name = v.name || "";
+                                                                var lang = v.lang || "";
+                                                                
+                                                                if (name === "French Male") foundMale = true;
+                                                                if (name.indexOf("Thomas") !== -1) foundThomas = name;
+                                                                if (name.indexOf("Amelie") !== -1) foundAmelie = name;
+                                                                
+                                                                if (!foundFrench && (lang.indexOf("fr") === 0 || name.indexOf("French") !== -1)) {
+                                                                    foundFrench = name;
+                                                                }
+                                                            }
+                                                            
+                                                            if (foundMale) voice = "French Male";
+                                                            else if (foundThomas) voice = foundThomas;
+                                                            else if (foundAmelie) voice = foundAmelie;
+                                                            else if (foundFrench) voice = foundFrench;
+                                                            
+                                                            responsiveVoice.speak("Temps écoulé!", voice);
+                                                        }
                                                     }
 
                                                     // Mettre à jour l'affichage
