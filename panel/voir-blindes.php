@@ -486,9 +486,16 @@ if (strlen($_SESSION['id'] == 0)) {
         <style>
             /* REDUCTION TAILLE TIMER DANS L'ONGLET ADMIN */
             #TimerE .timer-circle-container {
-                width: 55vmin !important;
-                height: 55vmin !important;
+                width: 44.3vmin !important;
+                height: 44.3vmin !important;
             }
+            
+            /* Réduction du contenu du timer pour l'onglet admin */
+            #TimerE #level-name { font-size: 2.6vmin !important; }
+            #TimerE #timer-display { font-size: 13.1vmin !important; }
+            #TimerE #timer-display.paused { font-size: 6.7vmin !important; }
+            #TimerE #level-info { font-size: 5.2vmin !important; }
+            #TimerE #car-pause { font-size: 2.2vmin !important; }
 
             /* Force l'interactivité et la position au-dessus des autres éléments */
             .players-table .btn {
@@ -614,7 +621,7 @@ if (strlen($_SESSION['id'] == 0)) {
             color: #f90909ff;  /* Rouge */
             font-weight: bold;
             line-height: 1;
-            text-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+            text-shadow: 0 0 20px rgba(168, 11, 11, 0.46);
             margin-bottom: 10px;
         }
         
@@ -818,16 +825,18 @@ if (strlen($_SESSION['id'] == 0)) {
                                                 </div>
 
                                                 <!-- Colonne droite: Tableau des joueurs (Style mis à jour) -->
-                                                <div style="flex: 1; min-width: 500px;">
+                                                <div style="flex: 1; min-width: 300px; max-width: 100%;">
                                                     <div class="card mb-4" style="border: none; box-shadow: none; border-radius: 8px; overflow: hidden;">
                                                         <div class="card-header"
-                                                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px 8px 0 0; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); border-bottom: 3px solid #5568d3;">
+                                                            onclick="if(!event.target.closest('a')) window.location.href = 'fullscreen-player.php?uid=<?php echo $id; ?>';"
+                                                            title="Cliquez pour ouvrir en plein écran"
+                                                            style="cursor: pointer; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px 8px 0 0; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4); border-bottom: 3px solid #5568d3;">
                                                             <i class="fas fa-users" style="margin-right: 10px; font-size: 1.2em;"></i> 
                                                             <strong style="font-size: 1.1em;"> <a href="voir-activite.php?uid=<?php echo $id; ?>" style="color: white; text-decoration: underline;"><?php echo htmlspecialchars($res['titre-activite'], ENT_QUOTES); ?></a></strong>
                                                         </div>
-                                                        <div class="card-body" style="padding: 25px; background: linear-gradient(135deg, #fafbfc 0%, #f0f4ff 100%);">
+                                                        <div class="card-body" style="padding: 10px; background: linear-gradient(135deg, #fafbfc 0%, #f0f4ff 100%); overflow-x: auto;">
                                                             <!-- AUGMENTATION DE LA TAILLE DE POLICE GLOBALE DU TABLEAU DE 14px A 16px -->
-                                                            <table class="table table-striped table-bordered players-table" style="font-size:16px;">
+                                                            <table class="table table-striped table-bordered players-table" style="font-size:1.5vmin; width: 100%;">
                                                                 <thead style="background: #667eea;">
                                                                     <tr>
                                                                         <th style="color: white !important;">Ordre</th>
@@ -945,6 +954,7 @@ if (strlen($_SESSION['id'] == 0)) {
 
                                                                         // CORRECTION CSS : Ajout de !important pour forcer le gris par dessus le style "striped" du tableau
                                                                         $rowStyle = $isEliminated ? 'opacity:0.6; background-color:#dcdcdc !important;' : '';
+                                                                        $rowClass = $isEliminated ? 'eliminated' : '';
                                                                         $disabledAttr = $isEliminated ? 'disabled' : '';
 
                                                                         // --- Restriction Recave (User 265 uniquement) ---
@@ -959,7 +969,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                             $btnPlusDisplay = '<button class="btn btn-primary btn-sm btn-plus" type="button" onclick="addRecave(this)" data-id="' . intval($row['id-participation']) . '" ' . $recaveDisabledAttr . ' style="background-color: #007bff !important; color: white !important; border-color: #007bff !important;">+</button>';
                                                                         }
 
-                                                                        echo '<tr style="' . $rowStyle . '">
+                                                                        echo '<tr class="' . $rowClass . '" style="' . $rowStyle . '">
                                                                             <td style="text-align:center; font-weight:bold;">' . $classementDisplay . '</td>
                                                                             <td class="pseudo-cell"><span class="actual-pseudo">' . htmlspecialchars($row['nom-membre'], ENT_QUOTES) . '</span>' . $elimCountDisplay . '</td>
                                                                             <td>

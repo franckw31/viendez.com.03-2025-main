@@ -102,13 +102,9 @@ window.openEliminationModal = function(victimParticipationId, victimName, activi
         
         if (String(partId) === String(victimParticipationId)) return; 
         
-        // --- CORRECTION ICI ---
-        // Cette ligne empêchait les joueurs éliminés d'apparaître dans la liste.
-        // On la commente pour autoriser tout le monde (même les éliminés) à être le "tueur".
-        
-        // if (elimSpan && elimSpan.textContent.trim().length > 0) return;
-        
-        // ----------------------
+        // FILTRE : On ne propose que les joueurs EN JEUX (pas éliminés)
+        // On vérifie la classe 'eliminated' ajoutée par PHP
+        if (r.classList.contains('eliminated')) return;
         
         var pseudo = pseudoSpan.textContent.trim();
         options += '<option value="' + pseudo + '" data-member-id="' + membreId + '">' + pseudo + '</option>';
@@ -123,7 +119,7 @@ window.openEliminationModal = function(victimParticipationId, victimName, activi
     overlay.innerHTML = `
         <div style="background:#fff;padding:16px;border-radius:6px;min-width:320px;box-shadow:0 0 20px rgba(0,0,0,0.5);">
             <h5 style="margin:0 0 10px">Quel joueur a éliminé <strong>${victimName}</strong> ?</h5>
-            <select id="eliminatorSelect" style="width:100%;padding:6px;margin-top:6px;">${options}</select>
+            <select id="eliminatorSelect" style="width:100%; height: 40px; padding:6px; margin-top:6px; color: #333; background-color: #fff;">${options}</select>
             
             <div style="margin-top:12px;padding:10px;border:1px solid #ddd;border-radius:4px;background-color:#f9f9f9;">
                 <label style="display:flex;align-items:center;margin:0;cursor:pointer;">
