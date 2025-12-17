@@ -285,7 +285,7 @@ $recave_montant = intval($act_row['recave_montant']);
     <a href="voir-blindes.php?uid=<?php echo $id; ?>" class="back-btn"><i class="fa fa-arrow-left"></i> Retour</a>
 
     <div class="header-title">
-        <?php echo htmlspecialchars($activity_title); ?> <span style="color: white; opacity: 0.5;">
+        <a href="fullscreen-timer.php?uid=<?php echo $id; ?>" style="color:inherit; text-decoration:none; cursor:pointer;"><?php echo htmlspecialchars($activity_title); ?></a> <span style="color: white; opacity: 0.5;">
     </div>
 
     <div class="content-wrapper">

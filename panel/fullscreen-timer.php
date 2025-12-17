@@ -177,10 +177,6 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
                 else if (foundAmelie) voice = foundAmelie;
                 else if (foundFrench) voice = foundFrench;
                 
-                // Affichage debug discret en bas de page
-                var d = document.getElementById('debug-voice');
-                if(d) d.innerHTML = debugMsg + " | Active: " + voice;
-                
                 console.log("Default Voice set to: " + voice);
                 responsiveVoice.setDefaultVoice(voice);
             };
@@ -385,11 +381,6 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
     <!-- Heure en haut à droite -->
     <div class="top-right-clock" id="real-time-clock">Il est --:--</div>
     
-    <!-- Debug Voice (Temporaire) -->
-    <div id="debug-voice" style="position:fixed; bottom:0; left:0; width:100%; background:rgba(0,0,0,0.7); color:#00ff00; font-size:14px; z-index:9999; text-align:center; padding:5px; pointer-events:none;">
-        Chargement voix...
-    </div>
-
     <div class="timer-container">
         
         <!-- ZONE HORLOGE & BLINDES -->
@@ -409,8 +400,8 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
         </div> -->
 
         <!-- ZONE STATS JOUEURS -->
-        <div id="zone-stats" style="font-size: 3vw; color: rgba(11, 245, 65, 0.83); margin-top: 20px; font-weight: bold;">
-            <?php echo $active_players; ?> <span style="color:white">Joueurs</span> / <?php echo $total_players; ?> &nbsp;, &nbsp; <span style="color:white">Stack Moyen </span> <?php echo number_format($avg_stack, 0, ',', ' '); ?>
+        <div id="zone-stats" style="font-size: 3vw; color: rgba(11, 245, 65, 0.83); margin-top: 20px; font-weight: bold; position: relative; z-index: 2000;">
+            <?php echo $active_players; ?> <a href="fullscreen-player.php?uid=<?php echo $id; ?>" style="color:white; text-decoration:underline; cursor:pointer;">Joueurs</a> / <?php echo $total_players; ?> &nbsp;, &nbsp; <span style="color:white">Stack Moyen </span> <?php echo number_format($avg_stack, 0, ',', ' '); ?>
         </div>
 
         <!-- ZONE ESTIMATION -->
@@ -501,7 +492,7 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
             const now = new Date();
             const hours = String(now.getHours()).padStart(2, '0');
             const minutes = String(now.getMinutes()).padStart(2, '0');
-            document.getElementById('real-time-clock').innerText = `Il est ${hours}:${minutes}`;
+            document.getElementById('real-time-clock').innerText = `${hours}:${minutes}`;
         }
         
         // Update immediately and then every second (to be accurate when minute changes)

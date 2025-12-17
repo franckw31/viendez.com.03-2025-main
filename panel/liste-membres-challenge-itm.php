@@ -742,6 +742,19 @@ $monthNames = [
 echo date('j') . ' ' . $monthNames[date('n')] . ' ' . date('Y'); 
 ?></span></li>
 </ol>
+                                                            <?php
+$membres = fetchMembres();
+$totalCagnotte = 0;
+$totalVictoires = 0;
+foreach ($membres as $m) {
+    $cagnotteVal = floatval(str_replace(',', '.', str_replace(' ', '', $m['cagnotte'])));
+    $totalCagnotte += $cagnotteVal;
+    $totalVictoires += (int)$m['classement'];
+}
+?>
+<div class="alert alert-info text-center" style="font-size: 24px; font-weight: bold;">
+    Total Cagnotte : <?= number_format($totalCagnotte, 2, ',', ' ') ?> € pour <?= $totalVictoires ?> Parties Jouées
+</div>
                                                             <div class="card mb-4">
                                                                 <div class="card-body p-2">
                                                                     <div class="table-responsive">
@@ -763,7 +776,7 @@ echo date('j') . ' ' . $monthNames[date('n')] . ' ' . date('Y');
                                                                                 </tr>
                                                                             </thead>
                                                                             <tbody>
-                                                                                <?php foreach(fetchMembres() as $index => $row): 
+                                                                                <?php foreach($membres as $index => $row): 
                                                                                     $position_actuelle = $index + 1;
                                                                                     $ancienne_pos = $row['ancienne_position'];
                                                                                     
@@ -942,15 +955,6 @@ echo date('j') . ' ' . $monthNames[date('n')] . ' ' . date('Y');
                         .removeClass('col-center')
                         .addClass('col-number'); // <-- aligner à droite
 
-                    // Points total (colonne 9)
-                    var pointsTotal = api.column(9, {search:'applied'}).data()
-                        .reduce((a, b) => {
-                            a = parseFloat(a.toString().replace(' ', '').replace(',', '.')) || 0;
-                            b = parseFloat(b.toString().replace(' ', '').replace(',', '.')) || 0;
-                            return a + b;
-                        }, 0);
-                    $(api.column(9).footer()).html(pointsTotal.toFixed(2).replace('.', ',') + ' ');
-
                     // Jetons total (colonne 10)
                     var jetonsTotal = api.column(10, {search:'applied'}).data()
                         .reduce((a, b) => {
@@ -974,13 +978,6 @@ echo date('j') . ' ' . $monthNames[date('n')] . ' ' . date('Y');
                         .reduce((a, b) => parseInt(a || 0) + parseInt(b || 0), 0);
                     $(api.column(7).footer())
                         .html(victoiresTotal)
-                        .addClass('col-number'); // aligner à droite
-
-                    // Total classement (colonne 7)
-                    var classementTotal = api.column(7, {search:'applied'}).data()
-                        .reduce((a, b) => parseInt(a || 0) + parseInt(b || 0), 0);
-                    $(api.column(7).footer())
-                        .html(classementTotal)
                         .addClass('col-number'); // aligner à droite
 
                     // Applique le formatage des totaux

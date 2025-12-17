@@ -314,7 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Mise à jour Stats Joueurs
             const statsZone = document.getElementById('zone-stats');
             if (statsZone && data.players_active !== undefined) {
-                statsZone.innerHTML = `${data.players_active} <span style="color:white">Joueurs</span> / ${data.players_total} &nbsp;|&nbsp; <span style="color:white">Stack Moyen </span> ${data.avg_stack}`;
+                statsZone.innerHTML = `${data.players_active} <a href="fullscreen-player.php?uid=${uid}" style="color:white; text-decoration:underline; cursor:pointer;">Joueurs</a> / ${data.players_total} &nbsp;|&nbsp; <span style="color:white">Stack Moyen </span> ${data.avg_stack}`;
             }
 
             // Sync du temps restant
