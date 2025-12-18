@@ -12,8 +12,10 @@ if (strlen($_SESSION['id'] == 0)) {
 	<!DOCTYPE html>
 	<html lang="en">
 	<head>
-		<title>AdmiN | Dashboard</title>
-		<linkh href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic" rel="stylesheet" type="text/css" />
+		<title>Admin | Dashboard</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimum-scale=1.0, maximum-scale=1.0">
+		<link href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
 		<link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
 		<link rel="stylesheet" href="vendor/themify-icons/themify-icons.min.css">
@@ -27,383 +29,134 @@ if (strlen($_SESSION['id'] == 0)) {
 		<link rel="stylesheet" href="assets/css/styles.css">
 		<link rel="stylesheet" href="assets/css/plugins.css">
 		<link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
-
+		
+		<!-- Modern Dashboard CSS -->
+		<link rel="stylesheet" href="assets/css/modern-dashboard.css">
 	</head>
 
 	<body>
 		<div id="app">
 			<?php
 			$fiche = $_SESSION['id'];
-			// echo "/".$fiche."/";
-			$result = mysqli_query($con, "SELECT * FROM `membres`  WHERE 'id-membre' = $fiche");
-			$num = mysqli_fetch_assoc($result);
-			$droits = $num[`droits`];
-			// $droits = "2";
-			// echo '-----'.$fiche.'------'.$droits.")";
-			// if ($droits = '1') {
-			// 	include('include/sidebaruser.php');
-			// } else {
-			// 	if ($droits = '2')
-			// 		include('include/sidebar.php');
-			// }
 			include('include/sidebar.php');
 			?>
 			<div class="app-content">
 				<?php include('include/header.php'); ?>
-				<!-- end: TOP NAVBAR -->
+				
 				<div class="main-content">
 					<div class="wrap-content container" id="container">
-						<!-- start: PAGE TITLE -->
+						<!-- Page Title -->
 						<section id="page-title">
 							<div class="row">
 								<div class="col-sm-8">
-									<h1 class="mainTitle">.</h1>
-									<?php
-									$result = mysqli_query($con, "SELECT * FROM `membres` WHERE 'id-membre'=$fiche");
-									$num = mysqli_fetch_assoc($result);
-									$droits = $num['droits'];
-										// echo '-----'.$fiche.'------';
-										// echo $num['prenom'].' ('.$_SESSION['id'].')'.'('.$droits.')'; ?>
+									<h1 class="mainTitle">Tableau de Bord</h1>
+									<span class="mainDescription">Bienvenue sur votre espace d'administration</span>
 								</div>
 								<ol class="breadcrumb">
-									<li>
-										<span>Admin.</span>
-									</li>
-									<li class="active">
-										<span>DashboarD</span>
-									</li>
+									<li><span>Admin</span></li>
+									<li class="active"><span>Dashboard</span></li>
 								</ol>
 							</div>
 						</section>
-						<!-- end: PAGE TITLE -->
-						<!-- start: BASIC EXAMPLE bg-white-->
-						<div class="ccontainer-fluid ccontainer-fullw ">
-							<div class="rrow">
 
-								<div class="col-sm-4"><a href="     prochaines-activites.php     ">
-									<div class="ppanel panel-white-fond1 no-radius text-center">
-										<div class="panel-body">
-											<span class="fa-stack fa-4x"> 
-											<!--	<i class="faa faa-square faa-stack-2x ttext-primary"></i> -->
-											<!--	<i class="faa faa-users faa-stack-1x faa-inverse"></i> --> </span>
-											<!-- <h2 class="StepTitle">Prochaines Activités</h2> where date_depart <> '0000-00-00' and datediff(date_depart,now())>-1 order-->
-											<p class="cll-effect-1">
-												<a href="prochaines-activites.php">
-												
-													<?php $result1 = mysqli_query($con, "SELECT * FROM activite");
-													
-													$num_rows1 = mysqli_num_rows($result1); {
-														?>
-														Consulter Prochaines Activités :
-														<?php echo htmlentities($num_rows1);
-													} ?>
-												</a>
-											</p>
-										</div>
+						<!-- Stats Overview -->
+						<div class="row">
+							<div class="col-sm-4">
+								<a href="prochaines-activites.php" class="dashboard-card card-blue">
+									<div class="card-icon"><i class="fa fa-calendar-check-o"></i></div>
+									<div class="card-title">Prochaines Activités</div>
+									<div class="card-description">Événements à venir</div>
+								</a>
+							</div>
+							<div class="col-sm-4">
+								<a href="liste-activites.php" class="dashboard-card card-orange">
+									<div class="card-icon"><i class="fa fa-list-alt"></i></div>
+									<div class="card-title">Historique des Activités</div>
+									<div class="card-stat">
+										<?php 
+										$result_act = mysqli_query($con, "SELECT * FROM activite");
+										echo htmlentities(mysqli_num_rows($result_act)); 
+										?>
 									</div>
-								</div>
-
-								<div class="col-sm-4"><a href="liste-membres-container.php">
-									<div class="panel panel-white-membres no-radius text-center">
-										<div class="panel-body">
-											<span class="fa-stack fa-4x">
-												<i class="faa faa-square faa-stack-2x ttext-primary"></i> 
-												<i class="faa faa-users faa-stack-1x faa-inverse"></i> </span>
-											<!-- <h2 class="StepTitle">Gestion des Activités</h2> -->
-											<p class="cl-effect-1">
-												<a href="liste-membres-container.php">
-													<?php $result1 = mysqli_query($con, "SELECT * FROM membres ");
-													$num_rows1 = mysqli_num_rows($result1); {
-														?>
-														Nos membres :
-														<?php echo htmlentities($num_rows1);
-													} ?>
-												</a>
-											</p>
-										</div>
-									</div>
-								</div>
-								
-								<div class="col-sm-4"><a href="liste-activites.php">
-									<div class="panel panel-white-activites no-radius text-center">
-										<div class="panel-body">
-											<span class="fa-stack fa-4x"> 
-												<i class="faa faa-square faa-stack-2x ttext-primary"></i> 
-												<i class="faa faa-smile-o faa-stack-1x faa-inverse"></i> </span>
-											<!-- <h2 class="StepTitle">Gestion des Membres</h2> -->
-
-											<p class="cl-effect-1">
-												<a href="liste-activites.php">
-													<?php $result = mysqli_query($con, "SELECT * FROM activite ");
-													$num_rows = mysqli_num_rows($result); {
-														?>
-														Activités :
-														<?php echo htmlentities($num_rows);
-													} ?>
-												</a>
-											</p>
-										</div>
-									</div>
-								</div>
-
-								<div class="col-sm-4"><a href="prochaines-activites.php">
-									<div class="panel panel-white no-radius text-center">
-										<!-- <div class="panel-body"> -->
-											<span class="ffa-stack fa-2x"> 
-												<!-- <i	class="fa fa-square fa-stack-2x text-primary"></i> -->
-												<!-- <i	class="fa fa-terminal fa-stack-1x fa-inverse"></i> -->
-											</span>
-											<h2 class="StepTitle">Prochainement</h2>
-
-									</div></a>
-								</div>
-
-								<div class="col-sm-4"><a href="liste-membres-container.php">
-									<div class="panel panel-white no-radius text-center">
-										<!-- <div class="panel-body"> -->
-											<span class="ffa-stack fa-2x"> 
-												<!-- <i	class="fa fa-square fa-stack-2x text-primary"></i> -->
-												<!-- <i	class="fa fa-terminal fa-stack-1x fa-inverse"></i> -->
-											</span>
-											<h2 class="StepTitle">Membres</h2>
-
-									</div></a>
-								</div>
-
-								<div class="col-sm-4"><a href="liste-activites.php">
-									<div class="panel panel-white no-radius text-center">
-										<!-- <div class="panel-body"> -->
-											<span class="ffa-stack fa-2x"> 
-												<!-- <i	class="fa fa-square fa-stack-2x text-primary"></i> -->
-												<!-- <i	class="fa fa-terminal fa-stack-1x fa-inverse"></i> -->
-											</span>
-											<h2 class="StepTitle">Historique</h2>
-
-									</div></a>
-								</div>
-								
-								
-
-								<div class="col-sm-4"><a href="liste-membres-challenge-itm.php">
-									<div class="ppanel panel-white-chal no-radius text-center">
-										<div class="panel-body">
-											<span class="fa-stack fa-4x"> 
-												<i class="faa faa-square faa-stack-2x ttext-primary"></i>
-												<i class="faa faa-users faa-stack-1x faa-inverse"></i> </span>
-											<!-- <h2 class="StepTitle">Prochaines Activités</h2> -->
-											<p class="cl-effect-1">
-												<a href="liste-membres-challenge-itm.php">
-													<?php $result1 = mysqli_query($con, "SELECT * FROM activite ");
-													$num_rows1 = mysqli_num_rows($result1); {
-														?>
-														Prochaines challenges :
-														<?php echo htmlentities($num_rows1);
-													} ?>
-												</a>
-											</p>
-										</div>
-									</div>
-								</div>
-								<div class="col-sm-4"><a href="quick-part.php">
-									<div class="panel panel-white-dico no-radius text-center">
-										<div class="panel-body">
-											<span class="fa-stack fa-4x"> 
-												<i class="tti-files ffa-1x ttext-primary"></i>
-												<i class="faa faa-terminal faa-stack-1x faa-inverse"></i> </span>
-											<!-- <h2 class="StepTitle">Recherche Textuelle</h2> -->
-
-											<p class="links cl-effect-1">
-												<a href="book-appointment.php">
-													<a href="quick-part.php">
-														<?php
-														$sql = mysqli_query($con, "SELECT * FROM tblcontactus where  IsRead is null");
-														$num_rows22 = mysqli_num_rows($sql);
-														?>
-														Rechercher </a>
-													</a>
-											</p>
-										</div>
-									</div>
-								</div>
-
-								<div class="col-sm-4"><a href="/panel/map.html">
-									<div class="panel panel-white-france no-radius text-center">
-									<div class="panel-body">
-											<span class="fa-stack fa-4x"> <i
-													class="faa faa-square faa-stack-4x ttext-primary"></i> <i
-													class="faa faa-users faa-stack-1x faa-inverse"></i> </span> 
-													<!-- <span class="fa-stack fa-2x"> <i class="ti-files fa-1x text-primary"></i> <i
-													class="fa fa-terminal fa-stack-1x fa-inverse"></i> </span> -->
-											<!-- <h2 class="StepTitle">Recherche Cartographique</h2> -->
-											<p class="cl-effect-1">
-												<a href="/panel/map.html">
-													<?php $result1 = mysqli_query($con, "SELECT * FROM activite ");
-													$num_rows1 = mysqli_num_rows($result1); {
-														?>
-														Carte</a>
-														<?php echo htmlentities($num_rows1);
-													} ?>
-												</a>
-											</p>
-										</div>
-									</div>
-								</div>
-								<div class="col-sm-4"><a href="liste-membres-challenge-itm.php">
-									<div class="panel panel-white no-radius text-center">
-										<!-- <div class="panel-body"> -->
-											<span class="ffa-stack fa-2x"> 
-												<!-- <i	class="fa fa-square fa-stack-2x text-primary"></i> -->
-												<!-- <i	class="fa fa-terminal fa-stack-1x fa-inverse"></i> -->
-											</span>
-											<h2 class="StepTitle">Challenges</h2>
-
-									</div></a>
-								</div>
-
-								<div class="col-sm-4"><a href="quick-part.php">
-									<div class="panel panel-white no-radius text-center">
-										<!-- <div class="panel-body"> -->
-											<span class="ffa-stack fa-2x"> 
-												<!-- <i	class="fa fa-square fa-stack-2x text-primary"></i> -->
-												<!-- <i	class="fa fa-terminal fa-stack-1x fa-inverse"></i> -->
-											</span>
-											<h2 class="StepTitle">Participation</h2>
-
-									</div></a>
-								</div>
-
-								<div class="col-sm-4"><a href="/panel/map.html">
-									<div class="panel panel-white no-radius text-center">
-										<!-- <div class="panel-body"> -->
-											<span class="ffa-stack fa-2x"> 
-												<!-- <i	class="fa fa-square fa-stack-2x text-primary"></i> -->
-												<!-- <i	class="fa fa-terminal fa-stack-1x fa-inverse"></i> -->
-											</span>
-											<h2 class="StepTitle">Localisation</h2>
-
-									</div></a>
-								</div>
+									<div class="card-description">Historique complet</div>
+								</a>
+							</div>
+							<div class="col-sm-4">
+								<a href="/panel/map.html" class="dashboard-card">
+									<div class="card-icon"><i class="fa fa-map-marker"></i></div>
+									<div class="card-title">Géolocalisation</div>
+									<div class="card-description">Localisation des membres</div>
+								</a>
 							</div>
 						</div>
 
-						<div class="col-sm-4"><a href="reglement.php">
-									<div class="ppanel panel-white-regles no-radius text-center">
-										<div class="panel-body">
-											<span class="fa-stack fa-4x"> 
-												<i class="faa faa-square faa-stack-2x ttext-primary"></i>
-												<i class="faa faa-users faa-stack-1x faa-inverse"></i> </span>
-											<!-- <h2 class="StepTitle">Prochaines Activités</h2> -->
-											<!-- <p class="cl-effect-1">
-												<a href="gestion-challenges.php">
-													<?php $result1 = mysqli_query($con, "SELECT * FROM activite");
-													$num_rows1 = mysqli_num_rows($result1); {
-														?>
-														Regles :
-														<?php echo htmlentities($num_rows1);
-													} ?>
-												</a>
-											</p> -->
-										</div>
+						<!-- Main Navigation Sections -->
+						
+						<!-- Gestion -->
+						<div class="row">
+							<div class="col-sm-4">
+								<a href="liste-membres-container.php" class="dashboard-card">
+									<div class="card-icon"><i class="fa fa-user"></i></div>
+									<div class="card-title">Gestion des Membres</div>
+									<div class="card-stat">
+										<?php 
+										$result_membres = mysqli_query($con, "SELECT * FROM membres");
+										echo htmlentities(mysqli_num_rows($result_membres)); 
+										?>
 									</div>
-								</div>
-								<div class="col-sm-4"><a href="/newtimer/index.php">
-									<div class="panel panel-white-blindest no-radius text-center">
-										<div class="panel-body">
-											<span class="fa-stack fa-4x"> 
-												<i class="tti-files ffa-1x ttext-primary"></i>
-												<i class="faa faa-terminal faa-stack-1x faa-inverse"></i> </span>
-											<!-- <h2 class="StepTitle">Recherche Textuelle</h2> -->
-
-											<!-- <p class="links cl-effect-1">
-												<a href="book-appointment.php">
-													<a href="recherche-loisir.php">
-														<?php
-														$sql = mysqli_query($con, "SELECT * FROM tblcontactus where  IsRead is null");
-														$num_rows22 = mysqli_num_rows($sql);
-														?>
-														Timer Blindes </a>
-													</a>
-											</p> -->
-										</div>
-									</div>
-								</div>
-
-								<div class="col-sm-4"><a href="agenda.php">
-									<div class="panel panel-white-texto no-radius text-center">
-									<div class="panel-body">
-											<span class="fa-stack fa-4x"> <i
-													class="faa faa-square faa-stack-4x ttext-primary"></i> <i
-													class="faa faa-users faa-stack-1x faa-inverse"></i> </span> 
-													<!-- <span class="fa-stack fa-2x"> <i class="ti-files fa-1x text-primary"></i> <i
-													class="fa fa-terminal fa-stack-1x fa-inverse"></i> </span> -->
-											<!-- <h2 class="StepTitle">Recherche Cartographique</h2> -->
-											<!-- <p class="cl-effect-1">
-												<a href="/index.html">
-													<?php $result1 = mysqli_query($con, "SELECT * FROM activite ");
-													$num_rows1 = mysqli_num_rows($result1); {
-														?>
-														Time 30S</a>
-														<?php echo htmlentities($num_rows1);
-													} ?>
-												</a>
-											</p> -->
-										</div>
-									</div>
-								</div>
-
-								<div class="col-sm-4"><a href="reglement.php">
-									<div class="panel panel-white no-radius text-center">
-										<!-- <div class="panel-body"> -->
-											<span class="ffa-stack fa-2x"> 
-												<!-- <i	class="fa fa-square fa-stack-2x text-primary"></i> -->
-												<!-- <i	class="fa fa-terminal fa-stack-1x fa-inverse"></i> -->
-											</span>
-											<h2 class="StepTitle text-center">Règles</h2>
-
-									</div></a>
-								</div>
-
-								<div class="col-sm-4"><a href="/newtimer/index.php">
-									<div class="panel panel-white no-radius text-center">
-										<!-- <div class="panel-body"> -->
-											<span class="ffa-stack fa-2x"> 
-												<!-- <i	class="fa fa-square fa-stack-2x text-primary"></i> -->
-												<!-- <i	class="fa fa-terminal fa-stack-1x fa-inverse"></i> -->
-											</span>
-											<h2 class="StepTitle">Timer</h2>
-
-									</div></a>
-								</div>
-
-								<div class="col-sm-4"><a href="agenda.php">
-									<div class="panel panel-white no-radius text-center">
-										<!-- <div class="panel-body"> -->
-											<span class="ffa-stack fa-2x"> 
-												<!-- <i	class="fa fa-square fa-stack-2x text-primary"></i> -->
-												<!-- <i	class="fa fa-terminal fa-stack-1x fa-inverse"></i> -->
-											</span>
-											<h2 class="StepTitle">Planning</h2>
-
-									</div></a>
-								</div>
+									<div class="card-description">Ajouter, modifier ou supprimer des membres</div>
+								</a>
+							</div>
+							<div class="col-sm-4">
+								<a href="liste-membres-challenge-itm.php" class="dashboard-card card-purple">
+									<div class="card-icon"><i class="fa fa-trophy"></i></div>
+									<div class="card-title">Challenges</div>
+									<div class="card-description">Suivi des compétitions et classements</div>
+								</a>
+							</div>
+							<div class="col-sm-4">
+								<a href="agenda.php" class="dashboard-card">
+									<div class="card-icon"><i class="fa fa-calendar"></i></div>
+									<div class="card-title">Planning Mensuel</div>
+									<div class="card-description">Vue calendrier des événements</div>
+								</a>
 							</div>
 						</div>
 
-						<!-- end: SELECT BOXES -->
+						<!-- Jeu & Compétition -->
+						<div class="row">
+							<div class="col-sm-4">
+								<a href="/newtimer/index.php" class="dashboard-card card-red">
+									<div class="card-icon"><i class="fa fa-clock-o"></i></div>
+									<div class="card-title">Horloge Rapide</div>
+									<div class="card-description">Lancer le chronomètre de tournoi</div>
+								</a>
+							</div>
+							<div class="col-sm-4">
+								<a href="reglement.php" class="dashboard-card">
+									<div class="card-icon"><i class="fa fa-book"></i></div>
+									<div class="card-title">Règlement Texas Holdem</div>
+									<div class="card-description">Consulter les règles du club</div>
+								</a>
+							</div>
+							<div class="col-sm-4">
+								<a href="quick-part.php" class="dashboard-card">
+									<div class="card-icon"><i class="fa fa-search"></i></div>
+									<div class="card-title">Recherche Rapide</div>
+									<div class="card-description">Trouver un membre ou une info</div>
+								</a>
+							</div>
+						</div>
 
 					</div>
 				</div>
 			</div>
-			<!-- start: FOOTER -->
+			
 			<?php include('include/footer.php'); ?>
-			<!-- end: FOOTER -->
-
-			<!-- start: SETTINGS -->
 			<?php include('include/setting.php'); ?>
-
-			<!-- end: SETTINGS -->
 		</div>
-		<!-- start: MAIN JAVASCRIPTS -->
+
+		<!-- Scripts -->
 		<script src="vendor/jquery/jquery.min.js"></script>
 		<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
 		<script src="vendor/modernizr/modernizr.js"></script>

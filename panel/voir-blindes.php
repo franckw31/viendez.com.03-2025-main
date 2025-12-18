@@ -2,6 +2,7 @@
 session_start();
 error_reporting(0);
 include('include/config.php');
+date_default_timezone_set('Europe/Paris');
 
 $id = intval($_GET['uid']);
 if (strlen($_SESSION['id'] == 0)) {
@@ -228,8 +229,18 @@ if (strlen($_SESSION['id'] == 0)) {
 
         // 2. Trouver la blinde active
         $currentIndex = -1;
+        
+        // Si le jeu est en pause, on se base sur l'heure de pause pour retrouver le niveau actif
+        $referenceTime = $now;
+        if (!empty($blinds) && isset($blinds[0]['en_pause']) && $blinds[0]['en_pause'] == 1) {
+            $hp = strtotime($blinds[0]['heure_pause']);
+            if ($hp > 0) {
+                $referenceTime = $hp;
+            }
+        }
+
         foreach($blinds as $k => $b) {
-            if (strtotime($b['fin']) > $now) {
+            if (strtotime($b['fin']) > $referenceTime) {
                 $currentIndex = $k;
                 break;
             }
@@ -278,8 +289,18 @@ if (strlen($_SESSION['id'] == 0)) {
 
         // 2. Trouver la blinde active (la première dont la fin est dans le futur)
         $currentIndex = -1;
+        
+        // Si le jeu est en pause, on se base sur l'heure de pause pour retrouver le niveau actif
+        $referenceTime = $now;
+        if (!empty($blinds) && isset($blinds[0]['en_pause']) && $blinds[0]['en_pause'] == 1) {
+            $hp = strtotime($blinds[0]['heure_pause']);
+            if ($hp > 0) {
+                $referenceTime = $hp;
+            }
+        }
+
         foreach($blinds as $k => $b) {
-            if (strtotime($b['fin']) > $now) {
+            if (strtotime($b['fin']) > $referenceTime) {
                 $currentIndex = $k;
                 break;
             }
@@ -295,7 +316,19 @@ if (strlen($_SESSION['id'] == 0)) {
         } else {
             // Sinon on recule d'un cran
             $targetIndex = $currentIndex - 1;
+            
+            // Si la blinde cible a une durée de 0 (ex: pause annulée ou niveau vide) OU est une pause (SB=0 et BB=0), on recule encore
+            // On s'arrête si on atteint l'index 0
+            while ($targetIndex > 0 && (intval($blinds[$targetIndex]['minutes']) <= 0 || (intval($blinds[$targetIndex]['sb']) == 0 && intval($blinds[$targetIndex]['bb']) == 0))) {
+                $targetIndex--;
+            }
         }
+
+        // DEBUG LOG
+        $log = "PrevBlind: ID=$id, Now=$now, RefTime=$referenceTime, CurrentIndex=$currentIndex, TargetIndex=$targetIndex\n";
+        if ($currentIndex >= 0) $log .= "Current: " . json_encode($blinds[$currentIndex]) . "\n";
+        if ($targetIndex >= 0) $log .= "Target: " . json_encode($blinds[$targetIndex]) . "\n";
+        file_put_contents('debug_prev_blind.txt', $log, FILE_APPEND);
 
         // 4. Recalculer tout le planning à partir de la cible
         if ($targetIndex >= 0 && !empty($blinds)) {
@@ -325,7 +358,7 @@ if (strlen($_SESSION['id'] == 0)) {
         // Rafraîchir la page
         ?>
         <script type="text/javascript">
-            window.location.replace("voir-blindes.php?uid=<?php echo $id; ?>");
+            window.location.replace("voir-blindes.php?uid=<?php echo $id; ?>&t=" + new Date().getTime());
         </script>
         <?php
     }
@@ -342,8 +375,18 @@ if (strlen($_SESSION['id'] == 0)) {
 
         // 2. Trouver la blinde active (celle qui est en cours ou qui vient de finir)
         $currentIndex = -1;
+        
+        // Si le jeu est en pause, on se base sur l'heure de pause pour retrouver le niveau actif
+        $referenceTime = $now;
+        if (!empty($blinds) && isset($blinds[0]['en_pause']) && $blinds[0]['en_pause'] == 1) {
+            $hp = strtotime($blinds[0]['heure_pause']);
+            if ($hp > 0) {
+                $referenceTime = $hp;
+            }
+        }
+
         foreach($blinds as $k => $b) {
-            if (strtotime($b['fin']) > $now) {
+            if (strtotime($b['fin']) > $referenceTime) {
                 $currentIndex = $k;
                 break;
             }
@@ -687,7 +730,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                         </div>
                                     <?php }
                                     ;
-                                    date_default_timezone_set('UTC+2');
+                                    date_default_timezone_set('Europe/Paris');
                                     ?>
                                     <div id="bSection">
                                         <div id="BlindesE" class="rubrique">                                            

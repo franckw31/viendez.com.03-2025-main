@@ -1,0 +1,35 @@
+PrevBlind: ID=674, Now=1765989142, RefTime=1765989142, CurrentIndex=0, TargetIndex=0
+Current: {"id":"5675","id-activite":"674","ordre":"1","nom":"100\/200","sb":"100","bb":"200","minutes":"20","fin":"2025-12-17 16:45:58","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5675","id-activite":"674","ordre":"1","nom":"100\/200","sb":"100","bb":"200","minutes":"20","fin":"2025-12-17 16:45:58","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=674, Now=1765989190, RefTime=1765989190, CurrentIndex=0, TargetIndex=0
+Current: {"id":"5675","id-activite":"674","ordre":"1","nom":"100\/200","sb":"100","bb":"200","minutes":"20","fin":"2025-12-17 16:52:22","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5675","id-activite":"674","ordre":"1","nom":"100\/200","sb":"100","bb":"200","minutes":"20","fin":"2025-12-17 16:52:22","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=674, Now=1765989199, RefTime=1765989199, CurrentIndex=0, TargetIndex=0
+Current: {"id":"5675","id-activite":"674","ordre":"1","nom":"100\/200","sb":"100","bb":"200","minutes":"20","fin":"2025-12-17 16:53:10","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5675","id-activite":"674","ordre":"1","nom":"100\/200","sb":"100","bb":"200","minutes":"20","fin":"2025-12-17 16:53:10","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=674, Now=1765989221, RefTime=1765989221, CurrentIndex=0, TargetIndex=0
+Current: {"id":"5675","id-activite":"674","ordre":"1","nom":"100\/200","sb":"100","bb":"200","minutes":"20","fin":"2025-12-17 16:53:19","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5675","id-activite":"674","ordre":"1","nom":"100\/200","sb":"100","bb":"200","minutes":"20","fin":"2025-12-17 16:53:19","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=674, Now=1765989454, RefTime=1765989454, CurrentIndex=0, TargetIndex=0
+Current: {"id":"5675","id-activite":"674","ordre":"1","nom":"100\/200","sb":"100","bb":"200","minutes":"20","fin":"2025-12-17 16:53:41","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5675","id-activite":"674","ordre":"1","nom":"100\/200","sb":"100","bb":"200","minutes":"20","fin":"2025-12-17 16:53:41","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=674, Now=1765989580, RefTime=1765989580, CurrentIndex=3, TargetIndex=2
+Current: {"id":"5678","id-activite":"674","ordre":"4","nom":"400\/800","sb":"400","bb":"800","minutes":"20","fin":"2025-12-17 17:51:34","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5677","id-activite":"674","ordre":"3","nom":"300\/600","sb":"300","bb":"600","minutes":"20","fin":"2025-12-17 17:31:34","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=674, Now=1765989588, RefTime=1765989588, CurrentIndex=2, TargetIndex=1
+Current: {"id":"5677","id-activite":"674","ordre":"3","nom":"300\/600","sb":"300","bb":"600","minutes":"20","fin":"2025-12-17 17:59:40","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5676","id-activite":"674","ordre":"2","nom":"200\/400","sb":"200","bb":"400","minutes":"20","fin":"2025-12-17 17:11:34","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=674, Now=1766049900, RefTime=1766049900, CurrentIndex=-1, TargetIndex=21
+Target: {"id":"5696","id-activite":"674","ordre":"22","nom":"50000\/100000","sb":"50000","bb":"100000","minutes":"15","fin":"2025-12-17 22:59:14","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=674, Now=1766049918, RefTime=1766049918, CurrentIndex=21, TargetIndex=20
+Current: {"id":"5696","id-activite":"674","ordre":"22","nom":"50000\/100000","sb":"50000","bb":"100000","minutes":"15","fin":"2025-12-18 10:40:00","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5695","id-activite":"674","ordre":"21","nom":"35000\/70000","sb":"35000","bb":"70000","minutes":"15","fin":"2025-12-17 22:44:14","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=674, Now=1766049926, RefTime=1766049926, CurrentIndex=20, TargetIndex=19
+Current: {"id":"5695","id-activite":"674","ordre":"21","nom":"35000\/70000","sb":"35000","bb":"70000","minutes":"15","fin":"2025-12-18 10:40:18","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5694","id-activite":"674","ordre":"20","nom":"25000\/50000","sb":"25000","bb":"50000","minutes":"15","fin":"2025-12-17 22:29:14","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=674, Now=1766049936, RefTime=1766049936, CurrentIndex=19, TargetIndex=18
+Current: {"id":"5694","id-activite":"674","ordre":"20","nom":"25000\/50000","sb":"25000","bb":"50000","minutes":"15","fin":"2025-12-18 10:40:26","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5693","id-activite":"674","ordre":"19","nom":"20000\/40000","sb":"20000","bb":"40000","minutes":"15","fin":"2025-12-17 22:14:14","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=674, Now=1766049944, RefTime=1766049944, CurrentIndex=18, TargetIndex=17
+Current: {"id":"5693","id-activite":"674","ordre":"19","nom":"20000\/40000","sb":"20000","bb":"40000","minutes":"15","fin":"2025-12-18 10:40:36","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5692","id-activite":"674","ordre":"18","nom":"15000\/30000","sb":"15000","bb":"30000","minutes":"15","fin":"2025-12-17 21:59:14","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}

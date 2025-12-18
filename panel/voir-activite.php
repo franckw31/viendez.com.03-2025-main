@@ -466,15 +466,15 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
         overflow: hidden;
         /* background: #000;  */
         background-size: 100% 100%;
-        background-image: url('/panel/images/table-empire-10j.jpg');
+        background-image: url('/panel/images/table-banks.jpg');
         background-repeat: no-repeat;
         opacity: 1;
         left: 0;
         right: 0;
         top: -100px;
         bottom: 0;
-        border-radius: 200px;
-        border: 1px solid white;
+        border-radius: 50%;
+        /* border: 1px solid white; */
 
 
     }
@@ -1370,27 +1370,7 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                     </script>
                                     <!-- <script >responsiveVoice.speak("Table 1","French Female",{volume: 1})</script> -->
 
-                                    <script>
-                                    var audio3 = new Audio("popa.mp3");
-                                    var audio2 = new Audio("http://glpjt.s3.amazonaws.com/so/av/a12.mp3");
-                                    var audio = new Audio(
-                                        "https://s3.amazonaws.com/audio-experiments/examples/elon_mono.wav");
-
-                                    function playAudio() {
-                                        audio3.play();
-                                    }
-
-                                    function pauseAudio() {
-                                        audio2.play();
-                                    }
-
-                                    function cancelAudio() {
-                                        audio.pause();
-                                        audio.currentTime = 0;
-                                    }
-                                    // playAudio();
-                                    // audio3.play();
-                                    </script>
+                                    
                                     <script>
                                     // playAudio();
                                     </script>
@@ -1658,7 +1638,7 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                             $joueursmax = $resb["places"];
                                             ?>
                                     <div class='info7-content '>
-                                        <?php echo $rowcounta . " Joueurs inscrits sur " . $joueursmax . " max" ?>
+                                        <?php echo $rowcounta + 1 . " Joueurs inscrits sur " . $joueursmax . " max" ?>
                                     </div>
                                     <div class='info8-content'>
                                         <table class="table ttable-bordered">
@@ -2206,7 +2186,7 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                             $joueursmax = $resb["places"];
                                             ?>
                                     <div class='info7-content '>
-                                        <?php echo $rowcounta . " Joueurs inscrits sur " . $joueursmax . " max" ?>
+                                        <?php echo $rowcounta + 1 . " Joueurs inscrits sur " . $joueursmax . " max" ?>
                                     </div>
                                     <div class='info8-content'>
                                         <table class="table ttable-bordered">
