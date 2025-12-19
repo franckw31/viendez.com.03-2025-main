@@ -117,6 +117,7 @@ try {
         $response['duration_seconds'] = max($theoretical_duration, $remaining);
         
         $response['level_name'] = "Niveau " . $current['ordre']; 
+        $response['level_order'] = intval($current['ordre']);
     } else {
         // Pas de niveau actif -> On cherche le prochain niveau à venir
         $sql_next = "SELECT * FROM `blindes-live` WHERE `id-activite` = '$id' 

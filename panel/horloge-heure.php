@@ -145,6 +145,23 @@ if(isset($_GET['uid'])) {
 <!-- Info Pause en dehors du cercle -->
 <div id="car-pause"></div>
 
+<!-- Bouton Bienvenue -->
+
+<div style="margin-top: 10px; text-align: center; display: flex; justify-content: center; gap: 10px;">
+    <button onclick="playWelcomeMessage()" style="cursor:pointer; font-size:14px; color:#00d2ff; background:rgba(0, 210, 255, 0.1); border:1px solid #00d2ff; padding: 5px 15px; border-radius: 20px;">
+        <i class="fa fa-bullhorn"></i> Message Bienvenue
+    </button>
+    <button onclick="playRulesMessage()" style="cursor:pointer; font-size:14px; color:#ffc107; background:rgba(255, 193, 7, 0.1); border:1px solid #ffc107; padding: 5px 15px; border-radius: 20px;">
+        <i class="fa fa-gavel"></i> Rappel Règles
+    </button>
+    <button onclick="playBlindsMessage()" style="cursor:pointer; font-size:14px; color:#4cd137; background:rgba(76, 209, 55, 0.1); border:1px solid #4cd137; padding: 5px 15px; border-radius: 20px;">
+        <i class="fa fa-money"></i> Rappel Blindes
+    </button>
+	<button onclick="playSirenAlert()" style="cursor:pointer; font-size:14px; color:#e84118; background:rgba(232, 65, 24, 0.1); border:1px solid #e84118; padding: 5px 15px; border-radius: 20px;">
+		<i class="fa fa-bell"></i> Alerte Sirène
+	</button>
+</div>
+
 <!-- BOUTONS DE TEST (Debug) -->
 <div style="margin-top: 5px; opacity: 0.7; text-align: center;">
     <button onclick="manualTrigger()" style="cursor:pointer; font-size:10px; color:red; background:none; border:none;">
@@ -158,6 +175,68 @@ if(isset($_GET['uid'])) {
 // Simulation manuelle
 function manualTrigger() {
     document.dispatchEvent(new CustomEvent('trigger-alert'));
+}
+// Bouton alerte sirène : joue un son de sirène (Web Audio API)
+function playSirenAlert() {
+    try {
+        // Web Audio API : sirène simple
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const o = ctx.createOscillator();
+        const g = ctx.createGain();
+        o.type = 'sine';
+        o.connect(g);
+        g.connect(ctx.destination);
+        let t = ctx.currentTime;
+        // Sirène : monte et descend 3 fois
+        for (let i = 0; i < 3; i++) {
+            o.frequency.setValueAtTime(440, t + i*0.6);
+            o.frequency.linearRampToValueAtTime(1760, t + i*0.3 + i*0.6);
+            o.frequency.linearRampToValueAtTime(440, t + (i+1)*0.6);
+        }
+        g.gain.setValueAtTime(0.2, t);
+        o.start(t);
+        o.stop(t + 1.8);
+        o.onended = () => ctx.close();
+    } catch (e) {
+        // Si Web Audio non supporté, fallback vocal
+        if ('speechSynthesis' in window) {
+            let utter = new SpeechSynthesisUtterance('Alerte sirène !');
+            utter.lang = 'fr-FR';
+            utter.rate = 0.8;
+            window.speechSynthesis.speak(utter);
+        } else {
+            alert('Alerte sirène !');
+        }
+    }
+}
+
+// Message de Bienvenue Manuel
+function playWelcomeMessage() {
+    document.dispatchEvent(new CustomEvent('trigger-welcome'));
+}
+// Message de rappel des blindes
+function playBlindsMessage() {
+    // On utilise les infos du niveau courant
+    let sb = window.lastSB || '';
+    let bb = window.lastBB || '';
+    let durationMin = window.lastDurationMin || 0;
+    let text = "Rappel : Les blinde actuelle sont, ";
+    if (sb && bb && durationMin > 0) {
+        text += `${sb} et ${bb}, pour des niveaux de ${durationMin} minutes.`;
+    } else if (sb && bb) {
+        text += `${sb} et ${bb}.`;
+    } else if (durationMin > 0) {
+        text += `Niveau de ${durationMin} minutes.`;
+    } else {
+        text += `non disponibles actuellement.`;
+    }
+    document.dispatchEvent(new CustomEvent('trigger-alert', { detail: { text: text } }));
+}
+
+// Message de rappel des règles
+function playRulesMessage() {
+    const rulesText = "Petit rappel des règles : pas de boisson ou nourriture sur les tables, on ne fume pas à l'intérieur, il y a des poubelles , donc on ne laisse rien traîner, un joueur debout à la première carte posée est out, seul le croupier touche les jetons, seul l'organisateur change les jetons sous surveillance. Bonne partie à tous !";
+    document.dispatchEvent(new CustomEvent('trigger-alert', { detail: { text: rulesText } }));
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -184,20 +263,26 @@ document.addEventListener('DOMContentLoaded', () => {
     let isPaused = false;
     let lastLevelId = null;
     let currentBlindsName = "";
+    // Pour rappel blindes
+    window.lastSB = '';
+    window.lastBB = '';
+    window.lastDurationMin = 0;
 
     // 2. FONCTION ALERTE VOCALE
-    function playAlert() {
-        let textToSpeak = "Changement de niveau. ";
+    function playAlert(customText) {
+        let textToSpeak = customText || "Changement de niveau. ";
         
-        if (currentBlindsName && currentBlindsName !== "default") {
-             // Si c'est une pause (0/0, 0-0 ou contient PAUSE)
-            if (currentBlindsName === "0/0" || currentBlindsName === "0-0" || currentBlindsName.toUpperCase().includes("PAUSE")) {
-                textToSpeak += "C'est la pause.";
-            } else {
-                // Remplace le slash par " " pour une meilleure prononciation
-                // Ex: "100/200" devient "Blindes 100 200"
-                let blinds = currentBlindsName.replace('-', 'et ');
-                textToSpeak += "Blinde, " + blinds;
+        if (!customText) {
+            if (currentBlindsName && currentBlindsName !== "default") {
+                // Si c'est une pause (0/0, 0-0 ou contient PAUSE)
+                if (currentBlindsName === "0/0" || currentBlindsName === "0-0" || currentBlindsName.toUpperCase().includes("PAUSE")) {
+                    textToSpeak += "C'est la pause.";
+                } else {
+                    // Remplace le slash par " " pour une meilleure prononciation
+                    // Ex: "100/200" devient "Blindes 100 200"
+                    let blinds = currentBlindsName.replace(/\//g, ' et ').replace(/-/g, ' et ');
+                    textToSpeak += "Blinde, " + blinds;
+                }
             }
         }
         
@@ -238,7 +323,20 @@ document.addEventListener('DOMContentLoaded', () => {
             console.warn("ResponsiveVoice non chargé");
         }
     }
-    document.addEventListener('trigger-alert', playAlert);
+    document.addEventListener('trigger-alert', function(e) { 
+        // Si l'event contient du texte (via detail.text), on l'utilise
+        let txt = (e.detail && e.detail.text) ? e.detail.text : null;
+        playAlert(txt); 
+    });
+
+    // Listener pour le message de bienvenue dynamique
+    document.addEventListener('trigger-welcome', function() {
+        let durationMin = Math.floor(totalDuration / 60);
+        let blinds = currentBlindsName.replace(/\//g, ' et ').replace(/-/g, ' et ');
+        
+        let text = `Bienvenue à tous , dans mon humble demeure, le tournoi a commencé. Les blinde de départ sont ${blinds}, pour des niveaux de ${durationMin} minutes. Bonne chance !`;
+        playAlert(text);
+    });
 
     // 3. MISE A JOUR AFFICHAGE (Chaque seconde)
     function updateTimer() {
@@ -305,16 +403,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
             isPaused = data.is_paused;
             currentBlindsName = data.blinds_raw || "default";
-            
-            // Mise à jour Durée Totale et Nom du Niveau
-            if (data.duration_seconds) totalDuration = parseInt(data.duration_seconds);
+
+            // Récupération SB/BB pour le rappel vocal
+            if (data.blinds_raw && /^(\d{1,6})[-/](\d{1,6})$/.test(data.blinds_raw)) {
+                let m = data.blinds_raw.match(/^(\d{1,6})[-/](\d{1,6})$/);
+                window.lastSB = m[1];
+                window.lastBB = m[2];
+            } else {
+                window.lastSB = '';
+                window.lastBB = '';
+            }
+            if (data.duration_seconds) {
+                totalDuration = parseInt(data.duration_seconds);
+                window.lastDurationMin = Math.floor(totalDuration / 60);
+            } else {
+                window.lastDurationMin = 0;
+            }
+            // Mise à jour Nom du Niveau
             if (data.level_name) levelNameDisplay.innerText = data.level_name;
             else levelNameDisplay.innerText = "Niveau --";
 
             // Mise à jour Stats Joueurs
             const statsZone = document.getElementById('zone-stats');
             if (statsZone && data.players_active !== undefined) {
-                statsZone.innerHTML = `${data.players_active} <a href="fullscreen-player.php?uid=${uid}" style="color:white; text-decoration:underline; cursor:pointer;">Joueurs</a> / ${data.players_total} &nbsp;|&nbsp; <span style="color:white">Stack Moyen </span> ${data.avg_stack}`;
+                statsZone.innerHTML = `${data.players_active} <a href="fullscreen-player.php?uid=${uid}" style="color:white; text-decoration:underline; cursor:pointer;">Joueurs</a> / ${data.players_total} &nbsp;|&nbsp; <span style="color:white">Stack Moyen </span> <a href="#" id="speak-avg-stack" style="color:#00d2ff; text-decoration:underline; cursor:pointer;">${data.avg_stack}</a>`;
+                // Ajout du handler pour l'audio
+                const avgStackLink = document.getElementById('speak-avg-stack');
+                if (avgStackLink) {
+                    avgStackLink.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        let msg = `Le stack moyen actuel est de ${data.avg_stack}`;
+                        if (typeof responsiveVoice !== 'undefined') {
+                            responsiveVoice.speak(msg, 'French Male');
+                        } else if ('speechSynthesis' in window) {
+                            let utter = new SpeechSynthesisUtterance(msg);
+                            utter.lang = 'fr-FR';
+                            utter.rate = 0.95;
+                            window.speechSynthesis.speak(utter);
+                        } else {
+                            alert(msg);
+                        }
+                    });
+                }
             }
 
             // Sync du temps restant
@@ -378,6 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (lastLevelId !== null && lastLevelId !== data.level_id && data.level_id !== 0) {
                 playAlert();
             }
+
             lastLevelId = data.level_id;
 
         } catch (e) { console.error(e); }

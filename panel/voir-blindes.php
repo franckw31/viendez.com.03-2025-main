@@ -596,7 +596,7 @@ if (strlen($_SESSION['id'] == 0)) {
             // Fallback iOS amélioré (V4)
             if (typeof responsiveVoice !== 'undefined') {
                 responsiveVoice.OnVoiceReady = function() {
-                    var voice = "French Female"; // Par défaut
+                    var voice = "French male"; // Par défaut
                     var voices = responsiveVoice.getVoices();
                     
                     var foundMale = false;

@@ -33,3 +33,18 @@ Target: {"id":"5693","id-activite":"674","ordre":"19","nom":"20000\/40000","sb":
 PrevBlind: ID=674, Now=1766049944, RefTime=1766049944, CurrentIndex=18, TargetIndex=17
 Current: {"id":"5693","id-activite":"674","ordre":"19","nom":"20000\/40000","sb":"20000","bb":"40000","minutes":"15","fin":"2025-12-18 10:40:36","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
 Target: {"id":"5692","id-activite":"674","ordre":"18","nom":"15000\/30000","sb":"15000","bb":"30000","minutes":"15","fin":"2025-12-17 21:59:14","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=674, Now=1766051974, RefTime=1766051974, CurrentIndex=19, TargetIndex=18
+Current: {"id":"5694","id-activite":"674","ordre":"20","nom":"25000\/50000","sb":"25000","bb":"50000","minutes":"15","fin":"2025-12-18 11:13:09","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5693","id-activite":"674","ordre":"19","nom":"20000\/40000","sb":"20000","bb":"40000","minutes":"15","fin":"2025-12-18 10:58:09","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=674, Now=1766052004, RefTime=1766052004, CurrentIndex=18, TargetIndex=17
+Current: {"id":"5693","id-activite":"674","ordre":"19","nom":"20000\/40000","sb":"20000","bb":"40000","minutes":"15","fin":"2025-12-18 11:14:34","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5692","id-activite":"674","ordre":"18","nom":"15000\/30000","sb":"15000","bb":"30000","minutes":"15","fin":"2025-12-18 10:43:09","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=674, Now=1766052019, RefTime=1766052019, CurrentIndex=17, TargetIndex=16
+Current: {"id":"5692","id-activite":"674","ordre":"18","nom":"15000\/30000","sb":"15000","bb":"30000","minutes":"15","fin":"2025-12-18 11:15:04","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5691","id-activite":"674","ordre":"17","nom":"10000\/20000","sb":"10000","bb":"20000","minutes":"15","fin":"2025-12-17 21:46:14","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=674, Now=1766052034, RefTime=1766052034, CurrentIndex=16, TargetIndex=15
+Current: {"id":"5691","id-activite":"674","ordre":"17","nom":"10000\/20000","sb":"10000","bb":"20000","minutes":"15","fin":"2025-12-18 11:15:19","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5690","id-activite":"674","ordre":"16","nom":"8000\/16000","sb":"8000","bb":"16000","minutes":"15","fin":"2025-12-17 21:31:14","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=674, Now=1766052438, RefTime=1766052438, CurrentIndex=18, TargetIndex=17
+Current: {"id":"5693","id-activite":"674","ordre":"19","nom":"20000\/40000","sb":"20000","bb":"40000","minutes":"15","fin":"2025-12-18 11:21:57","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5692","id-activite":"674","ordre":"18","nom":"15000\/30000","sb":"15000","bb":"30000","minutes":"15","fin":"2025-12-18 11:06:56","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}

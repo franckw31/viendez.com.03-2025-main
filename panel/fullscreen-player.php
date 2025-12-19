@@ -53,7 +53,7 @@ $recave_montant = intval($act_row['recave_montant']);
     
     <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
-    <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700|Raleway:300,400,700" rel="stylesheet">
+    <!-- <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700|Raleway:300,400,700" rel="stylesheet"> -->
 
     <style>
         /* Styles inspirés de fullscreen-timer.php */
@@ -428,6 +428,26 @@ $recave_montant = intval($act_row['recave_montant']);
     <script>
         // --- LOGIQUE DE SUPPRESSION (Adaptée de voir-blindes.js) ---
 
+        // Fonction utilitaire pour parler avec une voix masculine si possible
+        function speakWithMaleVoice(text) {
+            if ('speechSynthesis' in window) {
+                var msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'fr-FR';
+                
+                // Essayer de trouver une voix masculine
+                var voices = window.speechSynthesis.getVoices();
+                var maleVoice = voices.find(function(v) {
+                    return v.lang.startsWith('fr') && (v.name.includes('Male') || v.name.includes('Paul') || v.name.includes('Mathieu') || v.name.includes('Google français'));
+                });
+
+                if (maleVoice) {
+                    msg.voice = maleVoice;
+                }
+                
+                window.speechSynthesis.speak(msg);
+            }
+        }
+
         // Action du bouton POUBELLE / SORTIE
         window.confirmDeletePlayer = function(button) {
             console.log("%c[Action] Clic sur bouton SORTIE", "color: red; font-weight: bold;");
@@ -512,11 +532,11 @@ $recave_montant = intval($act_row['recave_montant']);
                 }
 
                 document.body.removeChild(overlay);
-                applyElimination(victimParticipationId, eliminatorMemberId, eliminatorName, isDefinitive, activityId);
+                applyElimination(victimParticipationId, eliminatorMemberId, eliminatorName, isDefinitive, activityId, victimName);
             };
         };
 
-        window.applyElimination = function(victimParticipationId, eliminatorMemberId, eliminatorName, isDefinitiveElim, activityId) {
+        window.applyElimination = function(victimParticipationId, eliminatorMemberId, eliminatorName, isDefinitiveElim, activityId, victimName) {
             console.log("%c[Process] Application de l'élimination...", "color: purple; font-weight: bold;");
             
             var markAsEliminatedUI = function() {
@@ -609,6 +629,10 @@ $recave_montant = intval($act_row['recave_montant']);
                         },
                         dataType: 'json',
                         success: function(response) {
+                            // Message vocal : Elimination définitive avec classement
+                            var suffixe = (rangCalcule == 1) ? "ère" : "ème";
+                            speakWithMaleVoice(victimName + " est éliminé définitivement par " + eliminatorName + " et termine la partie en " + rangCalcule + suffixe + " position");
+                            
                             finalizeElimination();
                         },
                         error: function(xhr, status, error) {
@@ -664,6 +688,9 @@ $recave_montant = intval($act_row['recave_montant']);
                                     }
                                 }
                             });
+
+                            // Message vocal : Qui a éliminé qui
+                            speakWithMaleVoice(eliminatorName + " a éliminé " + victimName);
 
                             finalizeElimination();
                         },
