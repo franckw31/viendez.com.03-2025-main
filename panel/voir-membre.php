@@ -1,6 +1,6 @@
 <?php
 session_start();
-error_reporting(0);
+// Debugging output removed for production
 include('include/config.php');
 
 // Check if user is logged in
@@ -44,55 +44,64 @@ $id = intval($_GET['id']); // get value
 
 if (isset($_POST['submit']) ) {
     
-    // Basic sanitization
-    $password = mysqli_real_escape_string($con, $_POST['password']);
-    $naissance_date = mysqli_real_escape_string($con, $_POST['naissance_date']);
-    $ville = mysqli_real_escape_string($con, $_POST['ville']); 
-    $rue = mysqli_real_escape_string($con, $_POST['rue']);
-    $posting_date = mysqli_real_escape_string($con, $_POST['posting_date']);
-    $association_date = mysqli_real_escape_string($con, $_POST['association_date']);
-    $fname = mysqli_real_escape_string($con, $_POST['fname']);
-    $lname = mysqli_real_escape_string($con, $_POST['lname']);
-    $telephone = mysqli_real_escape_string($con, $_POST['telephone']);
-    $email = mysqli_real_escape_string($con, $_POST['email']);
-    $codev = mysqli_real_escape_string($con, $_POST['CodeV']);
-    $verification = mysqli_real_escape_string($con, $_POST['verification']);
-    $pseudo = mysqli_real_escape_string($con, $_POST['pseudo']);
-    $def_nomact = mysqli_real_escape_string($con, $_POST['def_nomact']);
-    $def_str = mysqli_real_escape_string($con, $_POST['def_str']);
-    $def_nbj = mysqli_real_escape_string($con, $_POST['def_nbj']);
-    $def_buy = mysqli_real_escape_string($con, $_POST['def_buy']);
-    $def_rak = mysqli_real_escape_string($con, $_POST['def_rak']);
-    $def_bou = mysqli_real_escape_string($con, $_POST['def_bou']);
-    $def_rec = mysqli_real_escape_string($con, $_POST['def_rec']);
-    $def_jet = mysqli_real_escape_string($con, $_POST['def_jet']);
-    $def_bon = mysqli_real_escape_string($con, $_POST['def_bon']);
-    $def_add = mysqli_real_escape_string($con, $_POST['def_add']);
-    $def_ant = mysqli_real_escape_string($con, $_POST['def_ant']);
+    // Charger les valeurs actuelles
+    $stmt = mysqli_prepare($con, "SELECT * FROM membres WHERE `id-membre` = ?");
+    mysqli_stmt_bind_param($stmt, 'i', $id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $current = mysqli_fetch_assoc($result);
+    mysqli_stmt_close($stmt);
 
+    // Pour chaque champ, prendre POST sinon valeur actuelle
+    $fields = [
+        'pseudo', 'email', 'telephone', 'fname', 'lname', 'posting_date', 'association_date', 'rue', 'password', 'ville', 'CodeV', 'verification', 'naissance_date',
+        'def_com', 'def_str', 'def_nbj', 'def_buy', 'def_rak', 'def_bou', 'def_rec', 'def_jet', 'def_recave_jetons', 'def_recave_montant', 'def_bon', 'def_add', 'def_ant', 'def_cha'
+    ];
+    $values = [];
+    foreach ($fields as $f) {
+        $values[$f] = isset($_POST[$f]) ? mysqli_real_escape_string($con, $_POST[$f]) : $current[$f];
+    }
     try {
-        {
-            $stmt = mysqli_prepare($con, "UPDATE `membres` SET 
-                pseudo = ?, email = ?, telephone = ?, fname = ?, 
-                lname = ?, posting_date = ?, association_date = ?, 
-                rue = ?, password = ?, ville = ?, CodeV = ?,
-                verification = ?, naissance_date = ? WHERE `id-membre` = ?");
-
-            mysqli_stmt_bind_param($stmt, 'sssssssssssssi',
-                $pseudo, $email, $telephone, $fname,
-                $lname, $posting_date, $association_date,
-                $rue, $password, $ville, $codev,
-                $verification, $naissance_date, $id);
+        $stmt = mysqli_prepare($con, "UPDATE `membres` SET 
+            pseudo = ?, email = ?, telephone = ?, fname = ?, 
+            lname = ?, posting_date = ?, association_date = ?, 
+            rue = ?, password = ?, ville = ?, CodeV = ?,
+            verification = ?, naissance_date = ?,
+            def_com = ?, def_str = ?, def_nbj = ?, def_buy = ?, def_rak = ?, def_bou = ?, def_rec = ?, def_jet = ?, def_recave_jetons = ?, def_recave_montant = ?, def_bon = ?, def_add = ?, def_ant = ?, def_cha = ?
+            WHERE `id-membre` = ?");
+        if (!$stmt) {
+            error_log('ERROR: prepare failed in submit: ' . mysqli_error($con));
+            $_SESSION['error'] = 'Erreur préparation SQL: ' . mysqli_error($con);
+            header('Location: voir-membre.php?id=' . $id);
+            exit();
         }
-
+        $bind_ok = mysqli_stmt_bind_param($stmt, 'ssssssssssssssiiiiiiiiiiiiii',
+            $values['pseudo'], $values['email'], $values['telephone'], $values['fname'],
+            $values['lname'], $values['posting_date'], $values['association_date'],
+            $values['rue'], $values['password'], $values['ville'], $values['CodeV'],
+            $values['verification'], $values['naissance_date'],
+            $values['def_com'], $values['def_str'], $values['def_nbj'], $values['def_buy'], $values['def_rak'], $values['def_bou'], $values['def_rec'], $values['def_jet'], $values['def_recave_jetons'], $values['def_recave_montant'], $values['def_bon'], $values['def_add'], $values['def_ant'], $values['def_cha'], $id);
+        if (!$bind_ok) {
+            error_log('ERROR: bind_param failed in submit: ' . mysqli_error($con));
+            $_SESSION['error'] = 'Erreur bind_param: ' . mysqli_error($con);
+            header('Location: voir-membre.php?id=' . $id);
+            exit();
+        }
         if (!mysqli_stmt_execute($stmt)) {
+            error_log('ERROR: execute failed in submit: ' . mysqli_stmt_error($stmt));
             throw new Exception("Erreur lors de la mise à jour: " . mysqli_stmt_error($stmt));
         }
-
-        $_SESSION['msg'] = "Mise à jour effectuée avec succès";
-        
+        $affected = mysqli_stmt_affected_rows($stmt);
+        $_SESSION['msg'] = ($affected > 0) ? "Mise à jour effectuée avec succès" : "Aucune modification effectuée";
+        // debug block removed for production
+        if (headers_sent($file, $line)) { error_log("WARNING: headers already sent in $file:$line"); }
+        header('Location: voir-membre.php?id=' . $id);
+        exit();
     } catch (Exception $e) {
         $_SESSION['error'] = $e->getMessage();
+        error_log('Exception in submit: ' . $e->getMessage());
+        header('Location: voir-membre.php?id=' . $id);
+        exit();
     } finally {
         if (isset($stmt)) {
             mysqli_stmt_close($stmt);
@@ -103,28 +112,25 @@ if (isset($_POST['submit']) ) {
 
 if (isset($_POST['submito'])) {
     
-        // Validate and cast numeric fields
-        $def_str = mysqli_real_escape_string($con, $_POST['def_str']);
-        $def_nbj = mysqli_real_escape_string($con, $_POST['def_nbj']);
-        $def_buy = mysqli_real_escape_string($con, $_POST['def_buy']);
-        $def_rak = mysqli_real_escape_string($con, $_POST['def_rak']);
-        $def_bou = mysqli_real_escape_string($con, $_POST['def_bou']);
-        $def_rec = mysqli_real_escape_string($con, $_POST['def_rec']);
-        $def_jet = mysqli_real_escape_string($con, $_POST['def_jet']);
-        $def_bon = mysqli_real_escape_string($con, $_POST['def_bon']);
-        $def_add = mysqli_real_escape_string($con, $_POST['def_add']);
-        $def_ant = mysqli_real_escape_string($con, $_POST['def_ant']);
-        $def_cha = mysqli_real_escape_string($con, $_POST['def_cha']);
-          
-        // Sanitize string fields
-        $def_nomact = mysqli_real_escape_string($con, $_POST['def_nomact']);
-        $def_rdv = mysqli_real_escape_string($con, $_POST['def_rdv']);
-        $def_sta = mysqli_real_escape_string($con, $_POST['def_sta']);
-        $def_com = mysqli_real_escape_string($con, $_POST['def_com']);
-        try {
-            {
-            $stmt = mysqli_prepare($con, "UPDATE membres SET 
-            def_nomact = ?,
+    // Charger les valeurs actuelles
+    $stmt = mysqli_prepare($con, "SELECT * FROM membres WHERE `id-membre` = ?");
+    mysqli_stmt_bind_param($stmt, 'i', $id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $current = mysqli_fetch_assoc($result);
+    mysqli_stmt_close($stmt);
+
+    // Champs de l'orga
+    $fields = [
+        'def_com', 'def_str', 'def_nbj', 'def_buy', 'def_rak', 'def_bou', 'def_rec', 'def_jet', 'def_recave_jetons', 'def_recave_montant', 'def_bon', 'def_add', 'def_ant', 'def_rdv', 'def_sta', 'def_cha'
+    ];
+    $values = [];
+    foreach ($fields as $f) {
+        $values[$f] = isset($_POST[$f]) ? mysqli_real_escape_string($con, $_POST[$f]) : $current[$f];
+    }
+    try {
+        $stmt = mysqli_prepare($con, "UPDATE membres SET 
+            def_com = ?,
             def_str = ?,
             def_nbj = ?,
             def_buy = ?, 
@@ -132,53 +138,60 @@ if (isset($_POST['submito'])) {
             def_bou = ?,
             def_rec = ?,
             def_jet = ?,
+            def_recave_jetons = ?,
+            def_recave_montant = ?,
             def_bon = ?,
             def_add = ?,
             def_ant = ?,
             def_rdv = ?,
             def_sta = ?,
-            def_com = ?,
             def_cha = ?
             WHERE `id-membre` = ?");
-
-            mysqli_stmt_bind_param($stmt, 'siiiiiiiiiisssii', 
-            $def_nomact,
-            $def_str,
-            $def_nbj,
-            $def_buy,
-            $def_rak,
-            $def_bou,
-            $def_rec,
-            $def_jet,
-            $def_bon,
-            $def_add,
-            $def_ant,
-            $def_rdv,
-            $def_sta,
-            $def_com,
-            $def_cha,
-            $id);
-        }                
         if (!$stmt) {
-            throw new Exception("Prepare failed: " . mysqli_error($con));
+            error_log('ERROR: prepare failed in submito: ' . mysqli_error($con));
+            $_SESSION['error'] = 'Erreur préparation SQL: ' . mysqli_error($con);
+            header('Location: voir-membre.php?id=' . $id);
+            exit();
         }
-
-        // Bind with proper types: s=string, i=integer, d=double/float
-
+        $bind_ok = mysqli_stmt_bind_param($stmt, 'siiiiiiiiiiiisssii', 
+            $values['def_com'],
+            $values['def_str'],
+            $values['def_nbj'],
+            $values['def_buy'],
+            $values['def_rak'],
+            $values['def_bou'],
+            $values['def_rec'],
+            $values['def_jet'],
+            $values['def_recave_jetons'],
+            $values['def_recave_montant'],
+            $values['def_bon'],
+            $values['def_add'],
+            $values['def_ant'],
+            $values['def_rdv'],
+            $values['def_sta'],
+            $values['def_com'],
+            $values['def_cha'],
+            $id);
+        if (!$bind_ok) {
+            error_log('ERROR: bind_param failed in submito: ' . mysqli_error($con));
+            $_SESSION['error'] = 'Erreur bind_param: ' . mysqli_error($con);
+            header('Location: voir-membre.php?id=' . $id);
+            exit();
+        }
         if (!mysqli_stmt_execute($stmt)) {
+            error_log('ERROR: execute failed in submito: ' . mysqli_stmt_error($stmt));
             throw new Exception("Execute failed: " . mysqli_stmt_error($stmt));
         }
-
         $affected = mysqli_stmt_affected_rows($stmt);
-        if ($affected > 0) {
-            $_SESSION['msg'] = "Mise à jour effectuée avec succès";
-        } else {
-            $_SESSION['msg'] = "Aucune modification effectuée";
-        }
-
+        $_SESSION['msg'] = ($affected > 0) ? "Mise à jour effectuée avec succès" : "Aucune modification effectuée";
+        // debug block removed for production
+        header('Location: voir-membre.php?id=' . $id);
+        exit();
     } catch (Exception $e) {
         error_log("Error updating organization data: " . $e->getMessage());
         $_SESSION['error'] = $e->getMessage();
+        header('Location: voir-membre.php?id=' . $id);
+        exit();
     } finally {
         if (isset($stmt)) {
             mysqli_stmt_close($stmt);
@@ -267,8 +280,8 @@ if (isset($_POST['submitdup'])) {
         $bounty = intval($member['def_bou'] ?? 0);
         $jetons = intval($member['def_jet'] ?? 35000);
         $recave = intval($member['def_rec'] ?? 1);
-        $recave_montant = 10;
-        $recave_jetons = 40000;
+        $recave_montant = intval($member['def_recave_montant'] ?? 0);
+        $recave_jetons = intval($member['def_recave_jetons'] ?? 0);
         $addon = intval($member['def_add'] ?? 0);
         $ante = strval($member['def_ant'] ?? '0');
         $bonus = intval($member['def_bon'] ?? 5000);
@@ -276,40 +289,115 @@ if (isset($_POST['submitdup'])) {
         $id_challenge = intval($member['def_cha'] ?? 4);
         $id_structure = intval($member['def_str'] ?? 4);
 
-        // INSERT CORRIGÉ : Ajout de id_challenge (1) et id_structure (1)
-        $query = "INSERT INTO `activite` (
-            `id_challenge`, `id_structure`, `id-membre`, `titre-activite`, `date_depart`, `heure_depart`, `ville`, 
-            `lng`, `lat`, `places`, `nb-tables`, `buyin`, `rake`, `bounty`, 
-            `jetons`, `recave`, `recave_montant`, `recave_jetons`, `addon`, `ante`, `bonus`, `commentaire`
-        ) VALUES (?, ?, ?, ?, NOW(), NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // Build INSERT dynamically and include recave columns only if they exist in `activite` table
+        $cols_res = mysqli_query($con, "DESCRIBE `activite`");
+        $existing_cols = [];
+        while ($c = mysqli_fetch_assoc($cols_res)) {
+            $existing_cols[] = $c['Field'];
+        }
 
+        $insert_cols = [
+            'id_challenge', 'id_structure', 'id-membre', 'titre-activite', 'date_depart', 'heure_depart', 'ville',
+            'lng', 'lat', 'places', 'nb-tables', 'buyin', 'rake', 'bounty', 'jetons', 'recave'
+        ];
+
+        // Add recave amount / jetons if present under either def_ or non-def_ names
+        if (in_array('def_recave_montant', $existing_cols)) {
+            $insert_cols[] = 'def_recave_montant';
+            $recave_montant_field = 'def_recave_montant';
+        } elseif (in_array('recave_montant', $existing_cols)) {
+            $insert_cols[] = 'recave_montant';
+            $recave_montant_field = 'recave_montant';
+        } else {
+            $recave_montant_field = null;
+        }
+        if (in_array('def_recave_jetons', $existing_cols)) {
+            $insert_cols[] = 'def_recave_jetons';
+            $recave_jetons_field = 'def_recave_jetons';
+        } elseif (in_array('recave_jetons', $existing_cols)) {
+            $insert_cols[] = 'recave_jetons';
+            $recave_jetons_field = 'recave_jetons';
+        } else {
+            $recave_jetons_field = null;
+        }
+
+        $insert_cols = array_merge($insert_cols, ['addon', 'ante', 'bonus', 'commentaire']);
+
+        $cols_sql = implode(', ', array_map(function($c){ return "`".$c."`"; }, $insert_cols));
+        $placeholders = [];
+        foreach ($insert_cols as $c) {
+            if ($c === 'date_depart' || $c === 'heure_depart') {
+                $placeholders[] = 'NOW()';
+            } else {
+                $placeholders[] = '?';
+            }
+        }
+        $placeholders_sql = implode(', ', $placeholders);
+
+        $query = "INSERT INTO `activite` ($cols_sql) VALUES ($placeholders_sql)";
         $stmt = mysqli_prepare($con, $query);
         if (!$stmt) throw new Exception("Erreur préparation SQL: " . mysqli_error($con));
 
-        // Binding : 'iiissddiiiiiiiiiisis' (20 params) - Correction: suppression du dernier 'i' en trop
-        mysqli_stmt_bind_param($stmt, 'iiissddiiiiiiiiiisis',
-            $id_challenge,  // 1 (i)
-            $id_structure,  // 2 (i)
-            $id,            // 3 (i)
-            $titre,         // 4 (s)
-            $ville,         // 5 (s)
-            $lng,           // 6 (d)
-            $lat,           // 7 (d)
-            $places,        // 8 (i)
-            $nb_tables,     // 9 (i)
-            $buyin,         // 10 (i)
-            $rake,          // 11 (i)
-            $bounty,        // 12 (i)
-            $jetons,        // 13 (i)
-            $recave,        // 14 (i)
-            $recave_montant,// 15 (i)
-            $recave_jetons, // 16 (i)
-            $addon,         // 17 (i)
-            $ante,          // 18 (s)
-            $bonus,         // 19 (i)
-            $commentaire    // 20 (s)
-        );
-        
+        // Build types string and values array dynamically
+        $types = '';
+        $values_for_bind = [];
+        foreach ($insert_cols as $c) {
+            // Skip columns that are inserted as NOW() (no placeholder, no bind)
+            if ($c === 'date_depart' || $c === 'heure_depart') {
+                continue;
+            }
+
+            switch ($c) {
+                case 'id_challenge': case 'id_structure': case 'id-membre': case 'places': case 'nb-tables': case 'buyin': case 'rake': case 'bounty': case 'jetons': case 'recave': case 'def_recave_montant': case 'recave_montant': case 'def_recave_jetons': case 'recave_jetons': case 'addon': case 'bonus':
+                    $types .= 'i';
+                    break;
+                case 'lng': case 'lat':
+                    $types .= 'd';
+                    break;
+                default:
+                    $types .= 's';
+            }
+
+            // Map column to variable
+            if ($c === 'id_challenge') $values_for_bind[] = $id_challenge;
+            elseif ($c === 'id_structure') $values_for_bind[] = $id_structure;
+            elseif ($c === 'id-membre') $values_for_bind[] = $id;
+            elseif ($c === 'titre-activite') $values_for_bind[] = $titre;
+            elseif ($c === 'ville') $values_for_bind[] = $ville;
+            elseif ($c === 'lng') $values_for_bind[] = $lng;
+            elseif ($c === 'lat') $values_for_bind[] = $lat;
+            elseif ($c === 'places') $values_for_bind[] = $places;
+            elseif ($c === 'nb-tables') $values_for_bind[] = $nb_tables;
+            elseif ($c === 'buyin') $values_for_bind[] = $buyin;
+            elseif ($c === 'rake') $values_for_bind[] = $rake;
+            elseif ($c === 'bounty') $values_for_bind[] = $bounty;
+            elseif ($c === 'jetons') $values_for_bind[] = $jetons;
+            elseif ($c === 'recave') $values_for_bind[] = $recave;
+            elseif ($c === 'def_recave_montant' || $c === 'recave_montant') $values_for_bind[] = $recave_montant;
+            elseif ($c === 'def_recave_jetons' || $c === 'recave_jetons') $values_for_bind[] = $recave_jetons;
+            elseif ($c === 'addon') $values_for_bind[] = $addon;
+            elseif ($c === 'ante') $values_for_bind[] = $ante;
+            elseif ($c === 'bonus') $values_for_bind[] = $bonus;
+            elseif ($c === 'commentaire') $values_for_bind[] = $commentaire;
+            else $values_for_bind[] = null; // fallback
+        }
+
+        // Prepare parameters for bind_param (need references)
+        $bind_params = array_merge([$types], $values_for_bind);
+        $refs = [];
+        foreach ($bind_params as $key => $value) {
+            $refs[$key] = &$bind_params[$key];
+        }
+        try {
+            if (!call_user_func_array(array($stmt, 'bind_param'), $refs)) {
+                throw new Exception('Erreur bind_param: ' . mysqli_stmt_error($stmt));
+            }
+        } catch (ArgumentCountError $e) {
+            throw new Exception('bind_param ArgumentCountError: mismatch between placeholders and variables');
+        } catch (Throwable $e) {
+            throw new Exception('bind_param failed');
+        }
+
         if (!mysqli_stmt_execute($stmt)) throw new Exception("Erreur exécution SQL: " . mysqli_stmt_error($stmt));
 
         $new_id = mysqli_insert_id($con);
@@ -503,6 +591,44 @@ if (isset($_POST['submitnotif'])) {
         }
     }
 }
+$query = "SELECT * FROM `membres` WHERE `id-membre` = '" . intval($id) . "'";
+// Debug: show GET and session id when requested
+if (isset($_GET['debug']) && $_GET['debug'] == '1') {
+    echo '<div style="background:#eef;padding:10px;border:1px solid #99c;margin-bottom:10px;">DEBUG REQUEST: GET id=' . htmlentities(isset($_GET['id']) ? $_GET['id'] : '(none)') . ' | intval(id)=' . intval($id) . ' | session_id=' . htmlentities(session_id()) . '</div>';
+}
+$sql = mysqli_query($con, $query);
+if (!$sql) {
+    $err = mysqli_error($con);
+    error_log("ERROR: SELECT failed for voir-membre: $err -- Query: $query");
+    $_SESSION['error'] = "Erreur SQL: " . $err;
+    $member = null;
+} else {
+    $num = mysqli_num_rows($sql);
+    error_log("DEBUG: SELECT returned $num rows for id=$id");
+    if ($num > 0) {
+        $member = mysqli_fetch_assoc($sql);
+    } else {
+        $member = null;
+    }
+}
+// Debug output if requested
+if (isset($_GET['debug']) && $_GET['debug'] == '1') {
+    echo '<pre style="background:#fff8e1;padding:10px;border:1px solid #eee;color:#000;margin-top:10px;">DEBUG INFO:\nQuery: ' . htmlentities($query) . '\nMySQL error: ' . htmlentities(mysqli_error($con)) . '\nNum rows: ' . intval($num) . '\nRow: ' . htmlentities(print_r($member, true)) . '</pre>';
+}
+if (!$member) {
+    // Provide defaults to avoid template errors
+    $member = array('pseudo' => '', 'fname' => '', 'lname' => '', 'telephone' => '', 'email' => '', 'rue' => '', 'ville' => '', 'longitude' => '', 'latitude' => '', 'password' => '', 'naissance_date' => '', 'posting_date' => '', 'association_date' => '', 'CodeV' => '', 'verification' => '', 'def_com' => '', 'def_str' => '', 'def_nbj' => '', 'def_buy' => '', 'def_rak' => '', 'def_bou' => '', 'def_rec' => '', 'def_jet' => '', 'def_recave_jetons' => '', 'def_recave_montant' => '', 'def_bon' => '', 'def_add' => '', 'def_ant' => '', 'def_cha' => '', 'def_rdv' => '', 'def_sta' => '' );
+    // Also show debug message on page
+    if (!empty($_SESSION['error'])) {
+        echo '<div class="alert alert-danger">'.htmlentities($_SESSION['error']).'</div>';
+        $_SESSION['error'] = '';
+    } else {
+        echo '<div class="alert alert-warning">Aucun membre trouvé pour id=' . intval($id) . ' (Vérifiez l\'ID ou la base de données).</div>';
+        if (isset($_GET['debug']) && $_GET['debug'] == '1') {
+            echo '<pre style="background:#fff8e1;padding:10px;border:1px solid #eee;color:#000;margin-top:10px;">DEBUG INFO:\nQuery: ' . htmlentities($query) . '\nMySQL error: ' . htmlentities(mysqli_error($con)) . '\nNum rows: ' . intval($num) . '</pre>';
+        }
+    }
+}
 ?>
      
 <!DOCTYPE html>
@@ -576,6 +702,12 @@ if (isset($_POST['submitnotif'])) {
 #portefeuilleE.montrer {
     display: block;
 }
+/* Ensure input/select/textarea values are visible even inside tables with white text color */
+.table.current-user input,
+.table.current-user select,
+.table.current-user textarea {
+    color: #000 !important;
+}
     </style>
 </head>
 
@@ -639,12 +771,11 @@ if (isset($_POST['submitnotif'])) {
                                                     <div class="row margin-top-30">
                                                         <div class="panel-wwhite">
                                                             <div class="panel-body">
-                                                                <?php echo htmlentities($_SESSION['msg'] = ""); ?>
+                                                                <?php if (!empty($_SESSION['msg'])) { echo '<div class="alert alert-success">' . htmlentities($_SESSION['msg']) . '</div>'; $_SESSION['msg'] = ''; } ?>
                                                                 <div class="form-group">
                                                                     <?php
-                                                                    $id = intval($_GET['id']);
-                                                                    $sql = mysqli_query($con, "SELECT * FROM `membres` WHERE `id-membre` =  '$id'");
-                                                                    while ($row = mysqli_fetch_array($sql)) {
+                                                                    // Use the $row loaded above by the main SELECT; do not fetch the same result set again (pointer already advanced).
+                                                                    // $row already contains the member row or defaults set earlier.
                                                                     ?>
                                                                         <!-- Formulaire Photo sorti du formulaire principal et ID uniques (1) -->
                                                                         <form id="image_upload_form_1" enctype="multipart/form-data" method="post" class="change-pic" style="display:none;">
@@ -653,6 +784,8 @@ if (isset($_POST['submitnotif'])) {
                                                                         </form>
 
                                                                         <form method="post">
+<?php /* FORM RENDER debug output removed for production */ ?>
+
                                                                         <table style="color: white;" class="table table-bordered current-user">
                                                                             <tr>
                                                                                 <td rowspan="3" align="center">
@@ -668,11 +801,11 @@ if (isset($_POST['submitnotif'])) {
                                                                                     </div>
                                                                                 </td>
                                                                                     <th style="color:rgb(64, 30, 235) !important;">Votre Pseudo :</th>
-                                                                                    <td colspan="3"><input class="form-control" id="pseudo" name="pseudo" type="text" style="text-align:center; font-size:22px; bold" value="<?php echo $row['pseudo']; ?>"></td>
+                                                                                    <td colspan="3"><input class="form-control" id="pseudo" name="pseudo" type="text" style="text-align:center; font-size:22px; bold" value="<?php echo $member['pseudo']; ?>"></td>
 
                                                                             </tr>
                                                                             <tr>
-                                                                                <td style="display : none">
+                                                                                <td style="display: none;">
                                                                                     <button type="submit" name="submit" id="submit" class="btn btn-oo btn-primary">
                                                                                         Mise à jour</button>
                                                                                 </td>
@@ -691,54 +824,54 @@ if (isset($_POST['submitnotif'])) {
                                                                             </tr>
                                                                             <tr>
                                                                                 <th style="color: #ffffff !important;">Prénom</th>
-                                                                                <td><input class="form-control" id="fname" name="fname" type="text" value="<?php echo $row['fname']; ?>">
+                                                                                <td><input class="form-control" id="fname" name="fname" type="text" value="<?php echo $member['fname']; ?>">
                                                                                 </td>
                                                                                 <th style="color: #ffffff !important;">Nom</th>
-                                                                                <td><input class="form-control" id="lname" name="lname" type="text" value="<?php echo $row['lname']; ?>">
+                                                                                <td><input class="form-control" id="lname" name="lname" type="text" value="<?php echo $member['lname']; ?>">
                                                                                 </td>
                                                                             </tr>
                                                                             <tr>
                                                                                 <th style="color: #ffffff !important;">Téléphone</th>
-                                                                                <td><input class="form-control" id="telephone" name="telephone" type="text" value="<?php echo $row['telephone']; ?>"></td>
+                                                                                <td><input class="form-control" id="telephone" name="telephone" type="text" value="<?php echo $member['telephone']; ?>"></td>
                                                                                 <th style="color: #ffffff !important;">Email</th>
-                                                                                <td><input class="form-control" id="email" name="email" type="text" value="<?php echo $row['email']; ?>"></td>
+                                                                                <td><input class="form-control" id="email" name="email" type="text" value="<?php echo $member['email']; ?>"></td>
                                                                             </tr>
                                                                             <tr>
                                                                                 <th style="color: #ffffff !important;">Adresse</th>
-                                                                                <td><input class="form-control" id="rue" name="rue" type="text" value="<?php echo $row['rue']; ?>"></td>
+                                                                                <td><input class="form-control" id="rue" name="rue" type="text" value="<?php echo $member['rue']; ?>"></td>
                                                                                 <th style="color: #ffffff !important;">Ville</th>
-                                                                                <td><input class="form-control" id="ville" name="ville" type="text" value="<?php echo $row['ville']; ?>"></td>
+                                                                                <td><input class="form-control" id="ville" name="ville" type="text" value="<?php echo $member['ville']; ?>"></td>
                                                                             </tr>
                                                                             <tr>
                                                                                 <th style="color: #ffffff !important;">Longitude</th>
-                                                                                <td><input class="form-control" id="longitude" name="longitude" type="float" value="<?php echo $row['longitude']; ?>">
+                                                                                <td><input class="form-control" id="longitude" name="longitude" type="text" value="<?php echo $member['longitude']; ?>">
                                                                                 </td>
                                                                                 <th style="color: #ffffff !important;">Latitude</th>
-                                                                                <td><input class="form-control" id="latitude" name="latitude" type="float" value="<?php echo $row['latitude']; ?>">
+                                                                                <td><input class="form-control" id="latitude" name="latitude" type="text" value="<?php echo $member['latitude']; ?>">
                                                                                 </td>
                                                                             </tr>
                                                                             <tr>
                                                                                 <th style="color: #ffffff !important;">Mot de passe</th>
-                                                                                <td><input class="form-control" id="password" name="password" type="text" value="<?php echo $row['password']; ?>">
+                                                                                <td><input class="form-control" id="password" name="password" type="text" value="<?php echo $member['password']; ?>">
                                                                                 </td>
                                                                                 <th style="color: #ffffff !important;">Date nais</th>
-                                                                                <td><input class="form-control" id="naissance_date" name="naissance_date" type="date" value="<?php echo $row['naissance_date']; ?>">
+                                                                                <td><input class="form-control" id="naissance_date" name="naissance_date" type="date" value="<?php echo $member['naissance_date']; ?>">
                                                                                 </td>
                                                                             </tr>
                                                                             <tr>
                                                                                 <th style="color: #ffffff !important;">Date inscription</th>
-                                                                                <td><input class="form-control" id="posting_date" name="posting_date" type="date" value="<?php echo $row['posting_date']; ?>">
+                                                                                <td><input class="form-control" id="posting_date" name="posting_date" type="date" value="<?php echo $member['posting_date']; ?>">
                                                                                 </td>
                                                                                 <th style="color: #ffffff !important;">Fin Abonnement</th>
-                                                                                <td><input class="form-control" id="association_date" name="association_date" type="date" value="<?php echo $row['association_date']; ?>">
+                                                                                <td><input class="form-control" id="association_date" name="association_date" type="date" value="<?php echo $member['association_date']; ?>">
                                                                                 </td>
                                                                             </tr>
                                                                             <tr>
                                                                                 <th style="color: #ffffff !important;">CodeV</th>
-                                                                                <td><input class="form-control" id="CodeV" name="CodeV" type="text" value="<?php echo $row['CodeV']; ?>">
+                                                                                <td><input class="form-control" id="CodeV" name="CodeV" type="text" value="<?php echo $member['CodeV']; ?>">
                                                                                 </td>
                                                                                 <th style="color: #ffffff !important;">Validé</th>
-                                                                                <td><input class="form-control" id="verification" name="verification" type="text" value="<?php echo $row['verification']; ?>">
+                                                                                <td><input class="form-control" id="verification" name="verification" type="text" value="<?php echo $member['verification']; ?>">
                                                                                 </td>
                                                                             </tr>
                                                                             <tr>
@@ -755,7 +888,6 @@ if (isset($_POST['submitnotif'])) {
                                                                             </tr>
                                                                             </form>
                                                                         </table>
-                                                                    <?php } ?>
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -800,19 +932,19 @@ if (isset($_POST['submitnotif'])) {
                                                                                     </div>
                                                                                 </td>
                                                                                     <th style="color:rgb(64, 30, 235) !important;">Votre Pseudo :</th>
-                                                                                    <td colspan="3"><input class="form-control" id="pseudo" name="pseudo" type="text" style="text-align:center; font-size:22px; bold" value="<?php echo $row['pseudo']; ?>"></td>
+                                                                                    <td colspan="3"><input class="form-control" id="pseudo" name="pseudo" type="text" style="text-align:center; font-size:22px; bold" value="<?php echo $member['pseudo']; ?>"></td>
 
                                                                             </tr>
                                                                             <tr>
-                                                                                <td style="text-align:left ; display:none">
+                                                                                <td style="text-align:left; display:none;">
                                                                                     <button type="submit" name="submit" id="submit" class="btn btn-oo btn-primary">
                                                                                         Mise à jour</button>
                                                                                 </td>
                                                                                 <td style="text-align:center ;">
-                                                                                    <button type="submit" class="btn btn-primary-green btn-block" name="submito">OK </button>
+                                                                                    <button type="submit" class="btn btn-primary-green btn-block" name="submit">OK </button>
                                                                                 </td>
                                                                                 <td style="text-align:center ;">
-                                                                                    <button type="submit" class="btn btn-primary btn-block" name="submito">Modifier</button>
+                                                                                    <button type="submit" class="btn btn-primary btn-block" name="submit">Modifier</button>
                                                                                 </td>
                                                                                 <td style="text-align:center ;">
                                                                                     <button type="submit" class="btn btn-primary btn-block" name="submitdup">Création Activité</button>
@@ -822,67 +954,75 @@ if (isset($_POST['submitnotif'])) {
                                                                                 <td colspan="4"></td>
                                                                             </tr>
                                                                             <tr>
-                                                                                <th style="color: #ffffff !important;">Structure</th>
-                                                                                <td><input class="form-control" id="def_str" name="def_str" type="text" value="<?php echo $row['def_str']; ?>">
+                                                                                <th style="color: #ffffff !important;">Titre Activité</th>
+                                                                                <td><input class="form-control" id="def_com" name="def_com" type="text" value="<?php echo $member['def_com']; ?>">
                                                                                 </td>
                                                                                 <th style="color: #ffffff !important;">Nb Joueurs</th>
-                                                                                <td><input class="form-control" id="def_nbj" name="def_nbj" type="text" value="<?php echo $row['def_nbj']; ?>">
+                                                                                <td><input class="form-control" id="def_nbj" name="def_nbj" type="text" value="<?php echo $member['def_nbj']; ?>">
                                                                                 </td>
                                                                             </tr>
                                                                             <tr>
                                                                                 <th style="color: #ffffff !important;">Buyin</th>
-                                                                                <td><input class="form-control" id="def_buy" name="def_buy" type="text" value="<?php echo $row['def_buy']; ?>">
+                                                                                <td><input class="form-control" id="def_buy" name="def_buy" type="text" value="<?php echo $member['def_buy']; ?>">
                                                                                 </td>
                                                                                 <th style="color: #ffffff !important;">Rake</th>
-                                                                                <td><input class="form-control" id="def_rak" name="def_rak" type="text" value="<?php echo $row['def_rak']; ?>">
+                                                                                <td><input class="form-control" id="def_rak" name="def_rak" type="text" value="<?php echo $member['def_rak']; ?>">
                                                                                 </td>
                                                                             </tr>
                                                                             <tr>
                                                                                 <th style="color: #ffffff !important;">Bounty</th>
-                                                                                <td><input class="form-control" id="def_bou" name="def_bou" type="text" value="<?php echo $row['def_bou']; ?>">
+                                                                                <td><input class="form-control" id="def_bou" name="def_bou" type="text" value="<?php echo $member['def_bou']; ?>">
                                                                                 </td>
                                                                                 <th style="color: #ffffff !important;">Recaves</th>
-                                                                                <td><input class="form-control" id="def_rec" name="def_rec" type="text" value="<?php echo $row['def_rec']; ?>">
+                                                                                <td><input class="form-control" id="def_rec" name="def_rec" type="text" value="<?php echo $member['def_rec']; ?>">
                                                                                 </td>
                                                                             </tr>
                                                                             <tr>
                                                                                 <th style="color: #ffffff !important;">Nb Jetons</th>
-                                                                                <td><input class="form-control" id="def_jet" name="def_jet" type="text" value="<?php echo $row['def_jet']; ?>">
+                                                                                <td><input class="form-control" id="def_jet" name="def_jet" type="text" value="<?php echo $member['def_jet']; ?>">
                                                                                 </td>
                                                                                 <th style="color: #ffffff !important;">Bonus</th>
-                                                                                <td><input class="form-control" id="def_bon" name="def_bon" type="text" value="<?php echo $row['def_bon']; ?>">
+                                                                                <td><input class="form-control" id="def_bon" name="def_bon" type="text" value="<?php echo $member['def_bon']; ?>">
+                                                                                </td>
+                                                                            </tr>
+                                                                            <tr>
+                                                                                <th style="color: #ffffff !important;">Nb Jetons Recave</th>
+                                                                                <td><input class="form-control" id="def_recave_jetons" name="def_recave_jetons" type="text" value="<?php echo isset($row['def_recave_jetons']) ? $row['def_recave_jetons'] : ''; ?>">
+                                                                                </td>
+                                                                                <th style="color: #ffffff !important;">Montant Recave</th>
+                                                                                <td><input class="form-control" id="def_recave_montant" name="def_recave_montant" type="text" value="<?php echo isset($row['def_recave_montant']) ? $row['def_recave_montant'] : ''; ?>">
                                                                                 </td>
                                                                             </tr>
                                                                             <tr>
                                                                                 <th style="color: #ffffff !important;">Addon</th>
-                                                                                <td><input class="form-control" id="def_add" name="def_add" type="text" value="<?php echo $row['def_add']; ?>">
+                                                                                <td><input class="form-control" id="def_add" name="def_add" type="text" value="<?php echo $member['def_add']; ?>">
                                                                                 </td>
                                                                                 <th style="color: #ffffff !important;">Ante</th>
-                                                                                <td><input class="form-control" id="def_ant" name="def_ant" type="text" value="<?php echo $row['def_ant']; ?>">
+                                                                                <td><input class="form-control" id="def_ant" name="def_ant" type="text" value="<?php echo $member['def_ant']; ?>">
                                                                                 </td>
                                                                             </tr>
                                                                             <tr>
                                                                                 <th style="color: #ffffff !important;">Rendez-vous</th>
-                                                                                <td><input class="form-control" id="def_rdv" name="def_rdv" type="text" value="<?php echo $row['def_rdv']; ?>">
+                                                                                <td><input class="form-control" id="def_rdv" name="def_rdv" type="text" value="<?php echo $member['def_rdv']; ?>">
                                                                                 </td>
                                                                                 <th style="color: #ffffff !important;">Debut</th>
-                                                                                <td><input class="form-control" id="def_sta" name="def_sta" type="text" value="<?php echo $row['def_sta']; ?>">
+                                                                                <td><input class="form-control" id="def_sta" name="def_sta" type="text" value="<?php echo $member['def_sta']; ?>">
                                                                                 </td>
                                                                             </tr>
                                                                             <tr>
                                                                                 <th style="color: #ffffff !important;">Longitude</th>
-                                                                                <td><input class="form-control" id="longitude" name="longitude" type="text" value="<?php echo $row['longitude']; ?>">
+                                                                                <td><input class="form-control" id="longitude" name="longitude" type="text" value="<?php echo $member['longitude']; ?>">
                                                                                 </td>
                                                                                 <th style="color: #ffffff !important;">Latitude</th>
-                                                                                <td><input class="form-control" id="latitude" name="latitude" type="text" value="<?php echo $row['latitude']; ?>">
+                                                                                <td><input class="form-control" id="latitude" name="latitude" type="text" value="<?php echo $member['latitude']; ?>">
                                                                                 </td>
                                                                             </tr>
                                                                             <tr>
-                                                                                <th style="color: #ffffff !important;">Titre Activité</th>
-                                                                                <td><input class="form-control" id="def_com" name="def_com" type="text" value="<?php echo $row['def_com']; ?>">
+                                                                                <th style="color: #ffffff !important;">Structure</th>
+                                                                                <td><input class="form-control" id="def_str" name="def_str" type="text" value="<?php echo $member['def_str']; ?>">
                                                                                 </td>
                                                                                 <th style="color: #ffffff !important;">Challenge</th>
-                                                                                <td><input class="form-control" id="def_cha" name="def_cha" type="text" value="<?php echo $row['def_cha']; ?>">
+                                                                                <td><input class="form-control" id="def_cha" name="def_cha" type="text" value="<?php echo $member['def_cha']; ?>">
                                                                                 </td>
                                                                             </tr>
                                                                             
@@ -892,7 +1032,7 @@ if (isset($_POST['submitnotif'])) {
                                                                             <tr>
                                                                                 <!-- CORRECTION LIGNE 806 : Fusion des attributs style -->
                                                                                 <td style="display:none; text-align:center;">
-                                                                                    <button type="submit" class="btn btn-primary btn-block" name="submitnotif">Mise à jour</button>
+                                                                                    <button type="submit" class="btn btn-primary btn-block" name="submitdup">Mise à jour</button>
                                                                                 </td>
                                                                             </tr>
                                                                             </form>

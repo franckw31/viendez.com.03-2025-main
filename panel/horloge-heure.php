@@ -19,6 +19,7 @@ if(isset($_GET['uid'])) {
         display: flex;
         justify-content: center;
         align-items: center;
+        touch-action: none; /* Désactive le scroll natif pour garantir le swipe JS */
     }
 
     /* Adaptation pour Mobile (Portrait) */
@@ -44,6 +45,7 @@ if(isset($_GET['uid'])) {
         fill: none;
         stroke: #222;
         stroke-width: 15; /* Epaisseur du trait */
+        pointer-events: none; /* Laisse passer les events au parent */
     }
 
     /* Cercle de progression (bleu cyan) */
@@ -56,6 +58,7 @@ if(isset($_GET['uid'])) {
         stroke-dashoffset: 1131; /* Commence vide */
         transition: stroke-dashoffset 1s linear;
         filter: drop-shadow(0 0 10px #00d2ff); /* Effet néon */
+        pointer-events: none; /* Laisse passer les events au parent */
     }
 
     /* Contenu central (Texte) */
@@ -170,7 +173,10 @@ if(isset($_GET['uid'])) {
 </div>
 
 <script>
+
 // --- LOGIQUE JS ---
+// Variable globale pour la détection du swipe (priorité swipe sur pause)
+let swipeDetected = false;
 
 // Simulation manuelle
 function manualTrigger() {
@@ -527,6 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.querySelector('.timer-circle-container');
     
     if (container) {
+        // Gestion molette inchangée
         container.addEventListener('wheel', (e) => {
             e.preventDefault();
             
@@ -601,6 +608,85 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
             });
         }
+        // --- GESTION DU SWIPE TACTILE (TOUCH) ---
+        let touchStartY = null;
+        let touchStartTarget = null;
+        let swipeActive = false;
+        let touchStartAngle = null;
+        let lastAngle = null;
+        // Délégation : on écoute sur le parent, mais on accepte tout enfant (SVG, cercles, etc)
+        container.addEventListener('touchstart', function(e) {
+            if (e.touches.length !== 1) return;
+            const rect = container.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const x = e.touches[0].clientX - centerX;
+            const y = e.touches[0].clientY - centerY;
+            // Correction de la rotation -90deg du cercle : on soustrait PI/2
+            touchStartAngle = Math.atan2(y, x) - Math.PI / 2;
+            lastAngle = touchStartAngle;
+            touchStartY = e.touches[0].clientY;
+            touchStartTarget = e.target;
+            swipeActive = true;
+        }, { passive: true });
+
+        document.addEventListener('touchmove', function(e) {
+            if (!swipeActive || touchStartY === null) return;
+            const rect = container.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const x = e.touches[0].clientX - centerX;
+            const y = e.touches[0].clientY - centerY;
+            // Correction de la rotation -90deg du cercle : on soustrait PI/2
+            const angle = Math.atan2(y, x) - Math.PI / 2;
+            // Calcul de la différence d'angle (en radians)
+            let deltaAngle = angle - lastAngle;
+            // Corriger le passage -PI/+PI
+            if (deltaAngle > Math.PI) deltaAngle -= 2 * Math.PI;
+            if (deltaAngle < -Math.PI) deltaAngle += 2 * Math.PI;
+            // Seuil : chaque 15° (PI/12) = 1 minute
+            const angleStep = Math.PI / 12;
+            if (Math.abs(deltaAngle) >= angleStep) {
+                // Bloquer la synchro serveur pour éviter les sauts
+                syncLocked = true;
+                clearTimeout(unlockSyncTimeout);
+                let steps = Math.trunc(deltaAngle / angleStep);
+                // Sens horaire (angle augmente) = +minutes, antihoraire = -minutes
+                pendingMinutes += steps;
+                seconds += steps * 60;
+                if (seconds < 0) seconds = 0;
+                updateTimer();
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(() => {
+                    if (pendingMinutes !== 0) {
+                        fetch(`modif-horloge.php?act=${uid}&min=${pendingMinutes}&sou=ajax_ignore`)
+                            .then(() => {
+                                console.log(`Temps mis à jour (touch) : ${pendingMinutes} min`);
+                                pendingMinutes = 0;
+                            })
+                            .catch(err => console.error("Erreur update temps (touch)", err));
+                    }
+                    unlockSyncTimeout = setTimeout(() => {
+                        syncLocked = false;
+                        sync();
+                    }, 2000);
+                }, 500);
+                // Réinitialiser la référence pour suivre le doigt
+                lastAngle += steps * angleStep;
+            }
+        }, { passive: false });
+        document.addEventListener('touchend', function(e) {
+            touchStartY = null;
+            touchStartTarget = null;
+            swipeActive = false;
+        }, { passive: true });
+
+        // Réinitialisation si le système interrompt le swipe
+        document.addEventListener('touchcancel', function(e) {
+            touchStartY = null;
+            touchStartTarget = null;
+            swipeActive = false;
+        }, { passive: true });
     }
 });
 </script>
