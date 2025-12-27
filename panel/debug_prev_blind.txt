@@ -48,3 +48,15 @@ Target: {"id":"5690","id-activite":"674","ordre":"16","nom":"8000\/16000","sb":"
 PrevBlind: ID=674, Now=1766052438, RefTime=1766052438, CurrentIndex=18, TargetIndex=17
 Current: {"id":"5693","id-activite":"674","ordre":"19","nom":"20000\/40000","sb":"20000","bb":"40000","minutes":"15","fin":"2025-12-18 11:21:57","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
 Target: {"id":"5692","id-activite":"674","ordre":"18","nom":"15000\/30000","sb":"15000","bb":"30000","minutes":"15","fin":"2025-12-18 11:06:56","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=675, Now=1766137147, RefTime=1766137147, CurrentIndex=6, TargetIndex=4
+Current: {"id":"5978","id-activite":"675","ordre":"7","nom":"600\/1200","sb":"600","bb":"1200","minutes":"20","fin":"2025-12-19 10:40:03","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5976","id-activite":"675","ordre":"5","nom":"500\/1000","sb":"500","bb":"1000","minutes":"20","fin":"2025-12-19 09:50:03","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=675, Now=1766137151, RefTime=1766137151, CurrentIndex=4, TargetIndex=3
+Current: {"id":"5976","id-activite":"675","ordre":"5","nom":"500\/1000","sb":"500","bb":"1000","minutes":"20","fin":"2025-12-19 10:59:07","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5975","id-activite":"675","ordre":"4","nom":"400\/800","sb":"400","bb":"800","minutes":"20","fin":"2025-12-19 09:30:03","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=675, Now=1766139525, RefTime=1766139525, CurrentIndex=5, TargetIndex=4
+Current: {"id":"5977","id-activite":"675","ordre":"6","nom":"Pause","sb":"0","bb":"0","minutes":"30","fin":"2025-12-19 11:48:13","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5976","id-activite":"675","ordre":"5","nom":"500\/1000","sb":"500","bb":"1000","minutes":"20","fin":"2025-12-19 11:18:13","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+PrevBlind: ID=675, Now=1766139533, RefTime=1766139533, CurrentIndex=4, TargetIndex=3
+Current: {"id":"5976","id-activite":"675","ordre":"5","nom":"500\/1000","sb":"500","bb":"1000","minutes":"20","fin":"2025-12-19 11:38:45","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}
+Target: {"id":"5975","id-activite":"675","ordre":"4","nom":"400\/800","sb":"400","bb":"800","minutes":"20","fin":"2025-12-19 10:58:13","ante":"0","en_pause":"0","heure_pause":null,"heure_depause":null,"delta":null}

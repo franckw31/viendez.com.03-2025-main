@@ -144,7 +144,7 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
     <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
     <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700|Raleway:300,400,700" rel="stylesheet">
-    <script src="https://code.responsivevoice.org/responsivevoice.js?key=RTEc1M0w"></script>
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=RTEc1M0w" onload="try{ responsiveVoice.setDefaultVoice('French Female'); }catch(e){ console.warn('responsiveVoice load onload', e); }"></script>
     <script>
         // Fallback iOS amélioré (V4 - Debug & Specific Names)
         if (typeof responsiveVoice !== 'undefined') {

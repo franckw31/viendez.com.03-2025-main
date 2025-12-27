@@ -38,40 +38,57 @@ if (strlen($_SESSION['id'] == 0)) {
 } else {
     $id = intval($_GET['uid']); // get value
     if (isset($_POST['submit'])) {
-        $titre_activite = $_POST['titre-activite'];
-        $date_depart = $_POST['date_depart'];
-        $heure_depart = $_POST['heure_depart'];
-        $ville = $_POST['ville'];
-        $places = $_POST['places'];
-        $rake = $_POST['rake'];
-        $buyin = $_POST['buyin'];
-        $bounty = $_POST['bounty'];
-        $recave = $_POST['recave'];
-        $recave_montant = $_POST['recave_montant'];
-        $recave_jetons = $_POST['recave_jetons'];
-        $addon = $_POST['addon'];
-        $ante = $_POST['ante'];
-        $idmembre = $_POST['id-membre'];
-        $commentaire = $_POST['commentaire'];
-        $structure = $_POST['structure'];
-        $jetons = $_POST['jetons'];
-        $bonus = $_POST['bonus'];
-        $lng = $_POST['lng'];
-        $lat = $_POST['lat'];
-        $addon = $_POST['addon'];
-        $nb_tables = $_POST['nb-tables'];
+        // Load current values from DB
+        $cur = mysqli_query($con, "SELECT * FROM `activite` WHERE `id-activite` = '$id'");
+        $currow = mysqli_fetch_assoc($cur);
+
+        // Helper: take POST value if provided and not empty, otherwise fallback to current DB value
+        $get = function($name, $fallback) {
+            if (isset($_POST[$name]) && $_POST[$name] !== '') return $_POST[$name];
+            return $fallback;
+        };
+
+        // Text fields (escape)
+        $titre_activite = mysqli_real_escape_string($con, $get('titre-activite', $currow['titre-activite']));
+        $date_depart = mysqli_real_escape_string($con, $get('date_depart', $currow['date_depart']));
+        $heure_depart = mysqli_real_escape_string($con, $get('heure_depart', $currow['heure_depart']));
+        $ville = mysqli_real_escape_string($con, $get('ville', $currow['ville']));
+
+        // Numeric / integer fields
+        $places = is_numeric($get('places', $currow['places'])) ? intval($get('places', $currow['places'])) : $currow['places'];
+        $nb_tables = is_numeric($get('nb-tables', $currow['nb-tables'])) ? intval($get('nb-tables', $currow['nb-tables'])) : $currow['nb-tables'];
+
+        $rake = is_numeric($get('rake', $currow['rake'])) ? $get('rake', $currow['rake']) : $currow['rake'];
+        $buyin = is_numeric($get('buyin', $currow['buyin'])) ? $get('buyin', $currow['buyin']) : $currow['buyin'];
+        $bounty = is_numeric($get('bounty', $currow['bounty'])) ? $get('bounty', $currow['bounty']) : $currow['bounty'];
+        $recave = is_numeric($get('recave', $currow['recave'])) ? $get('recave', $currow['recave']) : $currow['recave'];
+        $recave_montant = is_numeric($get('recave_montant', $currow['recave_montant'])) ? $get('recave_montant', $currow['recave_montant']) : $currow['recave_montant'];
+        $recave_jetons = is_numeric($get('recave_jetons', $currow['recave_jetons'])) ? $get('recave_jetons', $currow['recave_jetons']) : $currow['recave_jetons'];
+        $addon = mysqli_real_escape_string($con, $get('addon', $currow['addon']));
+        $ante = mysqli_real_escape_string($con, $get('ante', $currow['ante']));
+        $jetons = is_numeric($get('jetons', $currow['jetons'])) ? $get('jetons', $currow['jetons']) : $currow['jetons'];
+        $bonus = is_numeric($get('bonus', $currow['bonus'])) ? $get('bonus', $currow['bonus']) : $currow['bonus'];
+        $lng = mysqli_real_escape_string($con, $get('lng', $currow['lng']));
+        $lat = mysqli_real_escape_string($con, $get('lat', $currow['lat']));
+
+        $idmembre = isset($_POST['id-membre']) && $_POST['id-membre'] !== '' ? intval($_POST['id-membre']) : (isset($currow['id-membre']) ? $currow['id-membre'] : null);
+        $commentaire = isset($_POST['commentaire']) ? mysqli_real_escape_string($con, $_POST['commentaire']) : $currow['commentaire'];
+        $challenge = isset($_POST['challenge']) && $_POST['challenge'] !== '' ? intval($_POST['challenge']) : (isset($currow['id_challenge']) ? intval($currow['id_challenge']) : null);
+        $structure = isset($_POST['structure']) && $_POST['structure'] !== '' ? intval($_POST['structure']) : (isset($currow['id_structure']) ? $currow['id_structure'] : null);
+
         $idmembresession = $_SESSION['id'];
-        echo $idmembresession."/".$idmembre."/";
-        if (($idmembresession == $idmembre) or ($idmembresession == 265)) { echo $id;
-            $msg = mysqli_query($con, "UPDATE `activite` SET 
+
+        // Only allow updates if the current session user is the original organizer (from DB) or an admin (id 265).
+        if (isset($currow['id-membre']) && ($idmembresession == $currow['id-membre'] || $idmembresession == 265)) {
+            $sql = "UPDATE `activite` SET 
                 `titre-activite` = '$titre_activite',
                 `date_depart` = '$date_depart',
                 `heure_depart` = '$heure_depart',
                 `ville` = '$ville',
                 `places` = '$places',
                 `nb-tables` = '$nb_tables',
-                `commentaire` = '$commentaire',
-                `id_structure` = '$structure',
+                `id_challenge` = " . (is_null($challenge) ? 'NULL' : "'$challenge'") . ",
+                `id_structure` = " . (is_null($structure) ? 'NULL' : "'$structure'") . ",
                 `buyin` = '$buyin',
                 `rake` = '$rake',
                 `bounty` = '$bounty',
@@ -84,13 +101,18 @@ if (strlen($_SESSION['id'] == 0)) {
                 `bonus` = '$bonus',
                 `lng` = '$lng',
                 `lat` = '$lat'
-                WHERE `id-activite` = '$id'");
-        //    $msg = mysqli_query($con, "UPDATE `activite` SET `titre-activite` = '$titre_activite' , `date_depart` = '$date_depart' , `heure_depart` = '$heure_depart' ,`ville` = '$ville' , `places` = '$places' , `nb-tables` = '$nb_tables' , `commentaire` = '$commentaire' , `buyin` = '$buyin' , `rake` = '$rake' , `bounty` = '$bounty' , `jetons` = '$jetons' , `recave` = '$recave' , `addon` = '$addon' , `ante` = '$ante' , `bonus` = '$bonus' , `lng` = '$lng' , `lat` = '$lat' WHERE `id-activite` = '$id'");
-        
-            //    $msg = mysqli_query($con, "UPDATE `activite` SET `places` = '$places' WHERE `id-activite` = '$id'");
-        
+                WHERE `id-activite` = '$id'";
+
+            $msg = mysqli_query($con, $sql);
+            if ($msg) {
+                echo '<script>window.location.replace("/panel/voir-activite.php?uid=' . $id . '");</script>';
+            } else {
+                echo '<script>alert("Erreur lors de la mise à jour: ' . mysqli_real_escape_string($con,mysqli_error($con)) . '");</script>';
+            }
+        } else {
+            // Not authorized to edit: show a message for clarity
+            echo '<div class="alert alert-warning" style="margin:10px">Vous n\'êtes pas autorisé à modifier cette activité.</div>';
         }
-        ;
     }
     ;
     if (isset($_POST['submitinsmanu'])) {
@@ -395,6 +417,8 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-16" />
     <!-- <meta http-equiv="refresh" content="30"> -->
     <title>Admin | Edition Membre</title>
+    <link rel="icon" type="image/png" href="/panel/assets/images/toulouse.jfif">
+    <link rel="shortcut icon" href="/panel/assets/images/toulouse.jfif">
     <!-- <link href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic" rel="stylesheet" type="text/css" /> -->
     <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
@@ -451,7 +475,7 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
     <link rel="stylesheet" href="css/les-styles.css">
 
     <script>
-    responsiveVoice.setDefaultVoice("French Female")
+    try{ responsiveVoice.setDefaultVoice("French Female"); }catch(e){ console.warn('responsiveVoice not loaded yet'); }
     </script>
     <!-- <script>responsiveVoice.speak("menu activite")</script> -->
     <style>
@@ -475,7 +499,9 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
         bottom: 0;
         border-radius: 50%;
         /* border: 1px solid white; */
-
+        /* Prevent the decorative overlay from intercepting mouse/touch events so buttons below can be clicked */
+        pointer-events: none;
+        z-index: 0;
 
     }
 
@@ -982,6 +1008,7 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
 </head>
 
 <body>
+    
     <div id="app">
         <?php include ('include/sidebar.php'); ?>
         <div class="app-content">
@@ -1001,22 +1028,26 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                     $id = intval($_GET['uid']);
                                     $reqnbt = mysqli_query($con, "SELECT * FROM `activite` WHERE `id-activite` = '$id' ");
                                     $res = mysqli_fetch_array($reqnbt);
+                                    if (!$res) {
+                                        echo "<div class='alert alert-danger' style='margin:20px;'>Activité introuvable pour l'identifiant <b>".htmlspecialchars($id)."</b>.</div>";
+                                        exit;
+                                    }
                                     $nbt = $res["nb-tables"];
                                     /* echo '--------'.$nbt.'---------'; */
                                     if ($nbt == '1') { ?>
                                 <div id="bMenu">
-                                    <a href="#" id="infos" class="btnnav" onmouseover="afficher1('infos')">Infos</a> 
-                                    <a href="#" id="inscrits" class="btnnav" onmouseover="afficher1('inscrits')">Joueurs</a> 
-                                    <a href="#" id="t1" class="btnnav" onmouseover="afficher1('t1')">Table 1</a> 
+                                    <a href="#" id="infos" class="btnnav" onmouseover="afficher1('infos')" onclick="afficher1('infos'); return false;">Infos</a> 
+                                    <a href="#" id="inscrits" class="btnnav" onmouseover="afficher1('inscrits')" onclick="afficher1('inscrits'); return false;">Joueurs</a> 
+                                    <a href="#" id="t1" class="btnnav" onmouseover="afficher1('t1')" onclick="afficher1('t1'); return false;">Table 1</a> 
                                     <!-- <a href="#" id="t2" class="btnnav" onmouseover="afficher2('t2')">Table 2</a> -->
                                     <!-- <a href="#" id="t3" class="btnnav" onmouseover="afficher2('t3')">Table 3</a> -->
                                     <!-- <a href="#" id="t4" class="btnnav" onmouseover="afficher2('t4')">Table 4</a> -->
                                     <a href="voir-blindes.php?uid=<?php echo $id; ?>" id="blindes" class="btnnav"
                                         onclick="window.location=this.href">Timer</a>
-                                    <a href="sieges.php?ac=<?php echo $id; ?>" id="blindes" class="btnnav"
+                                    <a href="sieges.php?ac=<?php echo $id; ?>&sou=/panel/voir-activite.php" id="blindes" class="btnnav"
                                         onclick="return confirm('Attention Réaffectation des Sieges ! ');">Place
                                         (re)</a>
-                                    <a href="creation-blindes.php?zero=1&act=<?php echo $id; ?>&sou=/panel/voir-activite.php"
+                                    <a href="creation-blindes.php?act=<?php echo $id; ?>&sou=/panel/voir-activite.php"
                                         id="blindes" class="btnnav"
                                         onclick="return confirm('Attention Reset Horloge ! ');">Start (re)</a>
                                 </div>
@@ -1025,11 +1056,11 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                 };
                                     if ($nbt == '2') { ?>
                                 <div id="bMenu">
-                                    <a href="#" id="infos" class="btnnav" onmouseover="afficher2('infos')">Infos</a>
+                                    <a href="#" id="infos" class="btnnav" onmouseover="afficher2('infos')" onclick="afficher2('infos'); return false;">Infos</a>
                                     <a href="#" id="inscrits" class="btnnav"
-                                        onmouseover="afficher2('inscrits')">Joueurs</a>
-                                    <a href="#" id="t1" class="btnnav" onmouseover="afficher2('t1')">Table 1</a>
-                                    <a href="#" id="t2" class="btnnav" onmouseover="afficher2('t2')">Table 2</a>
+                                        onmouseover="afficher2('inscrits')" onclick="afficher2('inscrits'); return false;">Joueurs</a>
+                                    <a href="#" id="t1" class="btnnav" onmouseover="afficher2('t1')" onclick="afficher2('t1'); return false;">Table 1</a>
+                                    <a href="#" id="t2" class="btnnav" onmouseover="afficher2('t2')" onclick="afficher2('t2'); return false;">Table 2</a>
                                     <!-- <a href="#" id="t3" class="btnnav" onmouseover="afficher2('t3')">Table 3</a> -->
                                     <!-- <a href="#" id="t4" class="btnnav" onmouseover="afficher2('t4')">Table 4</a> -->
                                     <a href="voir-blindes.php?uid=<?php echo $id; ?>" id="blindes" class="btnnav"
@@ -1046,12 +1077,12 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
 
                                     if ($nbt == '3') { ?>
                                 <div id="bMenu">
-                                    <a href="#" id="infos" class="btnnav" onmouseover="afficher3('infos')">Infos</a>
+                                    <a href="#" id="infos" class="btnnav" onmouseover="afficher3('infos')" onclick="afficher3('infos'); return false;">Infos</a>
                                     <a href="#" id="inscrits" class="btnnav"
-                                        onmouseover="afficher3('inscrits')">Joueurs</a>
-                                    <a href="#" id="t1" class="btnnav" onmouseover="afficher3('t1')">Table 1</a>
-                                    <a href="#" id="t2" class="btnnav" onmouseover="afficher3('t2')">Table 2</a>
-                                    <a href="#" id="t3" class="btnnav" onmouseover="afficher3('t3')">Table 3</a>
+                                        onmouseover="afficher3('inscrits')" onclick="afficher3('inscrits'); return false;">Joueurs</a>
+                                    <a href="#" id="t1" class="btnnav" onmouseover="afficher3('t1')" onclick="afficher3('t1'); return false;">Table 1</a>
+                                    <a href="#" id="t2" class="btnnav" onmouseover="afficher3('t2')" onclick="afficher3('t2'); return false;">Table 2</a>
+                                    <a href="#" id="t3" class="btnnav" onmouseover="afficher3('t3')" onclick="afficher3('t3'); return false;">Table 3</a>
                                     <!-- <a href="#" id="t4" class="btnnav" onmouseover="afficher3('t4')">Table 4</a> -->
                                     <a href="voir-blindes.php?uid=<?php echo $id; ?>" id="blindes" class="btnnav"
                                         onclick="window.location=this.href">Timer</a>
@@ -1068,12 +1099,12 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
 
                                     if ($nbt == '4') { ?>
                             <div id="bMenu">
-                                <a href="#" id="infos" class="btnnav" onmouseover="afficher4('infos')">Infos</a>
-                                <a href="#" id="inscrits" class="btnnav" onmouseover="afficher4('inscrits')">Joueurs</a>
-                                <a href="#" id="t1" class="btnnav" onmouseover="afficher4('t1')">Table 1</a>
-                                <a href="#" id="t2" class="btnnav" onmouseover="afficher4('t2')">Table 2</a>
-                                <a href="#" id="t3" class="btnnav" onmouseover="afficher4('t3')">Table 3</a>
-                                <a href="#" id="t4" class="btnnav" onmouseover="afficher4('t4')">Table 4</a>
+                                <a href="#" id="infos" class="btnnav" onmouseover="afficher4('infos')" onclick="afficher4('infos'); return false;">Infos</a>
+                                <a href="#" id="inscrits" class="btnnav" onmouseover="afficher4('inscrits')" onclick="afficher4('inscrits'); return false;">Joueurs</a>
+                                <a href="#" id="t1" class="btnnav" onmouseover="afficher4('t1')" onclick="afficher4('t1'); return false;">Table 1</a>
+                                <a href="#" id="t2" class="btnnav" onmouseover="afficher4('t2')" onclick="afficher4('t2'); return false;">Table 2</a>
+                                <a href="#" id="t3" class="btnnav" onmouseover="afficher4('t3')" onclick="afficher4('t3'); return false;">Table 3</a>
+                                <a href="#" id="t4" class="btnnav" onmouseover="afficher4('t4')" onclick="afficher4('t4'); return false;">Table 4</a>
                                 <a href="voir-blindes.php?uid=<?php echo $id; ?>" id="blindes" class="btnnav"
                                     onclick="window.location=this.href">Timer</a>
                                 <a href="sieges.php?ac=<?php echo $id; ?>" id="blindes" class="btnnav"
@@ -1084,9 +1115,19 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                     onclick="return confirm('Attention Reset Horloge ! ');">Start (re)</a>
                             </div>
                             <?php };?>
+                            <?php if (empty($nbt) || $nbt == 0) { ?>
+                            <!-- Fallback tab menu (server-side) -->
+                            <div id="bMenu">
+                                <a href="#" id="infos" class="btnnav" onclick="afficher1('infos'); return false;">Infos</a>
+                                <a href="#" id="inscrits" class="btnnav" onclick="afficher1('inscrits'); return false;">Joueurs</a>
+                                <a href="#" id="t1" class="btnnav" onclick="afficher1('t1'); return false;">Table 1</a>
+                                <a href="voir-blindes.php?uid=<?php echo $id; ?>" id="blindes" class="btnnav" onclick="window.location=this.href">Timer</a>
+                            </div>
+                            <?php } ?>
                             <div id="bSection">
                                 <div id="infosE">
-                                    <script src="voice.js?key=ncsRFoXJ"></script>
+
+                                    <script src="https://code.responsivevoice.org/responsivevoice.js?key=RTEc1M0w" onload="try{ responsiveVoice.setDefaultVoice('French Female'); }catch(e){ console.warn('responsiveVoice load onload', e); }"></script>
                                     <div class="wrap-content container" id="container">
                                         <div class="container-fluid bbg-pink">
                                             <div class="col-md-12">
@@ -1105,7 +1146,8 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                                                         while ($row2 = mysqli_fetch_array($sql2)) {
                                                                             $nom_org = $row2['pseudo'];
                                                                         } ?>
-                                                                <!-- <form method="post"> -->
+
+                                                                <form method="post" id="form-activite" style="margin:0;">
                                                                 <table class="table table-bordered">
                                                                     <tr>
                                                                         <td rowspan="2"><img
@@ -1140,40 +1182,21 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
 
                                                                             </form>
                                                                         </td>
-                                                                        <form method="post">
-                                                                            <td colspan="3"><input class="form-control"
-                                                                                    id="titre-activite"
-                                                                                    name="titre-activite" type="text"
-                                                                                    style="text-align:center; font-size:22px"
-                                                                                    value="<?php echo $row['titre-activite']; ?>">
+                                                                            <td colspan="4">
+                                                                                    <input type="hidden" name="submit" value="1" id="hidden-submit">
+                                                                                <input class="form-control" id="titre-activite"
+                                                                                        name="titre-activite" type="text"
+                                                                                        style="text-align:center; font-size:22px; width:100%"
+                                                                                        value="<?php echo $row['titre-activite']; ?>">
+                                                                                    <div style="text-align:center; margin-top:10px; display:flex; gap:10px; justify-content:center;">
+                                                                                        <button type="submit" name="submit" id="submit" class="btn btn-oo btn-primary" style="display:none">Mise à jour</button>
+                                                                                        <button type="submit" id="submit-ins" class="btn btn-primaryg btn-block" name="submit-ins">S'inscrire</button>
+                                                                                        <button type="submit" class="btn btn-primary btn-block" name="submit">Modifier</button>
+                                                                                        <button type="submit" class="btn btn-primary-rouge btn-block" name="submit-desins">Se désinscrire</button>
+                                                                                    </div>
+                                                                                </form>
                                                                             </td>
-                                                                    </tr>
-                                                                    <tr>
-                                                                        <td style="text-align:center ; display:none">
-                                                                            <button type="submit" name="submit"
-                                                                                id="submit"
-                                                                                class="btn btn-oo btn-primary">
-                                                                                Mise à jour</button>
-                                                                        </td>
-                                                                        <td style="text-align:center ;">
-                                                                            <button type="submit" id="submit-ins"
-                                                                                class="btn btn-primaryg btn-block"
-                                                                                name="submit-ins">S'inscrire
-                                                                            </button>
-                                                                        </td>
-                                                                        <td style="text-align:center ;">
-                                                                            <button type="submit"
-                                                                                class="btn btn-primary btn-block"
-                                                                                name="submit">Modifier</button>
-                                                                        </td>
-                                                                        <td style="text-align:center ;">
-                                                                            <button type="submit"
-                                                                                class="btn btn-primary-rouge btn-block"
-                                                                                name="submit-desins">Se
-                                                                                désinscrire</button>
-                                                                        </td>
-                                                                    </tr>
-                                                                    </tr>
+                                                                        </tr>
 
                                                                     <tr>
                                                                         <th>Date</th>
@@ -1243,8 +1266,8 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                                                         <script type="text/javascript">
                                                                         document.getElementById("places").onchange =
                                                                             function() {
-                                                                                document.getElementById("submit")
-                                                                                    .submit();
+                                                                                var f = document.getElementById("form-activite");
+                                                                                if (f) f.submit();
                                                                             };
                                                                         </script>
                                                                         <th style="color: #fffdfdff; background-color: #9b9898ff;">nb tables</th>
@@ -1311,18 +1334,18 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                                                                 value="<?php echo $row['bonus']; ?>">
                                                                         </td>
                                                                     </tr>
-                                                                    <tr>
-                                                                        <th style="color: #fffdfdff; background-color: #9b9898ff;">structure</th>
-                                                                        <td><input class="form-control" id="structure"
+                                                                            <tr>
+                                                                            <th style="color: #fffdfdff; background-color: #9b9898ff;">structure</th>
+                                                                            <td><input class="form-control" id="structure"
                                                                                 name="structure" type="text"
                                                                                 value="<?php echo $row['id_structure']; ?>">
-                                                                        </td>
-                                                                        <th style="color: #fffdfdff; background-color: #9b9898ff;">commentaire</th>
-                                                                        <td><input class="form-control" id="commentaire"
-                                                                                name="commentaire" type="text"
-                                                                                value="<?php echo $row['commentaire']; ?>">
-                                                                        </td>
-                                                                    </tr>
+                                                                            </td>
+                                                                            <th style="color: #fffdfdff; background-color: #9b9898ff;">Challenge</th>
+                                                                            <td><input class="form-control" id="challenge"
+                                                                                name="challenge" type="text"
+                                                                                value="<?php echo isset($row['id_challenge']) ? $row['id_challenge'] : ''; ?>">
+                                                                            </td>
+                                                                            </tr>
                                                                     <tr>
                                                                         <td style="display:none" ; colspan="2">
                                                                             <select name="lois" value="lois"
@@ -1364,7 +1387,7 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                         </div>
                                     </div>
                                 </div>
-                                <div id="t1E">
+                                <div id="t1E" class="rubrique montrer">
                                     <script>
                                     responsiveVoice.setDefaultVoice("French Female")
                                     </script>
@@ -2455,7 +2478,7 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                                                                         <li
                                                                                             class="breadcrumb-item active">
                                                                                             <a
-                                                                                                href="sieges.php?&ac=<?php echo $id ?>">Inscrits</a>
+                                                                                                href="sieges.php?&ac=<?php echo $id ?>&sou=/panel/voir-activite.php">Inscrits</a>
                                                                                         </li>
                                                                                     </ol>
                                                                                     <div class="card mb-4">
@@ -2652,92 +2675,71 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
             <script src="../js/datatables-simple-demo.js"></script> -->
     <script type="text/javascript" language="javascript">
     function afficher1(id) {
+        console.log('afficher1 called for', id);
         var leCalque = document.getElementById(id);
         var leCalqueE = document.getElementById(id + "E");
 
-        document.getElementById("infosE").className = "rubrique bgImg";
-        document.getElementById("inscritsE").className = "rubrique bgImg";
-        document.getElementById("t1E").className = "rubrique bgImg";
-        // document.getElementById("t2E").className = "rubrique bgImg";
-        // document.getElementById("t3E").className = "rubrique bgImg";
-        // document.getElementById("t4E").className = "rubrique bgImg";
+        // safe guards
+        ['infosE','inscritsE','t1E'].forEach(function(el){var e=document.getElementById(el); if(e) e.className = 'rubrique bgImg';});
+        ['infos','inscrits','t1'].forEach(function(el){var e=document.getElementById(el); if(e) e.className = 'btnnav';});
 
-        document.getElementById("infos").className = "btnnav";
-        document.getElementById("inscrits").className = "btnnav";
-        document.getElementById("t1").className = "btnnav";
-        // document.getElementById("t2").className = "btnnav";
-        // document.getElementById("t3").className = "btnnav";
-        // document.getElementById("t4").className = "btnnav";
-
-        leCalqueE.className += " montrer";
-        leCalque.className = "btnnavA";
+        if (leCalqueE) leCalqueE.className += " montrer";
+        if (leCalque) leCalque.className = "btnnavA";
     }
 
     function afficher2(id) {
+        console.log('afficher2 called for', id);
         var leCalque = document.getElementById(id);
         var leCalqueE = document.getElementById(id + "E");
 
-        document.getElementById("infosE").className = "rubrique bgImg";
-        document.getElementById("inscritsE").className = "rubrique bgImg";
-        document.getElementById("t1E").className = "rubrique bgImg";
-        document.getElementById("t2E").className = "rubrique bgImg";
-        // document.getElementById("t3E").className = "rubrique bgImg";
-        // document.getElementById("t4E").className = "rubrique bgImg";
+        ['infosE','inscritsE','t1E','t2E'].forEach(function(el){var e=document.getElementById(el); if(e) e.className = 'rubrique bgImg';});
+        ['infos','inscrits','t1','t2'].forEach(function(el){var e=document.getElementById(el); if(e) e.className = 'btnnav';});
 
-        document.getElementById("infos").className = "btnnav";
-        document.getElementById("inscrits").className = "btnnav";
-        document.getElementById("t1").className = "btnnav";
-        document.getElementById("t2").className = "btnnav";
-        // document.getElementById("t3").className = "btnnav";
-        // document.getElementById("t4").className = "btnnav";
-
-        leCalqueE.className += " montrer";
-        leCalque.className = "btnnavA";
+        if (leCalqueE) leCalqueE.className += " montrer";
+        if (leCalque) leCalque.className = "btnnavA";
     }
 
     function afficher3(id) {
+        console.log('afficher3 called for', id);
         var leCalque = document.getElementById(id);
         var leCalqueE = document.getElementById(id + "E");
 
-        document.getElementById("infosE").className = "rubrique bgImg";
-        document.getElementById("inscritsE").className = "rubrique bgImg";
-        document.getElementById("t1E").className = "rubrique bgImg";
-        document.getElementById("t2E").className = "rubrique bgImg";
-        document.getElementById("t3E").className = "rubrique bgImg";
-        // document.getElementById("t4E").className = "rubrique bgImg";
+        ['infosE','inscritsE','t1E','t2E','t3E'].forEach(function(el){var e=document.getElementById(el); if(e) e.className = 'rubrique bgImg';});
+        ['infos','inscrits','t1','t2','t3'].forEach(function(el){var e=document.getElementById(el); if(e) e.className = 'btnnav';});
 
-        document.getElementById("infos").className = "btnnav";
-        document.getElementById("inscrits").className = "btnnav";
-        document.getElementById("t1").className = "btnnav";
-        document.getElementById("t2").className = "btnnav";
-        document.getElementById("t3").className = "btnnav";
-        // document.getElementById("t4").className = "btnnav";
-
-        leCalqueE.className += " montrer";
-        leCalque.className = "btnnavA";
+        if (leCalqueE) leCalqueE.className += " montrer";
+        if (leCalque) leCalque.className = "btnnavA";
     }
 
     function afficher4(id) {
+        console.log('afficher4 called for', id);
         var leCalque = document.getElementById(id);
         var leCalqueE = document.getElementById(id + "E");
 
-        document.getElementById("infosE").className = "rubrique bgImg";
-        document.getElementById("t2E").className = "rubrique bgImg";
-        document.getElementById("inscritsE").className = "rubrique bgImg";
-        document.getElementById("t1E").className = "rubrique bgImg";
-        document.getElementById("t3E").className = "rubrique bgImg";
-        document.getElementById("t4E").className = "rubrique bgImg";
+        ['infosE','t2E','inscritsE','t1E','t3E','t4E'].forEach(function(el){var e=document.getElementById(el); if(e) e.className = 'rubrique bgImg';});
+        ['infos','t2','inscrits','t1','t3','t4'].forEach(function(el){var e=document.getElementById(el); if(e) e.className = 'btnnav';});
 
-        document.getElementById("infos").className = "btnnav";
-        document.getElementById("t2").className = "btnnav";
-        document.getElementById("inscrits").className = "btnnav";
-        document.getElementById("t1").className = "btnnav";
-        document.getElementById("t3").className = "btnnav";
-        document.getElementById("t4").className = "btnnav";
-
-        leCalqueE.className += " montrer";
-        leCalque.className = "btnnavA";
+        if (leCalqueE) leCalqueE.className += " montrer";
+        if (leCalque) leCalque.className = "btnnavA";
     }
+
+    // attach debug listeners to tab buttons
+    (function() {
+        try {
+            var menu = document.getElementById('bMenu');
+            if (menu) {
+                var items = menu.querySelectorAll('.btnnav');
+                items.forEach(function(it){
+                    it.addEventListener('click', function(e){
+                        console.log('btnnav clicked', it.id);
+                    });
+                    it.addEventListener('mouseover', function(e){
+                        //console.log('btnnav mouseover', it.id);
+                    });
+                });
+            }
+        } catch (e) { console.error(e); }
+    })();
     </script>
     <?php
         // $onglet = 'inf';
@@ -2825,6 +2827,134 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
         }
         ;
         ?>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            var rubriques = document.querySelectorAll('.rubrique');
+            console.log('DEBUG: rubrique count', rubriques.length);
+            rubriques.forEach(function(r){
+                console.log('rubrique', r.id, 'class=', r.className, 'computed display=', window.getComputedStyle(r).display);
+            });
+            var btns = document.querySelectorAll('#bMenu .btnnav');
+            console.log('DEBUG: btnnav count (inside first #bMenu)', btns.length);
+            btns.forEach(function(b){ console.log('btn', b.id, 'text=', b.textContent.trim(), 'class=', b.className); });
+            // check for any element with tabindex= -1 or pointer-events none covering buttons
+            var elems = document.querySelectorAll('body *');
+            var coverers = [];
+            elems.forEach(function(el){
+                var cs = window.getComputedStyle(el);
+                if (cs.pointerEvents === 'none') return;
+                if (cs.position === 'absolute' || cs.position === 'fixed' ) {
+                    var z = parseInt(cs.zIndex) || 0;
+                    if (z > 0) coverers.push({id: el.id || el.tagName, z: z, display: cs.display});
+                }
+            });
+            console.log('DEBUG: potential coverers (abs/fixed z>0) sample', coverers.slice(0,10));
+
+            // Fallback: ensure menu visible and one tab active
+            try {
+                var menuEl = document.getElementById('bMenu');
+                if (menuEl && window.getComputedStyle(menuEl).display === 'none') {
+                    menuEl.style.display = 'block';
+                    console.log('DEBUG: forced bMenu visible');
+                }
+                // hide all rubriques
+                rubriques.forEach(function(r){ r.classList.remove('montrer'); });
+                // if no active button, activate default based on server-side nb tables
+                var active = document.querySelector('#bMenu .btnnavA');
+                if (!active) {
+                    console.log('DEBUG: no active btnnavA found; selecting default');
+                    // default will be selected server-side; fallback to afficher1
+                    if (typeof afficher1 === 'function' && typeof afficher2 === 'function') {
+                        var nbt = <?php echo json_encode($nbt); ?>;
+                        if (nbt == '2') { if (typeof afficher2 === 'function') afficher2('t1'); else console.log('afficher2 missing'); }
+                        else if (nbt == '3') { if (typeof afficher3 === 'function') afficher3('t1'); else console.log('afficher3 missing'); }
+                        else if (nbt == '4') { if (typeof afficher4 === 'function') afficher4('t1'); else console.log('afficher4 missing'); }
+                        else { if (typeof afficher1 === 'function') afficher1('t1'); else console.log('afficher1 missing'); }
+                    } else {
+                        console.log('DEBUG: afficher functions not yet defined');
+                    }
+                }
+            } catch (e) { console.error('fallback ERR', e); }
+
+        } catch (e) { console.error('DEBUG ERR', e); }
+    });
+    </script>
+
+    <style>
+    /* Conservative fixes to force tab menu visible and ensure only one rubrique shown */
+    #bMenu { display: block !important; position: relative !important; z-index: 5000 !important; }
+    #bMenu .btnnav { display: inline-block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; background: rgba(255,255,255,0.95) !important; color: #333 !important; border-color: #a33639 !important; z-index: 5001 !important; }
+    .rubrique { display: none !important; }
+    .rubrique.montrer { display: block !important; }
+    </style>
+
+    <script>
+    (function(){
+        try {
+            var nbt = <?php echo json_encode($nbt); ?>;
+            // ensure all rubriques are hidden by default
+            document.querySelectorAll('.rubrique').forEach(function(r){ r.classList.remove('montrer'); });
+
+            // expose and attach click handlers to menu buttons
+            var menu = document.getElementById('bMenu');
+            if (menu) {
+                var btns = menu.querySelectorAll('.btnnav');
+                btns.forEach(function(b){
+                    b.style.display = 'inline-block';
+                    b.style.visibility = 'visible';
+                    b.style.pointerEvents = 'auto';
+                    b.addEventListener('click', function(ev){
+                        // If the link has a real href (not just '#'), allow the browser to handle it
+                        var href = b.getAttribute('href');
+                        if (href && href.trim() !== '#' && href.trim() !== '') {
+                            // let the default action (and inline onclick confirm) occur
+                            return;
+                        }
+                        // otherwise treat as a tab click
+                        ev.preventDefault();
+                        var id = b.id;
+                        if (nbt == '2' && typeof afficher2 === 'function') afficher2(id);
+                        else if (nbt == '3' && typeof afficher3 === 'function') afficher3(id);
+                        else if (nbt == '4' && typeof afficher4 === 'function') afficher4(id);
+                        else if (typeof afficher1 === 'function') afficher1(id);
+                    });
+                });
+                // activate a default tab if none active
+                if (!menu.querySelector('.btnnavA')) {
+                    if (nbt == '2' && typeof afficher2 === 'function') afficher2('t1');
+                    else if (nbt == '3' && typeof afficher3 === 'function') afficher3('t1');
+                    else if (nbt == '4' && typeof afficher4 === 'function') afficher4('t1');
+                    else if (typeof afficher1 === 'function') afficher1('t1');
+                }
+            }
+        } catch (e) { console.error('tab-fix-err', e); }
+    })();
+    </script>
+
+<script>
+// Ensure "Table 1" is the default active tab on page load
+(function(){
+    function activateTable1(){
+        try{
+            var nbt = (typeof window.nbt !== 'undefined' && window.nbt !== null) ? window.nbt : <?php echo json_encode($nbt); ?>;
+            // add active class to the t1 button
+            var menu = document.getElementById('bMenu');
+            if (menu){
+                var current = menu.querySelector('.btnnavA'); if (current) current.classList.remove('btnnavA');
+                var t1 = menu.querySelector('#t1'); if (t1) t1.classList.add('btnnavA');
+            }
+            // call the appropriate afficher function
+            if (nbt == '2' && typeof afficher2 === 'function') afficher2('t1');
+            else if (nbt == '3' && typeof afficher3 === 'function') afficher3('t1');
+            else if (nbt == '4' && typeof afficher4 === 'function') afficher4('t1');
+            else if (typeof afficher1 === 'function') afficher1('t1');
+        }catch(e){ console.warn('activateTable1 failed', e); }
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', activateTable1); else activateTable1();
+})();
+</script>
+
 </body>
 
 </html>

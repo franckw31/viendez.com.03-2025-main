@@ -617,7 +617,7 @@ if (isset($_POST['submitnotif'])) {
                                 </div>
                                 <div id="bSection">
                                     <div id="cssE">
-                                        <script src="voice.js?key=ncsRFoXJ"></script>
+                                        <script src="https://code.responsivevoice.org/responsivevoice.js?key=RTEc1M0w" onload="try{ responsiveVoice.setDefaultVoice('French Female'); }catch(e){ console.warn('responsiveVoice load onload', e); }"></script>
                                         <script>
                                             responsiveVoice.setDefaultVoice("French Female")
                                         </script>

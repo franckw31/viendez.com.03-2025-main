@@ -1,5 +1,6 @@
 <?php error_reporting(0);?>
 <header class="navbar nnavbar-default navbar-static-top">
+<link rel="icon" type="image/png" href="/panel/assets/images/toulouse.jfif">
 					<!-- start: NAVBAR HEADER -->
 	<div class="navbar-header">
 		<a href="/index.php" class="sidebar-mobile-toggler pull-left hidden-md hidden-lg" class="btn btn-navbar sidebar-toggle" data-toggle-class="app-slide-off" data-toggle-target="#app" data-toggle-click-outside="#sidebar">

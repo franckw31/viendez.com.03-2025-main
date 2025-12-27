@@ -49,15 +49,13 @@ if (strlen($_SESSION['id'] == 0)) {
 						<section id="page-title">
 							<div class="row">
 								<div class="col-sm-8">
-									<!-- <h1 class="mainTitle">Tableau de Bord</h1> -->
-                                     <span class="mainDescription">.</span>
-									<h2 class="mainTitle" style="color:white" >Bienvenue sur votre espace d'admin</h2>
-                                    
+									<h1 class="mainTitle">Tableau de Bord</h1>
+									<span class="mainDescription">Bienvenue sur votre espace d'administration</span>
 								</div>
-								<!-- <ol class="breadcrumb">
+								<ol class="breadcrumb">
 									<li><span>Admin</span></li>
 									<li class="active"><span>Dashboard</span></li>
-								</ol> -->
+								</ol>
 							</div>
 						</section>
 

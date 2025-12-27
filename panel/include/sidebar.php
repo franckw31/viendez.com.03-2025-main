@@ -1,13 +1,15 @@
 <?php
-session_start();
+// Only start session if not already started to avoid warnings
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 error_reporting(0);
-$idmembresession = $_SESSION['id']; //ok
-if (strlen($idmembresession == 0)) {
+$idmembresession = isset($_SESSION['id']) ? $_SESSION['id'] : '';
+if (strlen($idmembresession) == 0) {
     header('location:logout.php');
     exit;
-} else 
-{ if ($idmembresession == 265) 
-	{
+} else {
+    if ($idmembresession == 265) {
     // echo "-".$idmembresession."-";
     ?> 
     <div class="sidebar app-aside" id="sidebar">

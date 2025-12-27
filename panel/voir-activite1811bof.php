@@ -968,7 +968,7 @@
 								<?php }; ?>
 								<div id="bSection">
 									<div id="infosE">
-										<script src="voice.js?key=ncsRFoXJ"></script>
+										<script src="https://code.responsivevoice.org/responsivevoice.js?key=RTEc1M0w" onload="try{ responsiveVoice.setDefaultVoice('French Female'); }catch(e){ console.warn('responsiveVoice load onload', e); }"></script>
 										<div class="wrap-content container" id="container">
 											<div class="container-fluid bbg-pink">
 												<div class="col-md-12">

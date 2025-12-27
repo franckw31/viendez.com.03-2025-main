@@ -167,9 +167,9 @@ if(isset($_GET['uid'])) {
 
 <!-- BOUTONS DE TEST (Debug) -->
 <div style="margin-top: 5px; opacity: 0.7; text-align: center;">
-    <button onclick="manualTrigger()" style="cursor:pointer; font-size:10px; color:red; background:none; border:none;">
+    <!-- <button onclick="manualTrigger()" style="cursor:pointer; font-size:10px; color:red; background:none; border:none;">
         🚨 Test Voix
-    </button>
+    </button> -->
 </div>
 
 <script>
@@ -340,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let durationMin = Math.floor(totalDuration / 60);
         let blinds = currentBlindsName.replace(/\//g, ' et ').replace(/-/g, ' et ');
         
-        let text = `Bienvenue à tous , dans mon humble demeure, le tournoi a commencé. Les blinde de départ sont ${blinds}, pour des niveaux de ${durationMin} minutes. Bonne chance !`;
+        let text = `Bienvenue à tous , le tournoi vient de commencer. Les blinde de départ sont ${blinds}, pour des niveaux de ${durationMin} minutes. Bonne chance !`;
         playAlert(text);
     });
 
@@ -432,8 +432,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Mise à jour Stats Joueurs
             const statsZone = document.getElementById('zone-stats');
             if (statsZone && data.players_active !== undefined) {
-                statsZone.innerHTML = `${data.players_active} <a href="fullscreen-player.php?uid=${uid}" style="color:white; text-decoration:underline; cursor:pointer;">Joueurs</a> / ${data.players_total} &nbsp;|&nbsp; <span style="color:white">Stack Moyen </span> <a href="#" id="speak-avg-stack" style="color:#00d2ff; text-decoration:underline; cursor:pointer;">${data.avg_stack}</a>`;
-                // Ajout du handler pour l'audio
+                statsZone.innerHTML = `<a href="#" id="speak-active-players" data-players="${data.players_active}" style="color:#00d2ff; text-decoration:underline; cursor:pointer;">${data.players_active}</a> <a href="fullscreen-player.php?uid=${uid}" style="color:white; text-decoration:underline; cursor:pointer;">Joueurs</a> / ${data.players_total} &nbsp;|&nbsp; <span style="color:white">Stack Moyen </span> <a href="#" id="speak-avg-stack" style="color:#00d2ff; text-decoration:underline; cursor:pointer;">${data.avg_stack}</a>`;
+                // Ajout du handler pour l'audio sur le stack moyen
                 const avgStackLink = document.getElementById('speak-avg-stack');
                 if (avgStackLink) {
                     avgStackLink.addEventListener('click', function(e) {
@@ -451,6 +451,31 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
                     });
                 }
+
+                // Ajout du handler pour l'audio sur le nombre de joueurs actifs (une seule fois)
+                const activePlayersLink = document.getElementById('speak-active-players');
+                if (activePlayersLink && !activePlayersLink.hasAttribute('data-listener')) {
+                    activePlayersLink.setAttribute('data-listener', 'true');
+                    activePlayersLink.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const nb = this.getAttribute('data-players');
+                        let msgJoueurs = `Il reste ${nb} joueurs en jeu.`;
+                        if (typeof responsiveVoice !== 'undefined') {
+                            responsiveVoice.speak(msgJoueurs, 'French Male');
+                        } else if ('speechSynthesis' in window) {
+                            let utter = new SpeechSynthesisUtterance(msgJoueurs);
+                            utter.lang = 'fr-FR';
+                            utter.rate = 0.95;
+                            window.speechSynthesis.speak(utter);
+                        } else {
+                            alert(msgJoueurs);
+                        }
+                    });
+                } else if (activePlayersLink) {
+                    // Mise à jour du nombre de joueurs si le DOM est réécrit
+                    activePlayersLink.setAttribute('data-players', data.players_active);
+                }
+                // ...existing code...
             }
 
             // Sync du temps restant
@@ -482,6 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     let matchAbs = pVal.match(/^(\d{1,2}):(\d{2})/);
                     let isRelative = pVal.toLowerCase().includes("dans");
 
+                    let minutesPauseLinkHtml = null;
                     if (matchAbs) {
                         let h = parseInt(matchAbs[1]);
                         let m = parseInt(matchAbs[2]);
@@ -490,7 +516,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         target.setHours(h); target.setMinutes(m); target.setSeconds(0);
                         let diffMs = target - now;
                         let diffMins = Math.max(0, Math.floor(diffMs / 60000));
-                        displayText = `Pause <span style="color:white">dans</span> ${diffMins} <span style="color:white">Minutes, Soit</span> ${h.toString().padStart(2,'0')}h${m.toString().padStart(2,'0')}`;
+                        minutesPauseLinkHtml = `<a href='#' id='speak-minutes-pause' data-minutes='${diffMins}' style='color:#00d2ff; text-decoration:underline; cursor:pointer;'>${diffMins}</a>`;
+                        displayText = `Pause <span style='color:white'>dans</span> ${minutesPauseLinkHtml} <span style='color:white'>Minutes, Soit</span> ${h.toString().padStart(2,'0')}h${m.toString().padStart(2,'0')}`;
                     } 
                     else if (isRelative) {
                         let matchH = pVal.match(/(\d+)\s*h/);
@@ -502,12 +529,66 @@ document.addEventListener('DOMContentLoaded', () => {
                         d.setHours(d.getHours() + addH); d.setMinutes(d.getMinutes() + addM);
                         let pauseH = d.getHours().toString().padStart(2, '0');
                         let pauseM = d.getMinutes().toString().padStart(2, '0');
-                        displayText = `Pause <span style="color:white">dans</span> ${totalMinutes} <span style="color:white">Minutes, Soit</span> ${pauseH}h${pauseM}`;
+                        minutesPauseLinkHtml = `<a href='#' id='speak-minutes-pause' data-minutes='${totalMinutes}' style='color:#00d2ff; text-decoration:underline; cursor:pointer;'>${totalMinutes}</a>`;
+                        displayText = `Pause <span style='color:white'>dans</span> ${minutesPauseLinkHtml} <span style='color:white'>Minutes, Soit</span> ${pauseH}h${pauseM}`;
                     } else {
                         displayText = pVal;
                     }
                 }
                 pauseInfo.innerHTML = displayText;
+                // Ajout du handler pour l'audio sur les minutes restantes avant la pause
+                const minutesPauseLink = document.getElementById('speak-minutes-pause');
+                if (minutesPauseLink && !minutesPauseLink.hasAttribute('data-listener')) {
+                    minutesPauseLink.setAttribute('data-listener', 'true');
+                    // Cherche l'heure de la pause dans le texte parent
+                    minutesPauseLink.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const min = this.getAttribute('data-minutes');
+                        // Recherche l'heure juste après "Soit"
+                        let parent = this.parentElement;
+                        let msgHeure = '';
+                        if (parent) {
+                            // Cherche le texte après 'Soit' jusqu'à la fin du span ou balise
+                            let match = parent.innerHTML.match(/Soit\s*([^< ]+h[^< ]*)/);
+                            if (match) {
+                                msgHeure = match[1];
+                            } else {
+                                // Fallback : cherche le dernier nombre h nombre dans le parent
+                                let match2 = parent.innerHTML.match(/(\d{2}h\d{2})/g);
+                                if (match2 && match2.length > 0) {
+                                    msgHeure = match2[match2.length-1];
+                                }
+                            }
+                        }
+                        // Construire le message avec une pause claire entre les parties
+                        let firstPart = msgHeure ? `Il reste , ${min} minutes avant la prochaine pause, estimée à ${msgHeure}.` : `Il reste, ${min} minutes avant la prochaine pause.`;
+                        // Conserver l'indication "plus trois mains" si pertinente
+                        let plusTrois = '';
+                        if (parent && /plus\s+trois\s+mains/i.test(parent.innerHTML)) plusTrois = ' Plus trois mains.';
+                        // Heure actuelle
+                        let now = new Date();
+                        let hh = now.getHours().toString().padStart(2, '0');
+                        let mm = now.getMinutes().toString().padStart(2, '0');
+                        let secondPart = `Il est actuellement ${hh} heures ${mm} minutes.`;
+
+                        // Message final : deux phrases séparées pour une bonne pause vocale
+                        let msgPause = `${firstPart}${plusTrois} ${secondPart}`;
+                        if (typeof responsiveVoice !== 'undefined') {
+                            responsiveVoice.speak(msgPause, 'French Male');
+                        } else if ('speechSynthesis' in window) {
+                            let utter = new SpeechSynthesisUtterance(msgPause);
+                            utter.lang = 'fr-FR';
+                            utter.rate = 0.95;
+                            window.speechSynthesis.speak(utter);
+                        } else {
+                            alert(msgPause);
+                        }
+                    });
+                } else if (minutesPauseLink) {
+                    // Mise à jour du nombre de minutes si le DOM est réécrit
+                    minutesPauseLink.setAttribute('data-minutes', minutesPauseLink.textContent);
+                }
             }
 
             // Son au changement de niveau
@@ -533,6 +614,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.querySelector('.timer-circle-container');
     
     if (container) {
+            // Variable pour la détection du swipe circulaire (priorité swipe sur pause)
+            let swipeDetected = false;
         // Gestion molette inchangée
         container.addEventListener('wheel', (e) => {
             e.preventDefault();
@@ -581,6 +664,10 @@ document.addEventListener('DOMContentLoaded', () => {
         // (Sur voir-blindes.php, le clic sert à ouvrir le fullscreen)
         if (!window.location.href.includes('voir-blindes.php')) {
             container.addEventListener('click', (e) => {
+                    if (swipeDetected) {
+        swipeDetected = false;
+        return;
+    }
                 e.preventDefault();
                 e.stopPropagation(); // Empêche la propagation
 
@@ -628,10 +715,12 @@ document.addEventListener('DOMContentLoaded', () => {
             touchStartY = e.touches[0].clientY;
             touchStartTarget = e.target;
             swipeActive = true;
+            swipeDetected = false;
         }, { passive: true });
 
         document.addEventListener('touchmove', function(e) {
             if (!swipeActive || touchStartY === null) return;
+                swipeDetected = true;
             const rect = container.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
@@ -651,9 +740,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 syncLocked = true;
                 clearTimeout(unlockSyncTimeout);
                 let steps = Math.trunc(deltaAngle / angleStep);
-                // Sens horaire (angle augmente) = +minutes, antihoraire = -minutes
-                pendingMinutes += steps;
-                seconds += steps * 60;
+                // Sens horaire (angle augmente) = -minutes, antihoraire = +minutes
+                pendingMinutes -= steps;
+                seconds -= steps * 60;
                 if (seconds < 0) seconds = 0;
                 updateTimer();
                 clearTimeout(scrollTimeout);

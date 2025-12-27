@@ -45,12 +45,13 @@ if (strlen($_SESSION['id'] == 0)) {
         
         if (mysqli_num_rows($check_sql) == 0) {
             // Récupérer les valeurs par défaut de l'activité
-            $defaults_sql = mysqli_query($con, "SELECT rake, buyin, bounty FROM activite WHERE `id-activite` = '$acti'");
+            $defaults_sql = mysqli_query($con, "SELECT rake, buyin, bounty, `id_challenge` FROM activite WHERE `id-activite` = '$acti'");
             $defaults_row = mysqli_fetch_array($defaults_sql);
             
             $default_activity_rake = floatval($defaults_row['rake']);
             $default_activity_bounty = floatval($defaults_row['bounty']);
             $default_activity_buyin = floatval($defaults_row['buyin']);
+            $default_activity_challenge = floatval($defaults_row['id_challenge']);
             
             // Calcul du cout_in initial
             $initial_cout_in = $default_activity_buyin + $default_activity_bounty + $default_activity_rake;
@@ -61,7 +62,7 @@ if (strlen($_SESSION['id'] == 0)) {
             $pseudo = mysqli_real_escape_string($con, $pseudo_row['pseudo']);
 
             // Insertion
-            $insert_sql = "INSERT INTO `participation` (`id-membre`, `nom-membre`, `id-activite`, `id-table`, `id-siege`, `rake`, `cout_in`, `recave`) VALUES ('$membre', '$pseudo', '$acti', '$tabl', '$sieg', '$default_activity_rake', '$initial_cout_in', 0)";
+            $insert_sql = "INSERT INTO `participation` (`id-membre`, `nom-membre`, `id-activite`, `id-table`, `id-siege`, `rake`, `cout_in`, `recave`, `id-challenge`) VALUES ('$membre', '$pseudo', '$acti', '$tabl', '$sieg', '$default_activity_rake', '$initial_cout_in', 0, '$default_activity_challenge')";
             
             if(mysqli_query($con, $insert_sql)) {
                  $_SESSION['msg'] = "Joueur inscrit avec succès !";
@@ -481,7 +482,7 @@ if (strlen($_SESSION['id'] == 0)) {
         <link rel="stylesheet" href="assets/css/styles.css">
         <link rel="stylesheet" href="assets/css/plugins.css">
         <link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
-        <script src="https://code.responsivevoice.org/responsivevoice.js?key=RTEc1M0w"></script>
+        <script src="https://code.responsivevoice.org/responsivevoice.js?key=RTEc1M0w" onload="try{ responsiveVoice.setDefaultVoice('French Female'); }catch(e){ console.warn('responsiveVoice load onload', e); }"></script>
         <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
         <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
         <link href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css" rel="stylesheet" />
