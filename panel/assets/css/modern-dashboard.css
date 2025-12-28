@@ -105,8 +105,9 @@ body {
 .card-green .card-icon, .card-green .card-stat { color: #28a745; }
 .card-orange .card-icon, .card-orange .card-stat { color: #fd7e14; }
 .card-purple .card-icon, .card-purple .card-stat { color: #6f42c1; }
-.card-red .card-icon, .card-red .card-stat { color: #dc3545; }
-.card-teal .card-icon, .card-teal .card-stat { color: #20c997; }
+.card-red .card-icon, .card-red .card-stat { color: #dc3545 !important; }
+.card-teal .card-icon, .card-teal .card-stat { color: #20c997 !important; }
+.card-yellow .card-icon, .card-yellow .card-stat { color: #ffcc00 !important; }
 
 /* Section Headers */
 .section-header {

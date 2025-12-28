@@ -3,10 +3,17 @@ session_start();
 error_reporting(0);
 include('include/config.php');
 
-if (strlen($_SESSION['id'] == 0)) {
+if (strlen($_SESSION['login']) == 0) {
 	$_SESSION['redirect'] = 'panel/dashboard.php';
 	header('location:logout.php');
 } else {
+	// Si l'ID n'est pas en session, on le récupère via le login
+	if (!isset($_SESSION['id']) || $_SESSION['id'] == 0) {
+		$login = $_SESSION['login'];
+		$q_u = mysqli_query($con, "SELECT `id-membre` FROM membres WHERE pseudo = '$login'");
+		$r_u = mysqli_fetch_array($q_u);
+		$_SESSION['id'] = $r_u['id-membre'];
+	}
 
 	?>
 	<!DOCTYPE html>

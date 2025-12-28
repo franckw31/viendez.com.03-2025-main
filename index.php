@@ -28,8 +28,8 @@ if ($count == 1) {
     echo "ok";
     $id=$row['id-membre'];
     echo $id;
-    $_SESSION['user'] = $username;
-    $_SESSION['login'] = $username;
+    $_SESSION['user'] = $pseudo;
+    $_SESSION['login'] = $pseudo;
     $_SESSION['id'] = $id;
     header("Location: /panel/dashboard.php");
 }

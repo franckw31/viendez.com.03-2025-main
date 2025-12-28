@@ -1019,7 +1019,17 @@ if (!$member) {
                                                                             </tr>
                                                                             <tr>
                                                                                 <th style="color: #ffffff !important;">Structure</th>
-                                                                                <td><input class="form-control" id="def_str" name="def_str" type="text" value="<?php echo $member['def_str']; ?>">
+                                                                                <td>
+                                                                                    <select class="form-control" id="def_str" name="def_str">
+                                                                                        <option value="">Choisir une structure</option>
+                                                                                        <?php 
+                                                                                        $q_str = mysqli_query($con, "SELECT num_structure, nom FROM structure_modele WHERE num_structure IS NOT NULL ORDER BY nom ASC");
+                                                                                        while($r_str = mysqli_fetch_array($q_str)) {
+                                                                                            $selected = ($r_str['num_structure'] == $member['def_str']) ? 'selected' : '';
+                                                                                            echo '<option value="'.$r_str['num_structure'].'" '.$selected.'>'.htmlentities($r_str['nom']).'</option>';
+                                                                                        }
+                                                                                        ?>
+                                                                                    </select>
                                                                                 </td>
                                                                                 <th style="color: #ffffff !important;">Challenge</th>
                                                                                 <td><input class="form-control" id="def_cha" name="def_cha" type="text" value="<?php echo $member['def_cha']; ?>">

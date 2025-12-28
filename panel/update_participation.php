@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Requête de mise à jour
-        $sql = "UPDATE participation SET `$field` = ? WHERE `id-participation` = ?";
+        $sql = "UPDATE participation SET `$field` = ?, `ds` = NOW() WHERE `id-participation` = ?";
         $stmt = mysqli_prepare($conn, $sql);
         if (!$stmt) {
             throw new Exception("Erreur préparation requête : " . mysqli_error($conn));

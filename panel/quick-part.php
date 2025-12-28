@@ -239,7 +239,8 @@ if (isset($_POST['update_participation'])) {
             gain = ?,
             points = ?,
             cagnotte = ?,
-            cout_in = ?
+            cout_in = ?,
+            ds = NOW()
             WHERE `id-participation` = ?";
 
         $stmt_update = mysqli_prepare($con, $sql_update);

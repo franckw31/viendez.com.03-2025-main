@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $sql = "UPDATE participation 
-            SET `$field` = ? 
+            SET `$field` = ?, `ds` = NOW() 
             WHERE `id-membre` = ? 
             AND `id-activite` = ?";
     

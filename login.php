@@ -23,8 +23,11 @@ $count = mysqli_num_rows($qry);
 echo $count;
 if ($count == 1) {
     echo "ok";
-    $_SESSION['user'] = $username;
-    header("Location: index.html");
+    $row = mysqli_fetch_assoc($qry);
+    $_SESSION['user'] = $pseudo;
+    $_SESSION['login'] = $pseudo;
+    $_SESSION['id'] = $row['id-membre'];
+    header("Location: /panel/dashboard.php");
 }
 ;
 ?>
