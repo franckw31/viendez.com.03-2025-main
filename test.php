@@ -3,11 +3,11 @@
 // Connects to MySQL database named "dbs9616600" using PDO.
 // Replace host, user and pass with real credentials.
 
-$host = '127.0.0.1';
+$host = 'localhost';
 $port = 3306;
 $db   = 'dbs9616600';
-$user = 'your_db_username';
-$pass = 'your_db_password';
+$user = 'root';
+$pass = 'Kookies7*';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host={$host};port={$port};dbname={$db};charset={$charset}";

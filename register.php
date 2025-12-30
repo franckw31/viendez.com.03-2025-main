@@ -1,5 +1,7 @@
 <?php
 include('panel/include/config.php');
+require_once 'serveur-smtp/send.php';
+
 if(isset($_POST['register']))
 {
 	$username = $_POST['username'];
@@ -8,6 +10,12 @@ if(isset($_POST['register']))
 	$country = $_POST['country'];
   $sql = "INSERT INTO `membres` (`pseudo`, `email`, `password`, `country`) VALUES('$username','$email','$password','$country')";
   $qry = mysqli_query($con, $sql) or die("error");
+  
+  // Envoi de l'email de bienvenue
+  $subject = "Bienvenue sur Poker31 !";
+  $body = "<h1>Bienvenue $username !</h1><p>Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.</p>";
+  sendRealEmail($email, $subject, $body);
+
   header("Location: index.php");
 }
 ?>

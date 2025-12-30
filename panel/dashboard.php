@@ -97,6 +97,13 @@ if (strlen($_SESSION['login']) == 0) {
 									<div class="card-description">Localisation des membres</div>
 								</a>
 							</div>
+							<!-- <div class="col-sm-4">
+								<a href="chat.php" class="dashboard-card card-green" style="background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);">
+									<div class="card-icon"><i class="fa fa-whatsapp"></i></div>
+									<div class="card-title">Chat Joueurs</div>
+									<div class="card-description">Discutez avec les autres membres</div>
+								</a>
+							</div> -->
 						</div>
 
 						<!-- Main Navigation Sections -->

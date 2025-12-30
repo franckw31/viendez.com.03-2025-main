@@ -1,9 +1,9 @@
 <?php error_reporting(0);?>
-<header class="navbar nnavbar-default navbar-static-top">
+<header class="navbar navbar-default navbar-static-top">
 <link rel="icon" type="image/png" href="/panel/assets/images/toulouse.jfif">
 					<!-- start: NAVBAR HEADER -->
 	<div class="navbar-header">
-		<a href="/index.php" class="sidebar-mobile-toggler pull-left hidden-md hidden-lg" class="btn btn-navbar sidebar-toggle" data-toggle-class="app-slide-off" data-toggle-target="#app" data-toggle-click-outside="#sidebar">
+		<a href="/index.php" class="sidebar-mobile-toggler pull-left hidden-md hidden-lg btn btn-navbar sidebar-toggle" data-toggle-class="app-slide-off" data-toggle-target="#app" data-toggle-click-outside="#sidebar">
 			<i class="ti-align-justify"></i>
 		</a>
 		<a class="navbar-brand" href="/index.php">
@@ -24,24 +24,24 @@
 		<ul class="nav navbar-right">
 					<!-- start: MESSAGES DROPDOWN -->
 			<li  style="padding-top:3% ">
-				<h1>Console de Gestion</h1>
+				<h1>Console de Gestion <span class="badge badge-success" style="font-size: 0.5em; vertical-align: middle;">Beta-1</span></h1>
 			</li>
 			<?php
-			$id=intval($_GET['id']);
-			$id=265;
 			$id=$_SESSION['id'];
 			$sql=mysqli_query($con,"SELECT * FROM `membres` WHERE `id-membre` = '$id'");
 			while($row=mysqli_fetch_array($sql))
 				{														
 				?>	
+				<li class="current-user" style="padding-top: 10px;">
+					<a href="voir-membre.php?id=<?php echo $id;?>">
+						<img src="../images/faces/<?php  echo $row['photo'];?>" width="60" height="50" style="border-radius: 5px;">
+					</a>
+				</li>
 				<li class="dropdown current-user">
 					<a href class="dropdown-toggle" data-toggle="dropdown">
-						<img src="../images/faces/<?php  echo $row['photo'];?>" width="60" height="50"  ;> <span class="username"> <?php  echo $row['pseudo'];?>
-						<i class="ti-angle-down"></i></i></span>
+						<span class="username"> <?php  echo $row['pseudo'];?>
+						<i class="ti-angle-down"></i></span>
 					</a>
-					<?php
-				}
-				?>
 					<ul class="dropdown-menu dropdown-dark">
 						<li>
 							<a href="voir-membre.php?id=<?php  echo $id;?>">
@@ -55,6 +55,9 @@
 						</li>
 					</ul>
 				</li>
+				<?php
+				}
+				?>
 							<!-- end: USER OPTIONS DROPDOWN -->
 		</ul>
 						<!-- start: MENU TOGGLER FOR MOBILE DEVICES -->

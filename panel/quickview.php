@@ -340,36 +340,6 @@ if (strlen($_SESSION['login']) == 0) {
 						<!-- Inscription & Options -->
 						<div class="row">
 							<div class="col-sm-4">
-								<div class="dashboard-card card-red animated pulse infinite" style="animation-duration: 2s;">
-									<div class="card-icon"><i class="fa fa-pencil-square-o"></i></div>
-									<div class="card-title">Ma Participation</div>
-									<div class="card-stat" style="font-size: 16px; font-weight: normal; text-align: left; padding-left: 20px;">
-										<form method="post">
-											<input type="hidden" name="quick_reg" value="1">
-											<?php 
-											$user_id = intval($_SESSION['id']);
-											$id_act = intval($row_act['id-activite']);
-											$q_p = mysqli_query($con, "SELECT `option` FROM participation WHERE `id-membre` = '$user_id' AND `id-activite` = '$id_act'");
-											$r_p = mysqli_fetch_array($q_p);
-											$current_status = $r_p ? $r_p['option'] : 'None';
-											?>
-											<div class="radio clip-radio radio-primary" style="margin-bottom: 15px;">
-												<input type="radio" id="reg_inscrit" name="status" value="Inscrit" <?php echo ($current_status == 'Inscrit') ? 'checked' : ''; ?> onchange="this.form.submit()">
-												<label for="reg_inscrit" style="color: lime; font-weight: bold; font-size: 18px;">INSCRIPTION</label>
-											</div>
-											<div class="radio clip-radio radio-primary" style="margin-bottom: 15px;">
-												<input type="radio" id="reg_option" name="status" value="Option" <?php echo ($current_status == 'Option') ? 'checked' : ''; ?> onchange="this.form.submit()">
-												<label for="reg_option" style="color: #FFCC00; font-weight: bold; font-size: 18px;">OPTION</label>
-											</div>
-											<div class="radio clip-radio radio-primary radio-lightred" style="margin-bottom: 5px;">
-												<input type="radio" id="reg_none" name="status" value="None" <?php echo ($current_status == 'None' || $current_status == 'Desinscrit') ? 'checked' : ''; ?> onchange="this.form.submit()">
-												<label for="reg_none" style="color: #f91919ff; font-weight: bold; font-size: 18px;">DÉSINCRIPTION</label>
-											</div>
-										</form>
-									</div>
-								</div>
-							</div>
-							<div class="col-sm-4">
 								<div class="dashboard-card card-orange">
 									<div class="card-icon"><i class="fa fa-cutlery"></i></div>
 									<div class="card-title">Variante du Rake</div>
@@ -377,6 +347,8 @@ if (strlen($_SESSION['login']) == 0) {
 										<form method="post">
 											<input type="hidden" name="quick_reg" value="1">
 											<?php 
+											$user_id = intval($_SESSION['id']);
+											$id_act = intval($row_act['id-activite']);
 											$q_rake = mysqli_query($con, "SELECT * FROM rake ORDER BY id_rake ASC");
 											$q_p_rake = mysqli_query($con, "SELECT `id_rake` FROM participation WHERE `id-membre` = '$user_id' AND `id-activite` = '$id_act'");
 											$r_p_rake = mysqli_fetch_array($q_p_rake);
@@ -398,11 +370,66 @@ if (strlen($_SESSION['login']) == 0) {
 								</div>
 							</div>
 							<div class="col-sm-4">
+								<div class="dashboard-card card-red animated pulse infinite" style="animation-duration: 2s;">
+									<div class="card-icon"><i class="fa fa-pencil-square-o"></i></div>
+									<div class="card-title">Ma Participation</div>
+									<div class="card-stat" style="font-size: 16px; font-weight: normal; text-align: left; padding-left: 20px;">
+										<form method="post">
+											<input type="hidden" name="quick_reg" value="1">
+											<?php 
+											$user_id = intval($_SESSION['id']);
+											$id_act = intval($row_act['id-activite']);
+											$q_p = mysqli_query($con, "SELECT `option` FROM participation WHERE `id-membre` = '$user_id' AND `id-activite` = '$id_act'");
+											$r_p = mysqli_fetch_array($q_p);
+											$current_status = $r_p ? $r_p['option'] : 'None';
+
+											// Compter les messages non lus (privés)
+											$q_unread = mysqli_query($con, "SELECT COUNT(*) as total FROM chat_messages WHERE receiver_id = '$user_id' AND is_read = 0 AND group_id IS NULL");
+											$r_unread = mysqli_fetch_array($q_unread);
+											$unread_count = intval($r_unread['total']);
+
+											// Compter les messages non lus (groupes)
+											$q_unread_groups = mysqli_query($con, "
+												SELECT COUNT(*) as total 
+												FROM chat_messages m
+												JOIN chat_group_members gm ON m.group_id = gm.group_id
+												WHERE gm.member_id = '$user_id' 
+												AND m.sender_id != '$user_id'
+												AND m.timestamp > gm.last_read_at
+											");
+											$r_unread_groups = mysqli_fetch_array($q_unread_groups);
+											$unread_count += intval($r_unread_groups['total']);
+											?>
+											<div class="radio clip-radio radio-primary" style="margin-bottom: 15px;">
+												<input type="radio" id="reg_inscrit" name="status" value="Inscrit" <?php echo ($current_status == 'Inscrit') ? 'checked' : ''; ?> onchange="this.form.submit()">
+												<label for="reg_inscrit" style="color: lime; font-weight: bold; font-size: 18px;">INSCRIPTION</label>
+											</div>
+											<div class="radio clip-radio radio-primary" style="margin-bottom: 15px;">
+												<input type="radio" id="reg_option" name="status" value="Option" <?php echo ($current_status == 'Option') ? 'checked' : ''; ?> onchange="this.form.submit()">
+												<label for="reg_option" style="color: #FFCC00; font-weight: bold; font-size: 18px;">OPTION</label>
+											</div>
+											<div class="radio clip-radio radio-primary radio-lightred" style="margin-bottom: 5px;">
+												<input type="radio" id="reg_none" name="status" value="None" <?php echo ($current_status == 'None' || $current_status == 'Desinscrit') ? 'checked' : ''; ?> onchange="this.form.submit()">
+												<label for="reg_none" style="color: #f91919ff; font-weight: bold; font-size: 18px;">DÉSINCRIPTION</label>
+											</div>
+											<div style="margin-top: 10px; text-align: center;">
+												<a href="chat.php" style="color: #007bff; text-decoration: underline !important; font-weight: bold; font-size: 16px;">
+													<i class="fa fa-comments"></i> Accéder au Chat
+													<?php if ($unread_count > 0): ?>
+														<span class="badge badge-danger" style="background-color: #d9534f;"><?php echo $unread_count; ?></span>
+													<?php endif; ?>
+												</a>
+											</div>
+										</form>
+									</div>
+								</div>
+							</div>
+							<div class="col-sm-4">
 								<div class="dashboard-card card-blue">
 									<div class="card-icon"><i class="fa fa-forward"></i></div>
 									<?php 
 									$current_date = $row_act['date_depart'];
-									$q_next_acts = mysqli_query($con, "SELECT * FROM activite WHERE date_depart > '$current_date' ORDER BY date_depart ASC LIMIT 3");
+									$q_next_acts = mysqli_query($con, "SELECT * FROM activite WHERE date_depart > '$current_date' ORDER BY date_depart ASC LIMIT 1");
 									$first_next_id = "";
 									if(mysqli_num_rows($q_next_acts) > 0) {
 										$r_temp = mysqli_fetch_array($q_next_acts);

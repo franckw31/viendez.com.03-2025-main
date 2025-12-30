@@ -5,14 +5,9 @@ if (isset($_SESSION['Email_Session'])) {
     header("Location: /index.html");
     die();
 }
-include('/panel/include/config.php');
-//Import PHPMailer classes into the global namespace
-//These must be at the top of your script, not inside a function
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\Exception;
-//Load Composer's autoloader
-require 'panel/vendor/autoload.php';
-echo "coucou";
+include('config.php');
+require_once 'serveur-smtp/send.php';
+
 $msg = "";
 $Error_Pass="";
 if (isset($_POST['submit'])) {
@@ -22,32 +17,24 @@ if (isset($_POST['submit'])) {
     $Confirm_Password = mysqli_real_escape_string($conx, $_POST['Conf-Password']);
     $Code = mysqli_real_escape_string($conx, md5(rand()));
     if (mysqli_num_rows(mysqli_query($conx, "SELECT * FROM membres where email='{$email}'")) > 0) {
-        $msg = "<div class='alert alert-danger'>This Email:'{$email}' has been alredy existe.</div>";
+        $msg = "<div class='alert alert-danger'>Cet email : '{$email}' existe déjà.</div>";
     } else {
         if ($Password === $Confirm_Password) {
             $query = "INSERT INTO membres (`pseudo`, `email`, `Password`, `CodeV`) values('$pseudo','$email','$Password','$Code')";
             $result = mysqli_query($conx, $query);
             if ($result) {
-                //Create an instance; passing `true` enables exceptions
-                $mail = new PHPMailer(true);
-
-                try {
-                    //Server settings
-                $mail->SMTPDebug = 0;                      //Enable verbose debug output
-                $mail->isSMTP();                                            //Send using SMTP
-                $mail->Host       = 'smtp.ionos.fr';                     //Set the SMTP server to send through
-                $mail->SMTPAuth   = true;                                   //Enable SMTP authentication
-                $mail->Username   = 'admin@poker31.org';                     //SMTP username
-                $mail->Password   = 'Kookies7*p';                               //SMTP password
-                $mail->SMTPSecure = 'Tls';            //Enable implicit TLS encryption
-                $mail->Port       = 25;                                    //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
-
-                //Recipients
-                $mail->setFrom('admin@poker31.org', 'Admin Poker31');
-                $mail->addAddress($email);
-                //Content
-                    $mail->isHTML(true);                                  //Set email format to HTML
-                    $mail->Subject = 'Message de Poker31';
+                $subject = 'Message de Poker31 - Vérification de compte';
+                $body = '<p>Bienvenue sur Poker31 ! Voici votre lien de vérification : <b><a href="http://poker31.org/reg/index.php?Verification=' . $Code . '">Cliquez ici pour vérifier votre compte</a></b></p>';
+                
+                $res = sendRealEmail($email, $subject, $body);
+                
+                if ($res['success']) {
+                    $msg = "<div class='alert alert-info'>Nous avons envoyé un lien de vérification à votre adresse email.</div>";
+                } else {
+                    $msg = "<div class='alert alert-danger'>Erreur lors de l'envoi de l'email : " . $res['message'] . "</div>";
+                }
+            }
+        } else {
                     $mail->Body    = '<p> Ceci est le lien de verification<b><a href="http://poker31.org/index.php?Verification='.$Code.'">"http://poker31.org/index.php?Verification='.$Code.'"</a></b></p>';
 
                     $mail->send();

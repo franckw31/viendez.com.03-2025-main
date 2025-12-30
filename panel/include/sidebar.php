@@ -32,6 +32,7 @@ if (strlen($idmembresession) == 0) {
 						</div>
 					</a>
 				</li>
+				
 				<li>
 					<a href="javascript:void(0)">
 						<div class="item-content">
@@ -287,6 +288,30 @@ if (strlen($idmembresession) == 0) {
 							</div>
 							<div class="item-inner">
 								<span class="title"> Quick Particip. </span>
+							</div>
+						</div>
+					</a>
+				</li>
+				<li>
+					<a href="chat.php">
+						<div class="item-content">
+							<div class="item-media">
+								<i class="fa fa-whatsapp"></i>
+							</div>
+							<div class="item-inner">
+								<span class="title"> Chat Joueurs </span>
+							</div>
+						</div>
+					</a>
+				</li>
+				<li>
+					<a href="quickview.php">
+						<div class="item-content">
+							<div class="item-media">
+								<i class="fa fa-whatsapp"></i>
+							</div>
+							<div class="item-inner">
+								<span class="title"> Passeport </span>
 							</div>
 						</div>
 					</a>
@@ -556,13 +581,25 @@ else
 				</li> -->
 
 				<li>
-					<a href="patient-search.php">
+					<a href="chat.php">
 						<div class="item-content">
 							<div class="item-media">
-								<i class="ti-search"></i>
+								<i class="fa fa-whatsapp"></i>
 							</div>
 							<div class="item-inner">
-								<span class="title"> Recherches </span>
+								<span class="title"> Chat Joueurs </span>
+							</div>
+						</div>
+					</a>
+				</li>
+				<li>
+					<a href="quickview.php">
+						<div class="item-content">
+							<div class="item-media">
+								<i class="fa fa-whatsapp"></i>
+							</div>
+							<div class="item-inner">
+								<span class="title"> Passeport </span>
 							</div>
 						</div>
 					</a>

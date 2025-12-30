@@ -6,13 +6,7 @@ if (isset($_SESSION['Email_Session'])) {
 }
 
 include('config.php');
-
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
-use PHPMailer\PHPMailer\Exception;
-
-//Load Composer's autoloader
-require 'vendor/autoload.php';
+require_once 'serveur-smtp/send.php';
 
 $msg = "";
 if (isset($_POST['submit'])) {
@@ -21,32 +15,16 @@ if (isset($_POST['submit'])) {
     if (mysqli_num_rows(mysqli_query($conx, "SELECT * FROM register WHERE email='{$email}'")) > 0) {
         $query = mysqli_query($conx, "UPDATE register SET CodeV='{$CodeReset}' WHERE email='{$email}'");
         if ($query) {
-            $mail = new PHPMailer(true);
-
-            try {
-                //Server settings
-                $mail->SMTPDebug = 0;                      //Enable verbose debug output
-                $mail->isSMTP();                                            //Send using SMTP
-                $mail->Host       = 'smtp.ionos.fr';                     //Set the SMTP server to send through
-                $mail->SMTPAuth   = true;                                   //Enable SMTP authentication
-                $mail->Username   = 'admin@poker31.org';                     //SMTP username
-                $mail->Password   = 'Kookies7*p';                               //SMTP password
-                $mail->SMTPSecure = 'Tls';            //Enable implicit TLS encryption
-                $mail->Port       = 25;                                    //TCP port to connect to; use 587 if you have set `SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS`
-
-                //Recipients
-                $mail->setFrom('admin@poker31.org', 'Eagle');
-                $mail->addAddress($email);
-                //Content
-                $mail->isHTML(true);                                  //Set email format to HTML
-                $mail->Subject = 'Welecom To My Website';
-                $mail->Body    = '<p> This is the Verifecation Link<b><a href="http://poker31.org/reg/change-Password.php?Reset=' . $CodeReset . '">"http://poker31.org/reg/change-Password.php?Reset=' . $CodeReset . '"</a></b></p>';
-
-                $mail->send();
-            } catch (Exception $e) {
-                echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
+            $subject = 'Réinitialisation de votre mot de passe';
+            $body = '<p>Voici le lien de vérification pour changer votre mot de passe : <b><a href="http://poker31.org/reg/change-Password.php?Reset=' . $CodeReset . '">Cliquez ici</a></b></p>';
+            
+            $res = sendRealEmail($email, $subject, $body);
+            
+            if ($res['success']) {
+                $msg = "<div class='alert alert-info'>Nous avons envoyé un lien de vérification à votre adresse email.</div>";
+            } else {
+                $msg = "<div class='alert alert-danger'>Erreur lors de l'envoi de l'email : " . $res['message'] . "</div>";
             }
-            $msg = "<div class='alert alert-info'>we've send a verification code on Your email Address</div>";
         }
     } else {
         $msg = "<div class='alert alert-danger'>This email:'{$email}' don't found </div>";
