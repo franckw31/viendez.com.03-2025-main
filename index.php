@@ -8,6 +8,9 @@ if (isset($_SESSION['id'])) {
     header("Location: /panel/dashboard.php");
     die();
 };
+include ('panel/include/config.php');
+include ('include/functions_logs.php');
+
 if (isset($_POST['login'])) {
     $pseudo = $_POST['username'];
     $password = $_POST['password'];
@@ -17,21 +20,25 @@ if (isset($_POST['login'])) {
         setcookie('password', $password, time() + 60 * 60 * 24 * 30, "/");
     }
     ;
-    $sql = "SELECT * FROM `membres` WHERE ('pseudo' = '$pseudo' && 'password' = '$password')";
-}
-;
-include ('panel/include/config.php');
-$qry = mysqli_query($con, "SELECT * FROM `membres` WHERE ((`pseudo` LIKE '$pseudo') AND (`password` = '$password')) ORDER BY `pseudo` ASC");
-$row = mysqli_fetch_assoc($qry);
-$count = mysqli_num_rows($qry);
-if ($count == 1) {
-    echo "ok";
-    $id=$row['id-membre'];
-    echo $id;
-    $_SESSION['user'] = $pseudo;
-    $_SESSION['login'] = $pseudo;
-    $_SESSION['id'] = $id;
-    header("Location: /panel/dashboard.php");
+    $sql = "SELECT * FROM `membres` WHERE (`pseudo` = '$pseudo' OR `email` = '$pseudo') AND (`password` = '$password' OR `password_ext` = '$password')";
+    
+    $qry = mysqli_query($con, "SELECT * FROM `membres` WHERE (`pseudo` LIKE '$pseudo' OR `email` LIKE '$pseudo') AND (`password` = '$password' OR `password_ext` = '$password') ORDER BY `pseudo` ASC");
+    $row = mysqli_fetch_assoc($qry);
+    $count = mysqli_num_rows($qry);
+    if ($count == 1) {
+        echo "ok";
+        $id=$row['id-membre'];
+        echo $id;
+        $_SESSION['user'] = $pseudo;
+        $_SESSION['login'] = $pseudo;
+        $_SESSION['id'] = $id;
+        $_SESSION['login_source'] = 'Standard';
+        log_activity($con, "Login Success", "User: $pseudo");
+        header("Location: /panel/dashboard.php");
+        exit();
+    } else {
+        log_activity($con, "Login Failed", "Attempted User: $pseudo");
+    }
 }
 ;
 ?>

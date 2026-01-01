@@ -24,8 +24,47 @@ if (strlen($_SESSION['id'] == 0)) {
         $jetons = $_POST['jetons'];
         $addon = $_POST['addon'];
         $msg = mysqli_query($con, "INSERT INTO `activite` ( `titre-activite`, `id-membre`, `date_depart`, `heure_depart`, `ville`, `rue`, `lng`, `lat`, `places`, `reserves`, `options`, `libre`, `commentaire`, `id-structure`, `buyin`, `rake`, `bounty`, `jetons`, `recave`, `addon`, `ante`, `bonus`) VALUES ( '$titreactivite', '$idmembre', '$date_depart', '$heure_depart', '$ville', NULL, NULL, NULL, '$places', NULL, '0', NULL, '$commentaire', '$structure', '$buyin', '$rake', '$bounty', '$jetons', '$recave', '$addon', '$ante', '0')");
-        //$msg=mysqli_query($con,"INSERT INTO `activite` (`id-activite`, `titre-activite`, `id-membre`, `date_depart`, `heure_depart`, `ville`, `rue`, `lng`, `lat`, `places`, `reserves`, `options`, `libre`, `commentaire`, `structure`, `buyin`, `rake`, `bounty`, `jetons`, `recave`, `addon`, `ante`, `bonus`) VALUES (NULL, '-', '', '2022-12-31', '', '?', NULL, NULL, NULL, '8', NULL, '0', NULL, 'Aucun', 'Structure', '25', '5', '0', '40000', '1', '0', '0', '')");
-        //$sql=mysqli_query($con,"insert into competences(nom) values('$doctorspecilization')");
+        
+        if ($msg) {
+            // --- Création automatique du groupe de chat ---
+            $months = ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+            $d_obj = strtotime($date_depart);
+            $formatted_date = date('j', $d_obj) . ' ' . $months[intval(date('n', $d_obj))];
+            
+            $res_org = mysqli_query($con, "SELECT pseudo FROM membres WHERE `id-membre` = '$idmembre'");
+            $row_org = mysqli_fetch_assoc($res_org);
+            $organizer_name = $row_org ? $row_org['pseudo'] : "Organisateur";
+            
+            $new_group_name = $formatted_date . " " . $organizer_name;
+            
+            // 1. Récupérer le dernier groupe pour copier les membres
+            $res_last_grp = mysqli_query($con, "SELECT id FROM chat_groups ORDER BY id DESC LIMIT 1");
+            if ($res_last_grp && mysqli_num_rows($res_last_grp) > 0) {
+                $row_last_grp = mysqli_fetch_assoc($res_last_grp);
+                $last_group_id = $row_last_grp['id'];
+                
+                // 2. Créer le nouveau groupe
+                $stmt_grp = mysqli_prepare($con, "INSERT INTO chat_groups (name, created_by) VALUES (?, ?)");
+                mysqli_stmt_bind_param($stmt_grp, "si", $new_group_name, $idmembre);
+                
+                if (mysqli_stmt_execute($stmt_grp)) {
+                    $new_group_id = mysqli_insert_id($con);
+                    mysqli_stmt_close($stmt_grp);
+                    
+                    // 3. Copier les membres du dernier groupe
+                    $res_members = mysqli_query($con, "SELECT member_id FROM chat_group_members WHERE group_id = $last_group_id");
+                    while ($member = mysqli_fetch_assoc($res_members)) {
+                        $m_id = $member['member_id'];
+                        mysqli_query($con, "INSERT IGNORE INTO chat_group_members (group_id, member_id) VALUES ($new_group_id, $m_id)");
+                    }
+                    
+                    // S'assurer que le créateur est aussi dans le groupe s'il n'y était pas
+                    mysqli_query($con, "INSERT IGNORE INTO chat_group_members (group_id, member_id) VALUES ($new_group_id, $idmembre)");
+                }
+            }
+            // --- Fin création groupe ---
+        }
+
         $_SESSION['msg'] = "Activité ajoutée avec succés !!";
         // header('location:http://poker31.org/panel/liste-activites.php');
         // exit;

@@ -527,12 +527,16 @@ $_SESSION['is_admin'] = $is_admin;
                 // Load Groups
                 let groupHtml = '';
                 (data.groups || []).forEach(group => {
+                    let unread = parseInt(group.unread_count || 0);
+                    newTotalUnread += unread;
+                    let badge = unread > 0 ? `<span class="unread-badge">${unread}</span>` : '';
                     let activeClass = currentGroupId == group.id ? 'active' : '';
                     let escapedName = (group.name || '').replace(/'/g, "\\'");
                     groupHtml += `
                         <div class="contact-item ${activeClass}" id="group-${group.id}" onclick="selectGroup(${group.id}, '${escapedName}')">
                             <div class="contact-photo" style="background:#075e54; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">${(group.name || '?').charAt(0)}</div>
                             <span>${group.name}</span>
+                            ${badge}
                         </div>
                     `;
                 });
@@ -943,7 +947,42 @@ $_SESSION['is_admin'] = $is_admin;
 
         $(document).ready(function() {
             loadSidebar();
-            selectGlobal();
+            
+            // Gérer l'ouverture directe d'un groupe ou d'un contact via URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const groupId = urlParams.get('group_id');
+            const contactId = urlParams.get('contact_id');
+
+            if (groupId) {
+                // On attend un peu que le sidebar se charge pour avoir les éléments DOM
+                setTimeout(() => {
+                    let groupItem = $(`#group-${groupId}`);
+                    if (groupItem.length) {
+                        groupItem.click();
+                    } else {
+                        // Si pas encore dans le DOM, on essaie de récupérer le nom via AJAX
+                        $.getJSON('../chat/get_group_details.php', { group_id: groupId }, function(res) {
+                            if (res && res.success) {
+                                selectGroup(groupId, res.group.name);
+                            } else {
+                                selectGlobal();
+                            }
+                        });
+                    }
+                }, 800);
+            } else if (contactId) {
+                setTimeout(() => {
+                    let contactItem = $(`#contact-${contactId}`);
+                    if (contactItem.length) {
+                        contactItem.click();
+                    } else {
+                        selectGlobal();
+                    }
+                }, 800);
+            } else {
+                selectGlobal();
+            }
+
             setInterval(loadMessages, 3000);
             setInterval(loadSidebar, 5000);
 

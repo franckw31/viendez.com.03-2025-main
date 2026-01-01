@@ -30,20 +30,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     
-    $sql = "UPDATE participation p 
-            JOIN activite a ON p.`id-activite` = a.`id-activite`
-            SET p.classement = ?,
-                p.points = ?,
-                p.tf = ?,
-                p.recave = ?,
-                p.challenger = ?,
-                p.`option` = 'Valide',
-                p.caisse_chal = CASE 
-                    WHEN ? = 1 AND p.challenger = 0 THEN p.caisse_chal + 5
-                    WHEN ? = 0 AND p.challenger = 1 THEN GREATEST(p.caisse_chal - 5, 0)
-                    ELSE p.caisse_chal
-                END
-            WHERE p.`id-membre` = ? AND p.`id-activite` = ?";
+    $sql = "UPDATE participation 
+            SET valide = ?,
+                `option` = CASE WHEN ? = 'Actif' THEN 'Présent' ELSE 'Réservation' END
+            WHERE `id-membre` = ? AND `id-activite` = ?";
             
     $stmt = mysqli_prepare($conn, $sql);
     if (!$stmt) {
@@ -57,22 +47,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         foreach ($updates as $update) {
             $id_membre = (int)$update['id_membre'];
-            $classement = (int)$update['classement'];
-            $points = (int)$update['points'];
-            $tf = $update['tf'] === '1' ? 1 : 0;
-            $recave = (int)$update['recave'];
-            $challenger = $update['challenger'] ? 1 : 0;
+            $valide = $update['valide'];
             
             error_log("Processing update for member $id_membre: " . print_r($update, true));
             
-            mysqli_stmt_bind_param($stmt, "iiiiiiiii", 
-                $classement,
-                $points,
-                $tf,
-                $recave,
-                $challenger,
-                $challenger, // Pour la condition du CASE
-                $challenger, // Pour la condition du CASE
+            mysqli_stmt_bind_param($stmt, "ssii", 
+                $valide,
+                $valide,
                 $id_membre,
                 $id_activite
             );

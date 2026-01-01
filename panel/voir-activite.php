@@ -105,6 +105,33 @@ if (strlen($_SESSION['id'] == 0)) {
 
             $msg = mysqli_query($con, $sql);
             if ($msg) {
+                // --- Mise à jour du nom du groupe de chat si nécessaire ---
+                $months = ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+                
+                // Calcul de l'ancien nom
+                $d_old = strtotime($currow['date_depart']);
+                $formatted_old_date = date('j', $d_old) . ' ' . $months[intval(date('n', $d_old))];
+                $res_old_org = mysqli_query($con, "SELECT pseudo FROM membres WHERE `id-membre` = '" . $currow['id-membre'] . "'");
+                $row_old_org = mysqli_fetch_assoc($res_old_org);
+                $old_org_name = $row_old_org ? $row_old_org['pseudo'] : "Organisateur";
+                $old_group_name = $formatted_old_date . " " . $old_org_name;
+                
+                // Calcul du nouveau nom
+                $d_new = strtotime($date_depart);
+                $formatted_new_date = date('j', $d_new) . ' ' . $months[intval(date('n', $d_new))];
+                $res_new_org = mysqli_query($con, "SELECT pseudo FROM membres WHERE `id-membre` = '$idmembre'");
+                $row_new_org = mysqli_fetch_assoc($res_new_org);
+                $new_org_name = $row_new_org ? $row_new_org['pseudo'] : "Organisateur";
+                $new_group_name = $formatted_new_date . " " . $new_org_name;
+                
+                if ($old_group_name !== $new_group_name) {
+                    $stmt_upd_grp = mysqli_prepare($con, "UPDATE chat_groups SET name = ? WHERE name = ?");
+                    mysqli_stmt_bind_param($stmt_upd_grp, "ss", $new_group_name, $old_group_name);
+                    mysqli_stmt_execute($stmt_upd_grp);
+                    mysqli_stmt_close($stmt_upd_grp);
+                }
+                // --- Fin mise à jour groupe ---
+
                 echo '<script>window.location.replace("/panel/voir-activite.php?uid=' . $id . '");</script>';
             } else {
                 echo '<script>alert("Erreur lors de la mise à jour: ' . mysqli_real_escape_string($con,mysqli_error($con)) . '");</script>';
@@ -1425,7 +1452,8 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                             unset($siege);
                                             unset($option);
                                             unset($pseudo);
-                                            $sql = mysqli_query($con, "SELECT  `id-membre`,`position`,`id-participation`,`id-siege`,`option` FROM `participation` WHERE (`id-activite` = '$id' AND `id-table` = '$tableaff' )  ORDER BY `id-siege` ");
+                                            unset($anonyme);
+                                            $sql = mysqli_query($con, "SELECT  `id-membre`,`position`,`id-participation`,`id-siege`,`option`, `anonyme` FROM `participation` WHERE (`id-activite` = '$id' AND `id-table` = '$tableaff' )  ORDER BY `id-siege` ");
                                             $nb_lignes = mysqli_num_rows($sql);
                                             // echo $nb_lignes;
                                         
@@ -1454,6 +1482,7 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                                 $idparticipation[$cnt] = $row['id-participation'];
                                                 $siege[$cnt] = $row['id-siege'];
                                                 $option[$cnt] = $row['option'];
+                                                $anonyme[$cnt] = $row['anonyme'];
                                                 $sql2 = mysqli_query($con, "SELECT * FROM `membres` WHERE `id-membre` =  '$idmembre[$cnt]'");
                                                 while ($row2 = mysqli_fetch_array($sql2)) {
                                                     $pseudo[$cnt] = $row2['pseudo'];
@@ -1973,7 +2002,8 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                                 unset($siege);
                                                 unset($option);
                                                 unset($pseudo);
-                                                $sql = mysqli_query($con, "SELECT  `id-membre`,`position`,`id-participation`,`id-siege`,`option` FROM `participation` WHERE (`id-activite` = '$id' AND `id-table` = '$tableaff' )  ORDER BY `id-siege` ");
+                                                unset($anonyme);
+                                                $sql = mysqli_query($con, "SELECT  `id-membre`,`position`,`id-participation`,`id-siege`,`option`, `anonyme` FROM `participation` WHERE (`id-activite` = '$id' AND `id-table` = '$tableaff' )  ORDER BY `id-siege` ");
                                                 $nb_lignes = mysqli_num_rows($sql);
                                                 // echo $nb_lignes;
                                         
@@ -2002,6 +2032,7 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                                     $idparticipation[$cnt] = $row['id-participation'];
                                                     $siege[$cnt] = $row['id-siege'];
                                                     $option[$cnt] = $row['option'];
+                                                    $anonyme[$cnt] = $row['anonyme'];
                                                     $sql2 = mysqli_query($con, "SELECT * FROM `membres` WHERE `id-membre` =  '$idmembre[$cnt]'");
                                                     while ($row2 = mysqli_fetch_array($sql2)) {
                                                         $pseudo[$cnt] = $row2['pseudo'];
@@ -2170,9 +2201,10 @@ window.location.replace("/panel/voir-blindes.php?uid=<?php echo $id ?>");
                                                                     $nom = $pseudo[10]; ?>
                                                             <button type="submit" id='submitpl'
                                                                 value=<?php echo $idparticipation[10] ?>
-                                                                class="btnn btn-primary-noir btn-block"
+                                                                class="btnn btn-primary-green btn-block"
                                                                 name="submitpl"><?php echo $nom ?>
                                                             </button>
+                                                        </form>
                                                     </div>
                                                 </div>
 

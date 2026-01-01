@@ -30,17 +30,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     try {
-        // Vérifier si l'entrée existe
-        $check_sql = "INSERT IGNORE INTO participation 
-                      SET `id-membre` = ?, 
-                          `id-activite` = ?,
-                          challenger = 0,
-                          caisse_chal = 0";
-        
-        $check_stmt = mysqli_prepare($conn, $check_sql);
-        mysqli_stmt_bind_param($check_stmt, "ii", $id_membre, $id_activite);
-        mysqli_stmt_execute($check_stmt);
-        
         // Update avec transaction
         mysqli_begin_transaction($conn);
         

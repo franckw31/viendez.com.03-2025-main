@@ -9,16 +9,19 @@ if (!isset($_SESSION['id']) || !isset($_GET['group_id'])) {
 $group_id = (int)$_GET['group_id'];
 $current_user_id = $_SESSION['id'];
 
-// Check if user is admin (ID 265 or droits = 2)
-$is_admin = false;
-$res = mysqli_query($conx, "SELECT `droits` FROM `membres` WHERE `id-membre` = $current_user_id");
-if ($row = mysqli_fetch_assoc($res)) {
-    if ($current_user_id == 265 || $row['droits'] == '2') {
-        $is_admin = true;
-    }
+// Get group info
+$sql_group = "SELECT * FROM `chat_groups` WHERE id = $group_id";
+$res_group = mysqli_query($conx, $sql_group);
+$group = mysqli_fetch_assoc($res_group);
+
+if (!$group) {
+    die(json_encode(['error' => 'Group not found']));
 }
 
-if (!$is_admin) {
+// Check if user is member
+$sql_check = "SELECT * FROM `chat_group_members` WHERE group_id = $group_id AND member_id = $current_user_id";
+$res_check = mysqli_query($conx, $sql_check);
+if (mysqli_num_rows($res_check) == 0) {
     die(json_encode(['error' => 'Permission denied']));
 }
 
@@ -43,6 +46,8 @@ while ($row = mysqli_fetch_assoc($result_non_members)) {
 }
 
 echo json_encode([
+    'success' => true,
+    'group' => $group,
     'current_members' => $current_members,
     'non_members' => $non_members
 ]);

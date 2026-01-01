@@ -47,10 +47,16 @@ while ($row = mysqli_fetch_assoc($result_all)) {
 
 // Get groups the user belongs to
 $sql_groups = "SELECT g.id, g.name,
-               (SELECT COUNT(*) FROM `chat_messages` cm WHERE cm.group_id = g.id AND cm.sender_id != $current_user_id AND cm.timestamp > (SELECT COALESCE(MAX(joined_at), '1970-01-01') FROM chat_group_members WHERE group_id = g.id AND member_id = $current_user_id)) as total_messages
+               (SELECT COUNT(*) FROM `chat_messages` cm 
+                JOIN `chat_group_members` gm2 ON cm.group_id = gm2.group_id
+                WHERE cm.group_id = g.id 
+                AND gm2.member_id = $current_user_id
+                AND cm.sender_id != $current_user_id 
+                AND cm.timestamp > gm2.last_read_at) as unread_count
                FROM `chat_groups` g 
                JOIN `chat_group_members` gm ON g.id = gm.group_id 
-               WHERE gm.member_id = $current_user_id";
+               WHERE gm.member_id = $current_user_id
+               ORDER BY g.id DESC";
 // Note: Group unread is harder without a per-user read marker. 
 // For now, let's just focus on private messages unread count.
 $result_groups = mysqli_query($conx, $sql_groups);

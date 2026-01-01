@@ -1843,9 +1843,14 @@ if (strlen($_SESSION['id'] == 0)) {
                     button.classList.remove('btnnavA');
                 });
 
-                // Afficher UNIQUEMENT l'onglet Timer au démarrage
-                console.log('Affichage de l\'onglet Timer par défaut');
-                afficher2('Timer');
+                // Afficher l'onglet spécifié ou Timer par défaut
+                <?php if(isset($_GET['tab'])) { ?>
+                    console.log('Affichage de l\'onglet spécifié : <?php echo htmlentities($_GET['tab']); ?>');
+                    afficher2('<?php echo htmlentities($_GET['tab']); ?>');
+                <?php } else { ?>
+                    console.log('Affichage de l\'onglet Timer par défaut');
+                    afficher2('Timer');
+                <?php } ?>
             });
         </script>
     </body>

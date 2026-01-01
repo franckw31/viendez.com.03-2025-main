@@ -32,6 +32,18 @@ if (strlen($idmembresession) == 0) {
 						</div>
 					</a>
 				</li>
+				<li>
+					<a href="/logs.php">
+						<div class="item-content">
+							<div class="item-media">
+								<i class="fa fa-list"></i>
+							</div>
+							<div class="item-inner">
+								<span class="title"> Logs d'activité </span>
+							</div>
+						</div>
+					</a>
+				</li>
 				
 				<li>
 					<a href="javascript:void(0)">
@@ -67,7 +79,7 @@ if (strlen($idmembresession) == 0) {
 					<a href="javascript:void(0)">
 						<div class="item-content">
 							<div class="item-media">
-								<i class="ti-user"></i>
+								<i class="ti-calendar"></i>
 							</div>
 							<div class="item-inner">
 								<span class="title"> Activités </span><i class="icon-arrow"></i>
@@ -102,7 +114,7 @@ if (strlen($idmembresession) == 0) {
 					<a href="javascript:void(0)">
 						<div class="item-content">
 							<div class="item-media">
-								<i class="ti-user"></i>
+								<i class="ti-star"></i>
 							</div>
 							<div class="item-inner">
 								<span class="title"> Competences / Loisirs </span><i class="icon-arrow"></i>
@@ -143,7 +155,7 @@ if (strlen($idmembresession) == 0) {
 					<a href="javascript:void(0)">
 						<div class="item-content">
 							<div class="item-media">
-								<i class="ti-user"></i>
+								<i class="ti-trophy"></i>
 							</div>
 							<div class="item-inner">
 								<span class="title"> Challenges </span><i class="icon-arrow"></i>
@@ -160,11 +172,6 @@ if (strlen($idmembresession) == 0) {
 						<li>
 							<a href="gestion-challenge.php">
 								<span class="title"> Gérer les challenges </span>
-							</a>
-						</li>
-						<li>
-							<a href="recherche-competences.php">
-								<span class="title"> Recherche par challenge </span>
 							</a>
 						</li>
 					</ul>
@@ -293,6 +300,18 @@ if (strlen($idmembresession) == 0) {
 					</a>
 				</li>
 				<li>
+					<a href="quickview.php">
+						<div class="item-content">
+							<div class="item-media">
+								<i class="fa fa-id-card-o"></i>
+							</div>
+							<div class="item-inner">
+								<span class="title"> Passeport </span>
+							</div>
+						</div>
+					</a>
+				</li>
+				<li>
 					<a href="chat.php">
 						<div class="item-content">
 							<div class="item-media">
@@ -305,13 +324,13 @@ if (strlen($idmembresession) == 0) {
 					</a>
 				</li>
 				<li>
-					<a href="quickview.php">
+					<a href="/qrcode">
 						<div class="item-content">
 							<div class="item-media">
-								<i class="fa fa-whatsapp"></i>
+								<i class="fa fa-qrcode"></i>
 							</div>
 							<div class="item-inner">
-								<span class="title"> Passeport </span>
+								<span class="title"> QR Code </span>
 							</div>
 						</div>
 					</a>
@@ -383,7 +402,7 @@ else
 					<a href="javascript:void(0)">
 						<div class="item-content">
 							<div class="item-media">
-								<i class="ti-user"></i>
+								<i class="ti-calendar"></i>
 							</div>
 							<div class="item-inner">
 								<span class="title"> Activités </span><i class="icon-arrow"></i>
@@ -418,7 +437,7 @@ else
 					<a href="javascript:void(0)">
 						<div class="item-content">
 							<div class="item-media">
-								<i class="ti-user"></i>
+								<i class="ti-star"></i>
 							</div>
 							<div class="item-inner">
 								<span class="title"> Competences / Loisirs </span><i class="icon-arrow"></i>
@@ -455,7 +474,7 @@ else
 					<a href="javascript:void(0)">
 						<div class="item-content">
 							<div class="item-media">
-								<i class="ti-user"></i>
+								<i class="ti-trophy"></i>
 							</div>
 							<div class="item-inner">
 								<span class="title"> Challenges </span><i class="icon-arrow"></i>
@@ -472,11 +491,6 @@ else
 						<li>
 							<a href="gestion-challenge.php">
 								<span class="title"> Gérer les challenges </span>
-							</a>
-						</li>
-						<li>
-							<a href="recherche-competences.php">
-								<span class="title"> Recherche par challenge </span>
 							</a>
 						</li>
 					</ul>
@@ -581,6 +595,18 @@ else
 				</li> -->
 
 				<li>
+					<a href="quickview.php">
+						<div class="item-content">
+							<div class="item-media">
+								<i class="fa fa-id-card-o"></i>
+							</div>
+							<div class="item-inner">
+								<span class="title"> Passeport </span>
+							</div>
+						</div>
+					</a>
+				</li>
+				<li>
 					<a href="chat.php">
 						<div class="item-content">
 							<div class="item-media">
@@ -588,18 +614,6 @@ else
 							</div>
 							<div class="item-inner">
 								<span class="title"> Chat Joueurs </span>
-							</div>
-						</div>
-					</a>
-				</li>
-				<li>
-					<a href="quickview.php">
-						<div class="item-content">
-							<div class="item-media">
-								<i class="fa fa-whatsapp"></i>
-							</div>
-							<div class="item-inner">
-								<span class="title"> Passeport </span>
 							</div>
 						</div>
 					</a>

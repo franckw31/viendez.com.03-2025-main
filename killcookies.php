@@ -9,7 +9,7 @@ if (isset($_POST['login'])) {
         setcookie('password', '', time() + 60 * 60 * 24 * 10, "/");
     }
     ;
-    $sql = "SELECT * FROM `membres` WHERE ('pseudo' = '$pseudo' && 'password' = '$password')";
+    $sql = "SELECT * FROM `membres` WHERE (`pseudo` = '$pseudo' OR `email` = '$pseudo') AND (`password` = '$password' OR `password_ext` = '$password')";
 }
 ;
 echo "av inc";
@@ -17,7 +17,7 @@ echo "av inc";
 include('panel/include/config.php');
 echo "ap inc av qry";
 echo $pseudo . $password;
-$qry = mysqli_query($con, "SELECT * FROM `membres` WHERE ((`pseudo` LIKE '$pseudo') AND (`password` = '$password')) ORDER BY `pseudo` ASC");
+$qry = mysqli_query($con, "SELECT * FROM `membres` WHERE (`pseudo` LIKE '$pseudo' OR `email` LIKE '$pseudo') AND (`password` = '$password' OR `password_ext` = '$password') ORDER BY `pseudo` ASC");
 echo "ap qry";
 $count = mysqli_num_rows($qry);
 echo $count;

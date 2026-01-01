@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'classement', 'recave', 'points', 'tf',
         'buyin', 'bounty', 'rake',
         'rake_0', 'rake_5', 'rake_10', 'rake_12', 'rake_15', 'rake_20',
-        'cout_in'
+        'cout_in', 'latereg', 'option', 'valide', 'gain'
     ];
     if (!in_array($field, $allowed_fields)) {
         error_log("Invalid field: $field");
@@ -35,13 +35,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($field === 'tf') {
         $value = $value === '1' ? 1 : 0;
         $param_type = "i";
+    } elseif ($field === 'option' || $field === 'valide') {
+        $param_type = "s";
     } else {
         $param_type = "i"; // All other fields are integers
         $value = (int)$value;
     }
 
+    // Logic for synchronization
+    $extra_sql = "";
+    if ($field === 'option') {
+        if ($value === 'Présent') {
+            $extra_sql = ", `valide` = 'Actif'";
+        } else {
+            $extra_sql = ", `valide` = 'Inactif'";
+        }
+    } elseif ($field === 'valide') {
+        if ($value === 'Actif') {
+            $extra_sql = ", `option` = 'Présent'";
+        } else {
+            $extra_sql = ", `option` = 'Réservation'";
+        }
+    }
+
     $sql = "UPDATE participation 
-            SET `$field` = ?, `ds` = NOW() 
+            SET `$field` = ?, `ds` = NOW() $extra_sql
             WHERE `id-membre` = ? 
             AND `id-activite` = ?";
     

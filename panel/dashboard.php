@@ -72,8 +72,15 @@ if (strlen($_SESSION['login']) == 0) {
 						<div class="row">
 							<div class="col-sm-4">
 								<a href="prochaines-activites.php" class="dashboard-card card-blue">
-									<div class="card-icon"><i class="fa fa-calendar-check-o"></i></div>
+									<div class="card-icon"><i class="fa fa-rocket" style="background: linear-gradient(45deg, #FF512F 0%, #DD2476 50%, #FF512F 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block;"></i></div>
 									<div class="card-title">Prochaines Activités</div>
+									<div class="card-stat">
+										<?php 
+										$result_next = mysqli_query($con, "SELECT COUNT(*) as total FROM activite WHERE date_depart >= CURDATE()");
+										$row_next = mysqli_fetch_array($result_next);
+										echo htmlentities($row_next['total']); 
+										?>
+									</div>
 									<div class="card-description">Événements à venir</div>
 								</a>
 							</div>
@@ -83,8 +90,9 @@ if (strlen($_SESSION['login']) == 0) {
 									<div class="card-title">Historique des Activités</div>
 									<div class="card-stat">
 										<?php 
-										$result_act = mysqli_query($con, "SELECT * FROM activite");
-										echo htmlentities(mysqli_num_rows($result_act)); 
+										$result_act = mysqli_query($con, "SELECT COUNT(*) as total FROM activite");
+										$row_act_count = mysqli_fetch_array($result_act);
+										echo htmlentities($row_act_count['total']); 
 										?>
 									</div>
 									<div class="card-description">Historique complet</div>

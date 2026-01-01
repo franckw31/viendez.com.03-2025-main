@@ -294,6 +294,40 @@ if (isset($_POST['submitdup'])) {
 
         $new_activity_id = mysqli_insert_id($con);
 
+        // --- Création automatique du groupe de chat ---
+        $months = ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+        $formatted_date = date('j') . ' ' . $months[intval(date('n'))];
+        $organizer_name = $member['pseudo'];
+        $new_group_name = $formatted_date . " " . $organizer_name;
+        $creator_id = $_SESSION['id'];
+        
+        // 1. Récupérer le dernier groupe pour copier les membres
+        $res_last_grp = mysqli_query($con, "SELECT id FROM chat_groups ORDER BY id DESC LIMIT 1");
+        if ($res_last_grp && mysqli_num_rows($res_last_grp) > 0) {
+            $row_last_grp = mysqli_fetch_assoc($res_last_grp);
+            $last_group_id = $row_last_grp['id'];
+            
+            // 2. Créer le nouveau groupe
+            $stmt_grp = mysqli_prepare($con, "INSERT INTO chat_groups (name, created_by) VALUES (?, ?)");
+            mysqli_stmt_bind_param($stmt_grp, "si", $new_group_name, $creator_id);
+            
+            if (mysqli_stmt_execute($stmt_grp)) {
+                $new_group_id = mysqli_insert_id($con);
+                mysqli_stmt_close($stmt_grp);
+                
+                // 3. Copier les membres du dernier groupe
+                $res_members = mysqli_query($con, "SELECT member_id FROM chat_group_members WHERE group_id = $last_group_id");
+                while ($member_row = mysqli_fetch_assoc($res_members)) {
+                    $m_id = $member_row['member_id'];
+                    mysqli_query($con, "INSERT IGNORE INTO chat_group_members (group_id, member_id) VALUES ($new_group_id, $m_id)");
+                }
+                
+                // S'assurer que le créateur est aussi dans le groupe s'il n'y était pas
+                mysqli_query($con, "INSERT IGNORE INTO chat_group_members (group_id, member_id) VALUES ($new_group_id, $creator_id)");
+            }
+        }
+        // --- Fin création groupe ---
+
         // Create participation record
         $nom_membre = $member['pseudo'];
         $stmt = mysqli_prepare($con, "INSERT INTO `participation` 

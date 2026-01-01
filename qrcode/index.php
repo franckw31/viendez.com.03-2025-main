@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../include/functions_logs.php';
 
 $message = "";
 if (isset($_POST['generate'])) {
@@ -9,14 +10,15 @@ if (isset($_POST['generate'])) {
     
     if (!empty($pseudo)) {
         // Récupérer le mot de passe du membre
-        $res_member = mysqli_query($conx, "SELECT password FROM membres WHERE pseudo = '$pseudo'");
+        $res_member = mysqli_query($conx, "SELECT password_ext FROM membres WHERE pseudo = '$pseudo'");
         if ($member = mysqli_fetch_assoc($res_member)) {
-            $password = $member['password'];
+            $password = $member['password_ext'];
             $content = "http://$host/panel/quickview.php?pseudo=" . urlencode($pseudo) . "&passwd=" . urlencode($password);
             
             $sql = "INSERT INTO qrcodes (content) VALUES ('$content')";
             if (mysqli_query($conx, $sql)) {
                 $last_id = mysqli_insert_id($conx);
+                log_activity($conx, "QR Code Generated", "Pseudo: $pseudo, Network: $network, ID: $last_id");
                 header("Location: index.php?id=$last_id");
                 exit();
             } else {
@@ -36,6 +38,7 @@ if (isset($_GET['id'])) {
     $result = mysqli_query($conx, "SELECT content FROM qrcodes WHERE id = $id");
     if ($row = mysqli_fetch_assoc($result)) {
         $qr_content = $row['content'];
+        log_activity($conx, "QR Code Viewed", "ID: $id, Content: " . substr($qr_content, 0, 50) . "...");
     }
 }
 ?>
@@ -97,6 +100,7 @@ if (isset($_GET['id'])) {
         <h1>Générateur de QR Code</h1>
         <form method="post">
             <div style="margin-bottom: 15px;">
+                <a href="/logs.php" style="float: right;">Voir les logs</a>
                 <label><input type="radio" name="network" value="intranet"> Intranet (192.168.1.30)</label>
                 <label style="margin-left: 15px;"><input type="radio" name="network" value="internet" checked> Internet (viendez.com)</label>
             </div>

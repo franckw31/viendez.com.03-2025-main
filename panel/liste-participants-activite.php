@@ -1,6 +1,6 @@
 <?php
 session_start();
-error_reporting(0);
+// error_reporting(0);
 include('include/config.php');
 
 if (strlen($_SESSION['id']) == 0) {
@@ -25,6 +25,20 @@ if (strlen($_SESSION['id']) == 0) {
         return $conn;
     }
 
+    function formatFrenchDate($dateStr) {
+        if (!$dateStr || $dateStr == '0000-00-00 00:00:00') return '-';
+        $date = new DateTime($dateStr);
+        $months = [
+            1 => 'Janvier', 2 => 'Février', 3 => 'Mars', 4 => 'Avril', 5 => 'Mai', 6 => 'Juin',
+            7 => 'Juillet', 8 => 'Août', 9 => 'Septembre', 10 => 'Octobre', 11 => 'Novembre', 12 => 'Décembre'
+        ];
+        $day = $date->format('j');
+        $month = $months[(int)$date->format('n')];
+        $hour = $date->format('G');
+        $minute = $date->format('i');
+        return "$day $month {$hour}h{$minute}";
+    }
+
     function fetchParticipants() {
         $conn = getDBConnection();
         
@@ -36,7 +50,7 @@ if (strlen($_SESSION['id']) == 0) {
             return [];
         }
         
-        $id_activite = isset($_POST['id_activite']) ? (int)$_POST['id_activite'] : 0;
+        $id_activite = isset($_REQUEST['id_activite']) ? (int)$_REQUEST['id_activite'] : 0;
         $where_clause = $id_activite > 0 ? "WHERE p.`id-activite` = $id_activite" : "";
         
         // Get rake value for activity
@@ -60,23 +74,23 @@ if (strlen($_SESSION['id']) == 0) {
                     a.buyin,
                     a.bounty,
                     a.rake,
-                    COALESCE(p.rake_0, 0) as rake_0,
-                    COALESCE(p.rake_5, 0) as rake_5,
-                    COALESCE(p.rake_10, 0) as rake_10,
-                    COALESCE(p.rake_12, 0) as rake_12,
-                    COALESCE(p.rake_15, 0) as rake_15,
-                    COALESCE(p.rake_20, 0) as rake_20,
                     (a.buyin + a.bounty + a.rake + (CASE WHEN COALESCE(p.challenger, 0) = 1 THEN 5 ELSE 0 END)) as cout_in,
                     COALESCE(p.recave, 0) as recave,
                     COALESCE(p.classement, 1) as classement,
                     COALESCE(p.tf, 0) as tf,
                     COALESCE(p.points, 0) as points,
-                    COALESCE(p.caisse_chal, 0) as caisse_chal
+                    COALESCE(p.caisse_chal, 0) as caisse_chal,
+                    COALESCE(p.anonyme, 0) as anonyme,
+                    COALESCE(p.latereg, 0) as latereg,
+                    p.valide,
+                    p.option,
+                    COALESCE(p.gain, 0) as gain,
+                    p.ds
                 FROM participation p
                 JOIN membres m ON p.`id-membre` = m.`id-membre`
                 LEFT JOIN activite a ON p.`id-activite` = a.`id-activite`
                 $where_clause
-                ORDER BY p.points DESC";
+                ORDER BY m.pseudo ASC";
         
         $result = mysqli_query($conn, $query);
         if (!$result) {
@@ -112,6 +126,7 @@ if (strlen($_SESSION['id']) == 0) {
     <link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
     <style>
+        /* Base Styles */
         .col-small {
             width: 80px !important;
             text-align: center;
@@ -120,309 +135,148 @@ if (strlen($_SESSION['id']) == 0) {
             color: #0d6efd;
             font-weight: bold;
         }
-        tfoot tr th {
-            text-align: center !important;
-            padding: 8px !important;
-        }
+        
+        /* Table Styles */
         #employeeTable {
-            font-size: 20px;
+            font-size: 18px;
             width: 100%;
             border-collapse: collapse;
+            background-color: #ffffff;
         }
         #employeeTable thead th {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
-            background-color: #f5f5f5;
+            background-color: #f8f9fa;
             position: sticky;
             top: 0;
+            z-index: 10;
+            text-align: center;
+            padding: 12px 8px;
+            border: 1px solid #ddd;
         }
         #employeeTable tfoot th {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
-        }
-        #employeeTable th, #employeeTable td {
-            padding: 8px;
+            background-color: #f8f9fa;
+            text-align: center;
+            padding: 10px 8px;
             border: 1px solid #ddd;
+        }
+        #employeeTable td {
+            padding: 10px 8px;
+            border: 1px solid #ddd;
+            text-align: center;
+            vertical-align: middle;
         }
         #employeeTable tbody tr:nth-child(even) {
             background-color: #f9f9f9;
         }
         #employeeTable tbody tr:hover {
-            background-color: #f0f7ff;
+            background-color: rgba(0, 123, 255, 0.1);
         }
-        .form-select, .btn {
-            font-size: 16px;
+        
+        /* Rake Column Color */
+        td:nth-child(9) {
+            font-weight: bold;
+            color: #28a745;
         }
-        .breadcrumb {
-            font-size: 16px;
-        }
-        h1.mainTitle, h1.mt-4 {
-            font-size: 24px;
-        }
-        .container-fluid.container-fullw.bg-white {
-            background-color: transparent !important;
-        }
-        .panel-white {
-            background: transparent !important;
-        }
-        .card {
-            background: transparent !important;
-        }
-        .card-body {
-            background: transparent !important;
-        }
-        .table {
-            background-color: #ffffff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            border-radius: 4px;
-        }
-        .table thead th {
-            background-color: #f8f9fa;
-        }
-        .table tbody tr:hover {
-            background-color: rgba(0, 123, 255, 0.25);
-        }
+
+        /* Controls & Layout */
         .table-container {
+            width: 100%;
             overflow-x: auto;
-        }
-        .table-controls {
-            margin: 20px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .search-box {
-            padding: 8px;
+            -webkit-overflow-scrolling: touch;
+            margin-bottom: 20px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            width: 200px;
         }
-        @media (max-width: 768px) {
-            .col-lg-8 {
-                width: 100% !important;
-                padding: 0 10px;
-            }
-            
-            #employeeTable {
-                font-size: 14px;
-            }
-
-            .form-select {
-                width: 100% !important;
-            }
-
-            .d-flex {
-                flex-direction: column;
-            }
-
-            .btn-primary {
-                width: 100%;
-                margin-top: 10px;
-            }
-
-            .table-responsive {
-                margin: 0 -10px;
-                padding: 0 10px;
-                width: calc(100% + 20px);
-            }
-
-            .col-small {
-                width: 60px !important;
-            }
+        .table-controls {
+            margin: 15px 0;
+            display: flex;
+            justify-content: flex-end;
         }
-
-        @media (max-width: 480px) {
-            #employeeTable {
-                font-size: 12px;
-            }
-
-            .col-small {
-                width: 45px !important;
-            }
-
-            h1.mainTitle, h1.mt-4 {
-                font-size: 20px;
-            }
+        .search-box {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 250px;
         }
+        
         h1.mt-4 {
-            font-size: 26px;
+            font-size: 24px;
             font-weight: 700;
             color: #2c3e50;
             text-align: center;
-            margin: 30px auto !important;
-            padding: 20px;
-            background: rgba(255, 255, 255, 0.9);
+            margin: 20px auto !important;
+            padding: 15px;
+            background: #fff;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             text-transform: uppercase;
-            letter-spacing: 1px;
             max-width: 600px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+        }
+
+        form.mb-4 {
+            margin: 20px auto;
+            max-width: 600px;
+            padding: 15px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 992px) {
+            .col-lg-12 {
+                padding: 0 15px;
+            }
         }
 
         @media (max-width: 768px) {
             h1.mt-4 {
-                font-size: 24px;
-                margin: 15px auto !important;
-                padding: 15px;
-                width: calc(100% - 30px);
+                font-size: 20px;
+                margin: 10px auto !important;
+                width: 95%;
             }
-        }
-        .wrap-content {
-            overflow-x: hidden;
-        }
-        
-        .table-responsive {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            max-width: 100%;
-            margin: 0;
-            padding: 0;
-        }
-
-        @media (max-width: 768px) {
-            #employeeTable {
-                width: 100% !important;
-                min-width: 500px;
-            }
-
-            .col-lg-8 {
-                padding: 0;
-            }
-
-            .container-fluid.px-4 {
-                padding: 0 !important;
-            }
-
-            .card-body {
-                padding: 0.5rem !important;
-            }
-
-            .col-small {
-                width: 50px !important;
-                min-width: 50px !important;
-                padding: 4px !important;
-            }
-
-            td, th {
-                padding: 4px !important;
-                white-space: nowrap;
-            }
-        }
-
-        html, body {
-            overflow-x: hidden;
-            width: 100%;
-            position: relative;
-        }
-
-        .app-content, 
-        .wrap-content,
-        .container,
-        .container-fluid,
-        .row,
-        .col-md-12,
-        .panel-body,
-        .card-body {
-            max-width: 100%;
-            padding-left: 0 !important;
-            padding-right: 0 !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-        }
-
-        .table-responsive {
-            margin: 0;
-            border: none;
-            width: 100%;
-        }
-
-        @media (max-width: 768px) {
-            .container-fluid.px-4 {
-                padding: 0 !important;
-            }
-
-            #employeeTable {
-                display: block;
-                width: 100% !important;
-            }
-
-            .col-small {
-                min-width: auto !important;
-            }
-
-            td, th {
-                padding: 4px !important;
-                font-size: 12px;
-            }
-        }
-        form.mb-4 {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 20px auto;
-            max-width: 500px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.9);
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        form.mb-4 .d-flex {
-            width: 100%;
-            gap: 15px !important;
-            justify-content: center !important;
-        }
-
-        form.mb-4 .form-select {
-            max-width: 300px;
-            flex: 1;
-        }
-
-        form.mb-4 .btn-primary {
-            min-width: 100px;
-        }
-
-        @media (max-width: 768px) {
             form.mb-4 {
-                margin: 10px;
+                width: 95%;
                 padding: 10px;
             }
-            
             form.mb-4 .d-flex {
                 flex-direction: column;
+                gap: 10px !important;
             }
+            form.mb-4 .form-select, 
+            form.mb-4 .btn {
+                width: 100% !important;
+                max-width: none;
+            }
+            .search-box {
+                width: 100%;
+            }
+            #employeeTable {
+                font-size: 14px;
+            }
+            #employeeTable thead th {
+                font-size: 12px;
+                padding: 8px 4px;
+            }
+            #employeeTable td {
+                padding: 6px 4px;
+            }
+            .col-small {
+                width: 50px !important;
+                min-width: 50px;
+            }
+        }
 
-            form.mb-4 .form-select {
-                max-width: 100%;
-            }
-        }
-        h1.mt-4 {
-            margin: 0 auto 30px auto !important;
-            max-width: 500px;
-            width: 100%;
-        }
-        .table td {
-            text-align: center;
-        }
-        td:nth-child(7),  /* rake_0 */
-        td:nth-child(8),  /* rake_5 */
-        td:nth-child(9),  /* rake_10 */
-        td:nth-child(10), /* rake_12 */
-        td:nth-child(11), /* rake_15 */
-        td:nth-child(12)  /* rake_20 */ {
-            font-size: 18px;
-            color: #28a745;
-        }
+        /* Utility Classes */
         .checkbox-cell {
             text-align: center;
-            vertical-align: middle;
         }
         .challenger-checkbox {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             cursor: pointer;
         }
         .editable {
@@ -432,45 +286,37 @@ if (strlen($_SESSION['id']) == 0) {
         .editable:hover::after {
             content: '✎';
             position: absolute;
-            right: 5px;
-            color: #666;
+            right: 2px;
+            top: 2px;
+            font-size: 10px;
+            color: #999;
         }
-        .table tbody tr {
-            cursor: default;
-        }
+        
         .notification {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: rgba(40, 167, 69, 0.9);
+            background: #28a745;
             color: white;
-            padding: 15px 25px;
+            padding: 12px 20px;
             border-radius: 4px;
             display: none;
-            z-index: 9999;
-            animation: fadeInOut 2s ease-in-out;
-            pointer-events: none;
+            z-index: 10000;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         
-        @keyframes fadeInOut {
-            0% { opacity: 0; }
-            15% { opacity: 1; }
-            85% { opacity: 1; }
-            100% { opacity: 0; }
-        }
-
         .save-all-btn {
             margin: 20px auto;
             display: block;
-            padding: 10px 30px;
+            padding: 12px 25px;
             font-size: 16px;
+            font-weight: bold;
             background: #28a745;
             color: white;
             border: none;
             border-radius: 4px;
-            cursor: pointer;
+            transition: background 0.2s;
         }
-
         .save-all-btn:hover {
             background: #218838;
         }
@@ -488,7 +334,7 @@ if (strlen($_SESSION['id']) == 0) {
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="row margin-top-30">
-                                    <div class="col-lg-8 col-md-12">
+                                    <div class="col-lg-12 col-md-12">
                                         <div class="panel panel-white">
                                             <div class="panel-body">
                                                 <div id="layoutSidenav_content">
@@ -504,7 +350,7 @@ if (strlen($_SESSION['id']) == 0) {
                                                                         $sql = "SELECT `id-activite`, `titre-activite`, date_depart FROM activite ORDER BY date_depart DESC";
                                                                         $result = mysqli_query($conn, $sql);
                                                                         while ($activite = mysqli_fetch_assoc($result)) {
-                                                                            $selected = isset($_POST['id_activite']) && $_POST['id_activite'] == $activite['id-activite'] ? 'selected' : '';
+                                                                            $selected = isset($_REQUEST['id_activite']) && $_REQUEST['id_activite'] == $activite['id-activite'] ? 'selected' : '';
                                                                             $date = date('d/m/Y', strtotime($activite['date_depart']));
                                                                             echo "<option value='{$activite['id-activite']}' $selected>{$date} - {$activite['titre-activite']}</option>";
                                                                         }
@@ -524,72 +370,54 @@ if (strlen($_SESSION['id']) == 0) {
                                                                             <thead>
                                                                                 <tr>
                                                                                     <th>#</th>
-                                                                                    <th style="display:none;">ID</th>
-                                                                                    <th>Challenger</th>
+                                                                                    <th>Présent</th>
+                                                                                    <th>Option</th>
                                                                                     <th>Pseudo</th>
+                                                                                    <th>Latereg</th>
+                                                                                    <th>Date Inscription</th>
                                                                                     <th class="col-small">Buyin</th>
                                                                                     <th class="col-small">Bounty</th>
                                                                                     <th class="col-small">Rake</th>
-                                                                                    <th>Rake 0</th>
-                                                                                    <th>Rake 5</th>
-                                                                                    <th>Rake 10</th>
-                                                                                    <th>Rake 12</th>
-                                                                                    <th>Rake 15</th>
-                                                                                    <th>Rake 20</th>
                                                                                     <th class="col-small">Coût-In</th>
-                                                                                    <th class="col-small">Recave</th>
                                                                                     <th class="col-small">Classement</th>
-                                                                                    <th class="col-small">TF</th>
-                                                                                    <th>Points</th>
-                                                                                    <th class="col-small">Cagnotte</th>
+                                                                                    <th class="col-small">Gains</th>
                                                                                 </tr>
                                                                             </thead>
                                                                             <tbody>
                                                                                 <?php foreach(fetchParticipants() as $index => $row): ?>
                                                                                 <tr data-id="<?= $row['id-membre'] ?>">
                                                                                     <td><?= $index + 1 ?></td>
-                                                                                    <td style="display:none;"><?= $row['id-membre'] ?></td>
                                                                                     <td class="checkbox-cell">
-                                                                                        <input type="checkbox" class="challenger-checkbox" 
-                                                                                               <?= $row['challenger'] ? 'checked' : '' ?>>
+                                                                                        <input type="checkbox" class="present-checkbox" 
+                                                                                               <?= $row['option'] == 'Présent' ? 'checked' : '' ?>>
                                                                                     </td>
-                                                                                    <td><?= ($qui == $row['id-membre']) ? 
-                                                                                            '<span class="current-user">'.$row['pseudo'].'</span>' : 
-                                                                                            $row['pseudo'] ?></td>
+                                                                                    <td class="editable" data-field="option"><?= $row['option'] ?></td>
+                                                                                    <td><?php 
+                                                                                        $displayName = ($row['anonyme'] == 1 && $qui != $row['id-membre']) ? 'Anonyme' : $row['pseudo'];
+                                                                                        echo ($qui == $row['id-membre']) ? 
+                                                                                            '<span class="current-user">'.$displayName.'</span>' : 
+                                                                                            $displayName; 
+                                                                                    ?></td>
+                                                                                    <td class="editable checkbox-cell" data-field="latereg"><?= $row['latereg'] ? 'Oui' : 'Non' ?></td>
+                                                                                    <td><?= formatFrenchDate($row['ds']) ?></td>
                                                                                     <td class="editable col-small" data-field="buyin"><?= $row['buyin'] ?></td>
                                                                                     <td class="editable col-small" data-field="bounty"><?= $row['bounty'] ?></td>
                                                                                     <td class="editable col-small" data-field="rake"><?= $row['rake'] ?></td>
-                                                                                    <td class="editable checkbox-cell" data-field="rake_0"><?= $row['rake_0'] ? '1' : '0' ?></td>
-                                                                                    <td class="editable checkbox-cell" data-field="rake_5"><?= $row['rake_5'] ? '1' : '0' ?></td>
-                                                                                    <td class="editable checkbox-cell" data-field="rake_10"><?= $row['rake_10'] ? '1' : '0' ?></td>
-                                                                                    <td class="editable checkbox-cell" data-field="rake_12"><?= $row['rake_12'] ? '1' : '0' ?></td>
-                                                                                    <td class="editable checkbox-cell" data-field="rake_15"><?= $row['rake_15'] ? '1' : '0' ?></td>
-                                                                                    <td class="editable checkbox-cell" data-field="rake_20"><?= $row['rake_20'] ? '1' : '0' ?></td>
                                                                                     <td class="editable col-small" data-field="cout_in"><?= $row['cout_in'] ?></td>
-                                                                                    <td class="editable col-small" data-field="recave"><?= $row['recave'] ?></td>
                                                                                     <td class="editable col-small" data-field="classement"><?= $row['classement'] ?></td>
-                                                                                    <td class="editable col-small" data-field="tf"><?= $row['tf'] ? '1' : '0' ?></td>
-                                                                                    <td class="editable" data-field="points"><?= $row['points'] ?></td>
-                                                                                    <td><?= $row['caisse_chal'] ?></td>
+                                                                                    <td class="editable col-small" data-field="gain"><?= $row['gain'] ?></td>
                                                                                 </tr>
                                                                                 <?php endforeach; ?>
                                                                             </tbody>
                                                                             <tfoot>
                                                                                 <tr>
-                                                                                    <th colspan="4" style="text-align:right">Total:</th>
-                                                                                    <th></th>
-                                                                                    <th></th>
-                                                                                    <th></th>
-                                                                                    <th></th>
-                                                                                    <th></th>
-                                                                                    <th></th>
-                                                                                    <th></th>
-                                                                                    <th></th>
-                                                                                    <th></th>
-                                                                                    <th></th>
-                                                                                    <th></th>
-                                                                                    <th></th>
-                                                                                    <th></th>
+                                                                                    <th colspan="6" style="text-align:right">Total:</th>
+                                                                                    <th class="col-small" data-total-field="buyin"></th>
+                                                                                    <th class="col-small" data-total-field="bounty"></th>
+                                                                                    <th class="col-small" data-total-field="rake"></th>
+                                                                                    <th class="col-small" data-total-field="cout_in"></th>
+                                                                                    <th class="col-small"></th>
+                                                                                    <th class="col-small" data-total-field="gain"></th>
                                                                                 </tr>
                                                                             </tfoot>
                                                                         </table>
@@ -612,6 +440,8 @@ if (strlen($_SESSION['id']) == 0) {
                 </div>
             </div>
         </div>
+        <?php include('include/footer.php'); ?>
+        <?php include('include/setting.php'); ?>
     </div>
     <script src="vendor/jquery/jquery.min.js"></script>
     <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
@@ -630,9 +460,71 @@ if (strlen($_SESSION['id']) == 0) {
     <script src="assets/js/main.js"></script>
     <script src="assets/js/form-elements.js"></script>
     <script>
+        function showNotification(message) {
+            const $notif = $('#updateNotification');
+            $notif.text(message).fadeIn();
+            setTimeout(() => $notif.fadeOut(), 2000);
+        }
+
+        function updateField(id_membre, field, value, callback) {
+            const activite_id = $('select[name="id_activite"]').val();
+            $.ajax({
+                url: 'update_field.php',
+                method: 'POST',
+                data: {
+                    id_membre: id_membre,
+                    id_activite: activite_id,
+                    field: field,
+                    value: value
+                },
+                success: function(response) {
+                    try {
+                        const data = JSON.parse(response);
+                        if (data.success) {
+                            showNotification('Modification enregistrée');
+                            if (callback) callback(true);
+                        } else {
+                            alert('Erreur : ' + (data.error || 'Erreur inconnue'));
+                            if (callback) callback(false);
+                        }
+                    } catch(e) {
+                        console.error(e);
+                        if (callback) callback(false);
+                    }
+                },
+                error: function() {
+                    alert('Erreur lors de la mise à jour');
+                    if (callback) callback(false);
+                }
+            });
+        }
+
+        function calculateTotals() {
+            let totals = {
+                buyin: 0, bounty: 0, rake: 0, cout_in: 0, gain: 0
+            };
+
+            $('#employeeTable tbody tr:visible').each(function() {
+                const $row = $(this);
+                totals.buyin += parseFloat($row.find('[data-field="buyin"]').text()) || 0;
+                totals.bounty += parseFloat($row.find('[data-field="bounty"]').text()) || 0;
+                totals.rake += parseFloat($row.find('[data-field="rake"]').text()) || 0;
+                totals.cout_in += parseFloat($row.find('[data-field="cout_in"]').text()) || 0;
+                totals.gain += parseFloat($row.find('[data-field="gain"]').text()) || 0;
+            });
+
+            const $tfoot = $('#employeeTable tfoot tr');
+            $tfoot.find('[data-total-field="buyin"]').text(totals.buyin + ' €');
+            $tfoot.find('[data-total-field="bounty"]').text(totals.bounty + ' €');
+            $tfoot.find('[data-total-field="rake"]').text(totals.rake + ' €');
+            $tfoot.find('[data-total-field="cout_in"]').text(totals.cout_in + ' €');
+            $tfoot.find('[data-total-field="gain"]').text(totals.gain + ' €');
+        }
+
         jQuery(document).ready(function () {
             Main.init();
             FormElements.init();
+            calculateTotals();
 
             // Fonction de recherche simple
             $('#tableSearch').on('keyup', function() {
@@ -641,6 +533,7 @@ if (strlen($_SESSION['id']) == 0) {
                     const text = $(this).text().toLowerCase();
                     $(this).toggle(text.indexOf(searchText) > -1);
                 });
+                calculateTotals();
             });
 
             // Ajouter cette fonction dans le script JavaScript
@@ -660,13 +553,13 @@ if (strlen($_SESSION['id']) == 0) {
                             const data = JSON.parse(response);
                             if (data.success && data.data) {
                                 // Mise à jour des cellules
-                                row.find('td[data-field="classement"]').text(data.data.classement);
-                                row.find('td[data-field="points"]').text(data.data.points);
-                                row.find('td[data-field="tf"]').text(data.data.tf);
-                                row.find('td[data-field="recave"]').text(data.data.recave);
                                 row.find('td[data-field="cout_in"]').text(data.data.cout_in);
-                                row.find('td[data-field="caisse_chal"]').text(data.data.caisse_chal);
-                                row.find('.challenger-checkbox').prop('checked', data.data.challenger == 1);
+                                row.find('td[data-field="option"]').text(data.data.option);
+                                row.find('td[data-field="latereg"]').text(data.data.latereg == 1 ? 'Oui' : 'Non');
+                                row.find('td[data-field="classement"]').text(data.data.classement);
+                                row.find('td[data-field="gain"]').text(data.data.gain);
+                                row.find('.present-checkbox').prop('checked', data.data.option == 'Présent');
+                                calculateTotals();
                             }
                         } catch(e) {
                             console.error('Error refreshing row:', e);
@@ -692,8 +585,8 @@ if (strlen($_SESSION['id']) == 0) {
                     return;
                 }
 
-                if (['tf', 'rake_0', 'rake_5', 'rake_10', 'rake_12', 'rake_15', 'rake_20'].includes(field)) {
-                    const newValue = currentValue === '1' ? '0' : '1';
+                if (['latereg'].includes(field)) {
+                    const newValue = currentValue === 'Oui' ? '0' : '1';
                     updateField(cell.closest('tr').data('id'), field, newValue, function(success) {
                         if (success) refreshRowData(cell.closest('tr')); // Rafraîchir toute la ligne
                     });
@@ -724,52 +617,18 @@ if (strlen($_SESSION['id']) == 0) {
                 });
             });
 
-            // Click handler for challenger checkbox
-            $(document).on('change', '.challenger-checkbox', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                
+            // Click handler for present checkbox
+            $(document).on('change', '.present-checkbox', function(e) {
                 const checkbox = $(this);
                 const row = checkbox.closest('tr');
                 const id_membre = row.data('id');
-                const newStatus = checkbox.prop('checked') ? 1 : 0;
-                const activite_id = $('select[name="id_activite"]').val();
-
-                if (!activite_id) {
-                    alert('Veuillez sélectionner une activité');
-                    checkbox.prop('checked', !newStatus);
-                    return;
-                }
-
-                $.ajax({
-                    url: 'update_challenger.php',
-                    method: 'POST',
-                    data: {
-                        id_membre: id_membre,
-                        id_activite: activite_id,
-                        challenger: newStatus
-                    },
-                    success: function(response) {
-                        try {
-                            console.log('Response:', response);
-                            const data = JSON.parse(response);
-                            if (data.success) {
-                                showNotification('Modification enregistrée');
-                                refreshRowData(row); // Rafraîchir toute la ligne
-                            } else {
-                                checkbox.prop('checked', !newStatus);
-                                alert('Erreur : ' + (data.error || 'Erreur inconnue'));
-                            }
-                        } catch(e) {
-                            console.error('Parse error:', e);
-                            checkbox.prop('checked', !newStatus);
-                            alert('Erreur lors de la mise à jour');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Ajax error:', {xhr, status, error});
-                        checkbox.prop('checked', !newStatus);
-                        alert('Erreur lors de la mise à jour');
+                const newStatus = checkbox.prop('checked') ? 'Actif' : 'Inactif';
+                
+                updateField(id_membre, 'valide', newStatus, function(success) {
+                    if (success) {
+                        refreshRowData(row);
+                    } else {
+                        checkbox.prop('checked', !checkbox.prop('checked'));
                     }
                 });
             });
@@ -792,11 +651,7 @@ if (strlen($_SESSION['id']) == 0) {
                     const $row = $(this);
                     updates.push({
                         id_membre: $row.data('id'),
-                        classement: $row.find('td[data-field="classement"]').text().trim(),
-                        points: $row.find('td[data-field="points"]').text().trim(),
-                        tf: $row.find('td[data-field="tf"]').text().trim(),
-                        recave: $row.find('td[data-field="recave"]').text().trim(),
-                        challenger: $row.find('.challenger-checkbox').prop('checked') ? 1 : 0
+                        valide: $row.find('.present-checkbox').prop('checked') ? 'Actif' : 'Inactif'
                     });
                 });
 
