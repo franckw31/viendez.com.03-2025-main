@@ -53,24 +53,44 @@ if (preg_match('/pseudo=([^&]+)/', $qr_content, $matches)) {
             border: none;
             overflow: hidden;
             box-shadow: inset 0 0 0 1.5cm black; /* Force le noir même si le background est désactivé */
+            <?php elseif ($shape === 'card'): ?>
+            width: 80mm;
+            height: 50mm;
+            background-color: black !important;
+            background-image: url('joker_bg.jpg') !important;
+            background-size: cover !important;
+            background-position: calc(50% - 15mm) center !important;
+            background-repeat: no-repeat !important;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 3mm;
+            border: none;
+            border-radius: 3mm;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
             <?php endif; ?>
         }
         .qr-wrapper {
             position: relative;
-            display: inline-block;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
             background: #000;
             padding: 0.5px;
             <?php if ($shape === 'round'): ?>
             background: transparent;
+            <?php elseif ($shape === 'card'): ?>
+            transform: translateY(-5mm);
             <?php endif; ?>
         }
         .qr-overlay {
             position: absolute;
-            top: 50%;
+            top: 14mm; /* Centre du QR 28mm */
             left: 50%;
             transform: translate(-50%, -50%);
-            background: black;
-            padding: 1px;
+            padding: 0;
             border-radius: 2px;
             display: flex;
             flex-direction: column;
@@ -78,27 +98,32 @@ if (preg_match('/pseudo=([^&]+)/', $qr_content, $matches)) {
             box-shadow: 0 0 2px rgba(255,255,255,0.2);
         }
         .qr-logo {
-            width: 1.1cm;
-            height: 1.1cm;
+            width: 7mm;
+            height: 7mm;
+            background: black !important;
             <?php if ($shape === 'round'): ?>
-            width: 0.8cm;
-            height: 0.8cm;
+            width: 6mm;
+            height: 6mm;
+            <?php elseif ($shape === 'card'): ?>
+            width: 8.5mm;
+            height: 8.5mm;
             <?php endif; ?>
         }
         .qr-user-text {
-            font-size: 4pt;
+            font-size: 9pt;
             font-weight: bold;
-            margin-top: 3pt;
-            color: #ff0000;
+            margin-top: 2mm;
+            color: #ffffff;
             text-transform: capitalize;
             line-height: 1;
+            text-shadow: 1px 1px 2px rgba(0,0,0,1);
         }
         img.qr-code {
-            width: 3cm;
-            height: 3cm;
+            width: 28mm;
+            height: 28mm;
             <?php if ($shape === 'round'): ?>
-            width: 2.1cm;
-            height: 2.1cm;
+            width: 21mm;
+            height: 21mm;
             <?php endif; ?>
         }
         .content-text {
@@ -124,6 +149,15 @@ if (preg_match('/pseudo=([^&]+)/', $qr_content, $matches)) {
                 box-shadow: inset 0 0 0 1.5cm black !important;
                 -webkit-print-color-adjust: exact;
                 print-color-adjust: exact;
+                <?php elseif ($shape === 'card'): ?>
+                width: 80mm;
+                height: 50mm;
+                background-color: black !important;
+                background-image: url('joker_bg.jpg') !important;
+                background-size: cover !important;
+                background-position: calc(50% - 15mm) center !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
                 <?php endif; ?>
             }
         }
@@ -134,9 +168,9 @@ if (preg_match('/pseudo=([^&]+)/', $qr_content, $matches)) {
         <div class="qr-wrapper">
             <img src="https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=<?php echo urlencode($qr_content); ?>&ecc=H&color=ffffff&bgcolor=000000&margin=1&v=<?php echo time(); ?>" class="qr-code" alt="QR Code">
             <div class="qr-overlay">
-                <img src="../panel/bg.png" class="qr-logo" alt="Logo">
-                <div class="qr-user-text"><?php echo htmlspecialchars($display_user); ?></div>
+                <img src="vip.png" class="qr-logo" alt="Logo">
             </div>
+            <div class="qr-user-text"><?php echo htmlspecialchars($display_user); ?></div>
         </div>
     </div>
     <br>

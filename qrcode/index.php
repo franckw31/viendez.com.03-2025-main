@@ -43,7 +43,7 @@ if (isset($_GET['id'])) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="fr">
+vip<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -57,18 +57,19 @@ if (isset($_GET['id'])) {
         .qr-result { margin-top: 20px; }
         .qr-container-wrapper {
             position: relative;
-            display: inline-block;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
             background: #000;
             padding: 2px;
             border-radius: 4px;
         }
         .qr-overlay {
             position: absolute;
-            top: 50%;
+            top: 100px; /* Centre du QR 200px */
             left: 50%;
             transform: translate(-50%, -50%);
-            background: black;
-            padding: 4px;
+            padding: 0;
             border-radius: 4px;
             display: flex;
             flex-direction: column;
@@ -76,18 +77,20 @@ if (isset($_GET['id'])) {
             box-shadow: 0 0 5px rgba(255,255,255,0.2);
         }
         .qr-logo {
-            width: 80px;
-            height: 80px;
+            width: 70px;
+            height: 70px;
+            background: black;
         }
         .qr-user-text {
-            font-size: 7px;
+            font-size: 10px;
             font-weight: bold;
-            margin-top: 4px;
-            color: #ff0000;
+            margin-top: 2px;
+            color: #ffffff;
             text-transform: capitalize;
         }
         .print-btn { background-color: #28a745; margin-top: 10px; }
         .print-btn.round { background-color: #6f42c1; }
+        .print-btn.card { background-color: #ffc107; color: black; }
         @media print {
             body * { visibility: hidden; }
             #printableArea, #printableArea * { visibility: visible; }
@@ -98,7 +101,7 @@ if (isset($_GET['id'])) {
 <body>
     <div class="container">
         <h1>Générateur de QR Code</h1>
-        <form method="post">
+        <form method="post" id="generateForm">
             <div style="margin-bottom: 15px;">
                 <a href="/logs.php" style="float: right;">Voir les logs</a>
                 <label><input type="radio" name="network" value="intranet"> Intranet (192.168.1.30)</label>
@@ -133,33 +136,55 @@ if (isset($_GET['id'])) {
                 <div class="qr-container-wrapper">
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=<?php echo urlencode($qr_content); ?>&ecc=H&color=ffffff&bgcolor=000000&margin=1&v=<?php echo time(); ?>" alt="QR Code">
                     <div class="qr-overlay">
-                        <img src="../panel/bg.png" class="qr-logo" alt="Logo">
-                        <div class="qr-user-text"><?php echo htmlspecialchars($display_user); ?></div>
+                        <img src="vip.png" class="qr-logo" alt="Logo">
                     </div>
+                    <div class="qr-user-text"><?php echo htmlspecialchars($display_user); ?></div>
                 </div>
             </div>
             <a href="print.php?id=<?php echo $id; ?>" target="_blank">
-                <button class="print-btn">Imprimer Carré (3cm x 3cm)</button>
+                <button class="print-btn">Imprimer Carré (28mm x 28mm)</button>
             </a>
             <a href="print.php?id=<?php echo $id; ?>&shape=round" target="_blank">
                 <button class="print-btn round">Imprimer Rond (Ø 30mm)</button>
             </a>
+            <a href="print.php?id=<?php echo $id; ?>&shape=card" target="_blank">
+                <button class="print-btn card">Imprimer Carte (80mm x 50mm)</button>
+            </a>
         <?php endif; ?>
 
         <hr>
-        <h3>Historique récents</h3>
-        <ul>
-            <?php
-            $history = mysqli_query($conx, "SELECT * FROM qrcodes ORDER BY created_at DESC LIMIT 10");
-            while ($h = mysqli_fetch_assoc($history)) {
-                $h_pseudo = "Inconnu";
-                if (preg_match('/pseudo=([^&]+)/', $h['content'], $m_h)) {
-                    $h_pseudo = urldecode($m_h[1]);
+        <form action="print_multiple.php" method="get" target="_blank">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <h3>Historique récents</h3>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <label for="start_pos" style="font-size: 0.9em;">Position de départ :</label>
+                    <select name="start" id="start_pos" style="padding: 5px;">
+                        <?php for($i=1; $i<=10; $i++) echo "<option value='$i'>$i</option>"; ?>
+                    </select>
+                    <button type="submit" class="print-btn card" style="margin: 0; padding: 5px 15px;">Imprimer la sélection (A4)</button>
+                </div>
+            </div>
+            <p style="font-size: 0.9em; color: #666;">Sélectionnez jusqu'à 10 étiquettes pour une page A4.</p>
+            <ul style="text-align: left; list-style: none; padding: 0;">
+                <?php
+                $history = mysqli_query($conx, "SELECT * FROM qrcodes ORDER BY created_at DESC LIMIT 20");
+                while ($h = mysqli_fetch_assoc($history)) {
+                    $h_pseudo = "Inconnu";
+                    if (preg_match('/pseudo=([^&]+)/', $h['content'], $m_h)) {
+                        $h_pseudo = urldecode($m_h[1]);
+                    }
+                    echo "<li style='margin-bottom: 5px;'>
+                            <label>
+                                <input type='checkbox' name='ids[]' value='{$h['id']}'> 
+                                <strong>" . htmlspecialchars(ucfirst($h_pseudo)) . "</strong> : 
+                                <span style='font-size: 0.8em; color: #888;'>" . htmlspecialchars(substr($h['content'], 0, 30)) . "...</span>
+                            </label>
+                            <a href='index.php?id={$h['id']}' style='font-size: 0.8em; margin-left: 10px;'>[Voir]</a>
+                          </li>";
                 }
-                echo "<li><strong>" . htmlspecialchars(ucfirst($h_pseudo)) . "</strong> : <a href='index.php?id={$h['id']}'>" . htmlspecialchars(substr($h['content'], 0, 40)) . "...</a> ({$h['created_at']})</li>";
-            }
-            ?>
-        </ul>
+                ?>
+            </ul>
+        </form>
     </div>
 </body>
 </html>
