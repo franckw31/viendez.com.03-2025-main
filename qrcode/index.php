@@ -38,7 +38,7 @@ if (isset($_GET['id'])) {
     $result = mysqli_query($conx, "SELECT content FROM qrcodes WHERE id = $id");
     if ($row = mysqli_fetch_assoc($result)) {
         $qr_content = $row['content'];
-        log_activity($conx, "QR Code Viewed", "ID: $id, Content: " . substr($qr_content, 0, 50) . "...");
+        log_activity($conx, "QR Code Viewed", "ID: $id, Content: " . $qr_content);
     }
 }
 ?>
@@ -50,10 +50,37 @@ vip<html lang="fr">
     <title>Générateur de QR Code</title>
     <link rel="stylesheet" href="../css/base.css">
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; text-align: center; }
-        .container { max-width: 500px; margin: auto; background: #f4f4f4; padding: 20px; border-radius: 8px; }
-        input[type="text"] { width: 80%; padding: 10px; margin-bottom: 10px; }
-        button { padding: 10px 20px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px; }
+        body { font-family: Arial, sans-serif; padding: 10px; text-align: center; background-color: #eee; }
+        .container { 
+            width: 100%; 
+            max-width: 500px; 
+            margin: auto; 
+            background: #f4f4f4; 
+            padding: 15px; 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        input[type="text"], select { 
+            width: 100%; 
+            padding: 12px; 
+            margin-bottom: 15px; 
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px; /* Empêche le zoom auto sur iOS */
+        }
+        button { 
+            width: 100%;
+            padding: 12px 20px; 
+            cursor: pointer; 
+            background-color: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
         .qr-result { margin-top: 20px; }
         .qr-container-wrapper {
             position: relative;
@@ -63,18 +90,27 @@ vip<html lang="fr">
             background: #000;
             padding: 2px;
             border-radius: 4px;
+            max-width: 100%;
+        }
+        .qr-container-wrapper img {
+            max-width: 100%;
+            height: auto;
         }
         .qr-overlay {
             position: absolute;
-            top: 100px; /* Centre du QR 200px */
+            top: 50%;
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translate(-50%, -100%); /* Ajusté car le texte en bas décentre le visuel */
             padding: 0;
             border-radius: 4px;
             display: flex;
             flex-direction: column;
             align-items: center;
             box-shadow: 0 0 5px rgba(255,255,255,0.2);
+        }
+        /* Ajustement spécifique pour l'image 200x200 */
+        .qr-result .qr-overlay {
+            top: 100px; 
         }
         .qr-logo {
             width: 70px;
@@ -88,9 +124,59 @@ vip<html lang="fr">
             color: #ffffff;
             text-transform: capitalize;
         }
-        .print-btn { background-color: #28a745; margin-top: 10px; }
+        .print-btn { background-color: #28a745; margin-top: 5px; }
         .print-btn.round { background-color: #6f42c1; }
         .print-btn.card { background-color: #ffc107; color: black; }
+        
+        .history-header {
+            display: flex; 
+            flex-direction: column;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .history-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .history-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .history-item label {
+            flex: 1;
+            cursor: pointer;
+            word-break: break-all;
+            font-size: 0.9em;
+            text-align: left;
+        }
+        .history-item input {
+            margin-right: 10px;
+        }
+
+        @media (min-width: 480px) {
+            .history-header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .history-controls {
+                flex-direction: row;
+                align-items: center;
+            }
+            button {
+                width: auto;
+            }
+            .full-width-mobile {
+                width: 100%;
+            }
+        }
+
         @media print {
             body * { visibility: hidden; }
             #printableArea, #printableArea * { visibility: visible; }
@@ -102,12 +188,12 @@ vip<html lang="fr">
     <div class="container">
         <h1>Générateur de QR Code</h1>
         <form method="post" id="generateForm">
-            <div style="margin-bottom: 15px;">
-                <a href="/logs.php" style="float: right;">Voir les logs</a>
-                <label><input type="radio" name="network" value="intranet"> Intranet (192.168.1.30)</label>
-                <label style="margin-left: 15px;"><input type="radio" name="network" value="internet" checked> Internet (viendez.com)</label>
+            <div style="margin-bottom: 15px; text-align: left;">
+                <a href="/logs.php" style="float: right;">Logs</a>
+                <label style="display: block; margin-bottom: 5px;"><input type="radio" name="network" value="intranet"> Intranet (192.168.1.30)</label>
+                <label style="display: block;"><input type="radio" name="network" value="internet" checked> Internet (viendez.com)</label>
             </div>
-            <select name="pseudo" required style="width: 80%; padding: 10px; margin-bottom: 10px;">
+            <select name="pseudo" required>
                 <option value="">-- Sélectionner un membre --</option>
                 <?php
                 $members_list = mysqli_query($conx, "SELECT pseudo FROM membres ORDER BY pseudo ASC");
@@ -117,7 +203,7 @@ vip<html lang="fr">
                 ?>
             </select>
             <br>
-            <button type="submit" name="generate">Générer</button>
+            <button type="submit" name="generate" class="full-width-mobile">Générer</button>
         </form>
 
         <?php if ($message): ?>
@@ -141,31 +227,35 @@ vip<html lang="fr">
                     <div class="qr-user-text"><?php echo htmlspecialchars($display_user); ?></div>
                 </div>
             </div>
-            <a href="print.php?id=<?php echo $id; ?>" target="_blank">
-                <button class="print-btn">Imprimer Carré (28mm x 28mm)</button>
-            </a>
-            <a href="print.php?id=<?php echo $id; ?>&shape=round" target="_blank">
-                <button class="print-btn round">Imprimer Rond (Ø 30mm)</button>
-            </a>
-            <a href="print.php?id=<?php echo $id; ?>&shape=card" target="_blank">
-                <button class="print-btn card">Imprimer Carte (80mm x 50mm)</button>
-            </a>
+            <div style="display: flex; flex-direction: column; gap: 5px; margin-top: 10px;">
+                <a href="print.php?id=<?php echo $id; ?>" target="_blank" style="text-decoration: none;">
+                    <button class="print-btn full-width-mobile">Imprimer Carré (28mm)</button>
+                </a>
+                <a href="print.php?id=<?php echo $id; ?>&shape=round" target="_blank" style="text-decoration: none;">
+                    <button class="print-btn round full-width-mobile">Imprimer Rond (Ø 30mm)</button>
+                </a>
+                <a href="print.php?id=<?php echo $id; ?>&shape=card" target="_blank" style="text-decoration: none;">
+                    <button class="print-btn card full-width-mobile">Imprimer Carte (80x50)</button>
+                </a>
+            </div>
         <?php endif; ?>
 
-        <hr>
+        <hr style="margin: 20px 0;">
         <form action="print_multiple.php" method="get" target="_blank">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <h3>Historique récents</h3>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <label for="start_pos" style="font-size: 0.9em;">Position de départ :</label>
-                    <select name="start" id="start_pos" style="padding: 5px;">
-                        <?php for($i=1; $i<=10; $i++) echo "<option value='$i'>$i</option>"; ?>
-                    </select>
-                    <button type="submit" class="print-btn card" style="margin: 0; padding: 5px 15px;">Imprimer la sélection (A4)</button>
+            <div class="history-header">
+                <h3 style="margin: 0 0 10px 0;">Historique récents</h3>
+                <div class="history-controls">
+                    <div style="display: flex; align-items: center; gap: 5px;">
+                        <label for="start_pos" style="font-size: 0.9em; white-space: nowrap;">Départ :</label>
+                        <select name="start" id="start_pos" style="padding: 5px; margin: 0; width: auto;">
+                            <?php for($i=1; $i<=10; $i++) echo "<option value='$i'>$i</option>"; ?>
+                        </select>
+                    </div>
+                    <button type="submit" class="print-btn card" style="margin: 0; padding: 10px; font-size: 0.9em;">Imprimer sélection (A4)</button>
                 </div>
             </div>
-            <p style="font-size: 0.9em; color: #666;">Sélectionnez jusqu'à 10 étiquettes pour une page A4.</p>
-            <ul style="text-align: left; list-style: none; padding: 0;">
+            <p style="font-size: 0.85em; color: #666; text-align: left;">Sélectionnez jusqu'à 10 étiquettes.</p>
+            <div style="text-align: left;">
                 <?php
                 $history = mysqli_query($conx, "SELECT * FROM qrcodes ORDER BY created_at DESC LIMIT 20");
                 while ($h = mysqli_fetch_assoc($history)) {
@@ -173,17 +263,17 @@ vip<html lang="fr">
                     if (preg_match('/pseudo=([^&]+)/', $h['content'], $m_h)) {
                         $h_pseudo = urldecode($m_h[1]);
                     }
-                    echo "<li style='margin-bottom: 5px;'>
+                    echo "<div class='history-item'>
                             <label>
                                 <input type='checkbox' name='ids[]' value='{$h['id']}'> 
                                 <strong>" . htmlspecialchars(ucfirst($h_pseudo)) . "</strong> : 
-                                <span style='font-size: 0.8em; color: #888;'>" . htmlspecialchars(substr($h['content'], 0, 30)) . "...</span>
+                                <span style='color: #666;'>" . htmlspecialchars($h['content']) . "</span>
                             </label>
-                            <a href='index.php?id={$h['id']}' style='font-size: 0.8em; margin-left: 10px;'>[Voir]</a>
-                          </li>";
+                            <a href='index.php?id={$h['id']}' style='font-size: 0.8em; margin-left: 10px; white-space: nowrap;'>[Voir]</a>
+                          </div>";
                 }
                 ?>
-            </ul>
+            </div>
         </form>
     </div>
 </body>
