@@ -53,8 +53,9 @@ function int_val($v) { return (int)$v; }
             grid-template-columns: repeat(2, 80mm);
             grid-template-rows: repeat(5, 50mm);
             gap: 5mm; /* Espace entre les étiquettes */
-            padding: 15mm 20mm; /* Ajustement pour centrer le bloc de 165mm x 270mm */
+            padding: 15mm; /* Marges identiques de tous les côtés */
             box-sizing: border-box;
+            justify-content: center; /* Centre horizontalement le contenu */
         }
         .label-card {
             width: 80mm;
