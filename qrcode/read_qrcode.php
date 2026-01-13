@@ -31,20 +31,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         exit;
     }
     
+    // Déterminer la valeur : 2 si commence par http, sinon 1
+    $valeur = (strpos($nom, 'http') === 0) ? 1 : 2;
+
     // Si l'URL commence par https ou http et contient '=', extraire ce qui est après le dernier '='
     if ((strpos($nom, 'https') === 0 || strpos($nom, 'http') === 0) && strpos($nom, '=') !== false) {
         $nom = substr($nom, strrpos($nom, '=') + 1);
     }
     
     // Préparer et exécuter la requête
-    $stmt = $conx->prepare("INSERT INTO collections (nom) VALUES (?)");
+    $stmt = $conx->prepare("INSERT INTO collections (nom, valeur) VALUES (?, ?)");
     
     if ($stmt === false) {
         echo json_encode(['success' => false, 'message' => 'Erreur de préparation: ' . $conx->error]);
         exit;
     }
     
-    $stmt->bind_param("s", $nom);
+    $stmt->bind_param("si", $nom, $valeur);
     
     if ($stmt->execute()) {
         echo json_encode([
@@ -65,7 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner QR Code</title>
+    <title>Scanner QR Code v1.1</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.4/html5-qrcode.min.js"></script>
     <style>
         * {
@@ -347,8 +350,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, // Caméra arrière
                 {
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 }
+                    fps: 15,
+                    qrbox: { width: 150, height: 150 },
+                    disableFlip: false
                 },
                 onScanSuccess,
                 onScanFailure

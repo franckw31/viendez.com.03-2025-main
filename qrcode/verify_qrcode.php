@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
     
     // Préparer et exécuter la requête de recherche (sans dépendre de mysqlnd)
-    $stmt = $conx->prepare("SELECT id_collection, nom FROM collections WHERE nom = ?");
+    $stmt = $conx->prepare("SELECT id_collection, nom, valeur FROM collections WHERE nom = ?");
     
     if ($stmt === false) {
         respondJson(['success' => false, 'message' => 'Erreur de préparation: ' . $conx->error]);
@@ -91,14 +91,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $stmt->store_result();
         
         if ($stmt->num_rows > 0) {
-            $stmt->bind_result($id, $nomResult);
+            $stmt->bind_result($id, $nomResult, $valeur);
             $stmt->fetch();
             respondJson([
                 'success' => true,
                 'found' => true,
                 'message' => 'QR code trouvé!',
                 'id' => $id,
-                'nom' => $nomResult
+                'nom' => $nomResult,
+                'valeur' => $valeur
             ]);
         } else {
             respondJson([
@@ -411,8 +412,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, // Caméra arrière
                 {
-                    fps: 10,
-                    qrbox: { width: 250, height: 250 }
+                    fps: 15,
+                    qrbox: { width: 150, height: 150 },
+                    disableFlip: false
                 },
                 onScanSuccess,
                 onScanFailure
@@ -484,7 +486,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 
                 if (data.success) {
                     if (data.found) {
-                        showFoundResult(data.id, data.nom);
+                        showFoundResult(data.id, data.nom, data.valeur);
                     } else {
                         showNotFoundResult(content);
                     }
@@ -499,7 +501,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             });
         }
         
-        function showFoundResult(id, nom) {
+        function showFoundResult(id, nom, valeur) {
             const resultDiv = document.getElementById('resultDiv');
             resultDiv.className = 'result found';
             
@@ -508,7 +510,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             document.getElementById('resultContent').textContent = nom;
             
             const metaDiv = document.getElementById('resultMeta');
-            metaDiv.innerHTML = '<strong>ID:</strong> ' + id + '<br><strong>Statut:</strong> Enregistré dans la base de données';
+            metaDiv.innerHTML = '<strong>ID:</strong> ' + id + '<br><strong>Points:</strong> ' + valeur + '<br><strong>Statut:</strong> Enregistré dans la base de données';
             metaDiv.style.display = 'block';
             
             document.getElementById('resultContainer').style.display = 'block';

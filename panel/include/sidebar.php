@@ -324,7 +324,7 @@ if (strlen($idmembresession) == 0) {
 					</a>
 				</li>
 				<li>
-					<a href="/qrcode">
+					<a href="/panel/qrcodes.php">
 						<div class="item-content">
 							<div class="item-media">
 								<i class="fa fa-qrcode"></i>

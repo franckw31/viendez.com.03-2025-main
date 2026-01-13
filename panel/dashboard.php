@@ -172,6 +172,17 @@ if (strlen($_SESSION['login']) == 0) {
 							</div>
 						</div>
 
+						<!-- QR Codes -->
+						<div class="row">
+							<div class="col-sm-4">
+								<a href="/panel/qrcodes.php" class="dashboard-card card-green">
+									<div class="card-icon"><i class="fa fa-qrcode"></i></div>
+									<div class="card-title">Gestion QRcodes</div>
+									<div class="card-description">Créer, imprimer et vérifier les codes</div>
+								</a>
+							</div>
+						</div>
+
 					</div>
 				</div>
 			</div>
