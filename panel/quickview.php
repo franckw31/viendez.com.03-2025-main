@@ -279,7 +279,7 @@ if (strlen($_SESSION['login']) == 0) {
 									<div class="card-title">Inscriptions</div>
 									<div class="card-stat" style="font-size: 18px;">
 										<?php 
-										$q_ins = mysqli_query($con, "SELECT COUNT(*) as total FROM participation WHERE `id-activite` = '$id_act' AND `option` IN ('Reservation', 'Inscrit', 'Confirme', 'Elimine')");
+										$q_ins = mysqli_query($con, "SELECT COUNT(*) as total FROM participation WHERE `id-activite` = '$id_act' AND `option` IN ('Réservation', 'Inscrit', 'Confirmé', 'Eliminé', 'Présent')");
 										$r_ins = mysqli_fetch_array($q_ins);
 										$nb_inscrits = intval($r_ins['total']);
 										
@@ -415,6 +415,8 @@ if (strlen($_SESSION['login']) == 0) {
 											$q_p = mysqli_query($con, "SELECT `option` FROM participation WHERE `id-membre` = '$user_id' AND `id-activite` = '$id_act'");
 											$r_p = mysqli_fetch_array($q_p);
 											$current_status = $r_p ? $r_p['option'] : 'None';
+											// Vérifier si le joueur est inscrit (incluant Réservation et Présent)
+											$is_registered = in_array($current_status, ['Inscrit', 'Réservation', 'Présent', 'Confirmé', 'Eliminé']);
 
 											// Compter les messages non lus (privés)
 											$q_unread = mysqli_query($con, "SELECT COUNT(*) as total FROM chat_messages WHERE receiver_id = '$user_id' AND is_read = 0 AND group_id IS NULL");
@@ -449,7 +451,7 @@ if (strlen($_SESSION['login']) == 0) {
 											<input type="hidden" name="anonyme" id="anonyme_input" value="<?php echo $current_anonyme; ?>">
 											<input type="hidden" name="latereg" id="latereg_input" value="<?php echo $current_latereg; ?>">
 											<div class="radio clip-radio radio-primary" style="margin-bottom: 15px;">
-												<input type="radio" id="reg_inscrit" name="status" value="Inscrit" <?php echo ($current_status == 'Inscrit') ? 'checked' : ''; ?> onchange="handleRegistration(this)">
+												<input type="radio" id="reg_inscrit" name="status" value="Inscrit" <?php echo ($is_registered) ? 'checked' : ''; ?> onchange="handleRegistration(this)">
 												<label for="reg_inscrit" style="color: lime; font-weight: bold; font-size: 18px;">INSCRIPTION</label>
 											</div>
 											<div class="radio clip-radio radio-primary" style="margin-bottom: 15px;">

@@ -21,8 +21,8 @@
 					<!-- end: NAVBAR HEADER -->
 					<!-- start: NAVBAR COLLAPSE -->
 	<div class="navbar-collapse collapse">
-		<div style="position: absolute; width: 100%; left: 0; text-align: center; pointer-events: none;">
-			<h1 style="display: inline-block; margin-top: 10px; pointer-events: auto;">Console de Gestion <span class="badge badge-success" style="font-size: 0.5em; vertical-align: middle; ">Beta-1</span></h1>
+		<div style="position: absolute; width: 100%; left: 0; text-align: left; pointer-events: none;">
+			<h1 style="display: inline-block; margin-top: 10px; margin-left: 20px; pointer-events: auto;"><span class="badge badge-success" style="font-size: 0.5em; vertical-align: middle;">Beta-1</span> Console de Gestion</h1>
 		</div>
 		<ul class="nav navbar-right" style="display: flex; align-items: center;">
 					<!-- start: MESSAGES DROPDOWN -->
@@ -34,7 +34,7 @@
 				?>	
 				<li class="current-user" style="padding: 0 10px;">
 					<a href="voir-membre.php?id=<?php echo $id;?>">
-						<img src="../images/faces/<?php  echo $row['photo'];?>" width="60" height="50" style="border-radius: 5px;">
+						<img src="../images/faces/<?php  echo $row['photo'];?>" width="50" height="50" style="border-radius: 5px;">
 					</a>
 				</li>
 				<li class="dropdown current-user">

@@ -6,7 +6,7 @@ $message = "";
 if (isset($_POST['generate'])) {
     $pseudo = mysqli_real_escape_string($conx, $_POST['pseudo']);
     $network = isset($_POST['network']) ? $_POST['network'] : 'internet';
-    $host = ($network === 'internet') ? 'viendez.com' : '192.168.1.30';
+    $host = ($network === 'internet') ? 'viendez.com' : 'localhost';
     
     if (!empty($pseudo)) {
         // Récupérer le mot de passe du membre
@@ -190,7 +190,7 @@ vip<html lang="fr">
         <form method="post" id="generateForm">
             <div style="margin-bottom: 15px; text-align: left;">
                 <a href="/logs.php" style="float: right;">Logs</a>
-                <label style="display: block; margin-bottom: 5px;"><input type="radio" name="network" value="intranet"> Intranet (192.168.1.30)</label>
+                <label style="display: block; margin-bottom: 5px;"><input type="radio" name="network" value="intranet"> Intranet (Localhost)</label>
                 <label style="display: block;"><input type="radio" name="network" value="internet" checked> Internet (viendez.com)</label>
             </div>
             <select name="pseudo" required>
@@ -235,10 +235,24 @@ vip<html lang="fr">
                     <button class="print-btn round full-width-mobile">Imprimer Rond (Ø 30mm)</button>
                 </a>
                 <a href="print.php?id=<?php echo $id; ?>&shape=card" target="_blank" style="text-decoration: none;">
-                    <button class="print-btn card full-width-mobile">Imprimer Carte (80x50)</button>
+                    <button class="print-btn card full-width-mobile">Imprimer Carte (81x52)</button>
+                </a>
+                <a href="nfc.php?text=<?php echo urlencode($qr_content); ?>" target="_blank" style="text-decoration: none;">
+                    <button style="background-color: #9c27b0; margin-top: 5px; width: 100%; padding: 12px 20px; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
+                        📱 Écrire sur puce NFC
+                    </button>
                 </a>
             </div>
         <?php endif; ?>
+
+        <hr style="margin: 20px 0;">
+        <div style="text-align: center; margin: 20px 0;">
+            <a href="nfc.php" style="display: inline-block; text-decoration: none;">
+                <button style="background-color: #9c27b0; color: white; padding: 12px 25px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px;">
+                    📱 Écriture NFC
+                </button>
+            </a>
+        </div>
 
         <hr style="margin: 20px 0;">
         <form action="print_multiple.php" method="get" target="_blank">
@@ -257,7 +271,7 @@ vip<html lang="fr">
             <p style="font-size: 0.85em; color: #666; text-align: left;">Sélectionnez jusqu'à 10 étiquettes.</p>
             <div style="text-align: left;">
                 <?php
-                $history = mysqli_query($conx, "SELECT * FROM qrcodes ORDER BY created_at DESC LIMIT 20");
+                $history = mysqli_query($conx, "SELECT * FROM qrcodes ORDER BY content ASC LIMIT 20");
                 while ($h = mysqli_fetch_assoc($history)) {
                     $h_pseudo = "Inconnu";
                     if (preg_match('/pseudo=([^&]+)/', $h['content'], $m_h)) {
@@ -270,6 +284,7 @@ vip<html lang="fr">
                                 <span style='color: #666;'>" . htmlspecialchars($h['content']) . "</span>
                             </label>
                             <a href='index.php?id={$h['id']}' style='font-size: 0.8em; margin-left: 10px; white-space: nowrap;'>[Voir]</a>
+                            <a href='nfc.php?text=" . urlencode($h['content']) . "' style='font-size: 0.8em; margin-left: 5px; white-space: nowrap; color: #7b3ff2;'>[NFC]</a>
                           </div>";
                 }
                 ?>
