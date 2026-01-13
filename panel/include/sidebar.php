@@ -21,7 +21,7 @@ if (strlen($idmembresession) == 0) {
 			</div>
 			<ul class="main-navigation-menu">
 				<li>
-					<a href="dashboard.php">
+					<a href="/panel/dashboard.php">
 						<div class="item-content">
 							<div class="item-media">
 								<i class="ti-home"></i>
@@ -59,17 +59,17 @@ if (strlen($idmembresession) == 0) {
 					<ul class="sub-menu">
 
 						<li>
-							<a href="creation-membre.php">
+							<a href="/panel/creation-membre.php">
 								<span class="title"> Ajouter Membre</span>
 							</a>
 						</li>
 						<li>
-							<a href="liste-membres-container.php">
+							<a href="/panel/liste-membres-container.php">
 								<span class="title"> Gérer les Membres </span>
 							</a>
 						</li>
 						<li>
-							<a href="recherche-competences.php">
+							<a href="/panel/recherche-competences.php">
 								<span class="title"> Recherche par Compétence </span>
 							</a>
 						</li>
@@ -89,22 +89,22 @@ if (strlen($idmembresession) == 0) {
 					<ul class="sub-menu">
 
 						<li>
-							<a href="ajout-activite.php">
+							<a href="/panel/ajout-activite.php">
 								<span class="title"> Créer une Activité </span>
 							</a>
 						</li>
 						<li>
-							<a href="prochaines-activites.php">
+							<a href="/panel/prochaines-activites.php">
 								<span class="title"> Prochaines Activités </span>
 							</a>
 						</li>
 						<li>
-							<a href="liste-activites.php">
+							<a href="/panel/liste-activites.php">
 								<span class="title"> Gérer les Activités </span>
 							</a>
 						</li>
 						<li>
-							<a href="liste-participations-container.php">
+							<a href="/panel/liste-participations-container.php">
 								<span class="title"> Gérer les participations </span>
 							</a>
 						</li>
@@ -124,28 +124,28 @@ if (strlen($idmembresession) == 0) {
 					<ul class="sub-menu">
 
 						<li>
-							<a href="ajout-competences.php">
+							<a href="/panel/ajout-competences.php">
 								<span class="title"> Gestion des Competences </span>
 							</a>
 						</li>
 
 						<li>
-							<a href="ajout-loisirs.php">
+							<a href="/panel/ajout-loisirs.php">
 								<span class="title"> Gestion des Loisirs </span>
 							</a>
 						</li>
 						<li>
-							<a href="ajout-collection.php">
+							<a href="/panel/ajout-collection.php">
 								<span class="title"> Gestion des Collections </span>
 							</a>
 						</li>
 						<li>
-							<a href="ajout-blindes.php">
+							<a href="/panel/ajout-blindes.php">
 								<span class="title"> Gestion des Blindes </span>
 							</a>
 						</li>
 						<li>
-							<a href="ajout-structures.php">
+							<a href="/panel/ajout-structures.php">
 								<span class="title"> Gestion des Structures </span>
 							</a>
 						</li>
@@ -165,12 +165,12 @@ if (strlen($idmembresession) == 0) {
 					<ul class="sub-menu">
 
 						<li>
-							<a href="ajout-challenge.php">
+							<a href="/panel/ajout-challenge.php">
 								<span class="title"> Ajouter challenge</span>
 							</a>
 						</li>
 						<li>
-							<a href="gestion-challenge.php">
+							<a href="/panel/gestion-challenge.php">
 								<span class="title"> Gérer les challenges </span>
 							</a>
 						</li>
@@ -196,7 +196,7 @@ if (strlen($idmembresession) == 0) {
 						</li>
 
 						<li>
-							<a href="read-query.php">
+							<a href="/panel/read-query.php">
 								<span class="title"> Read Query </span>
 							</a>
 						</li>
@@ -263,12 +263,12 @@ if (strlen($idmembresession) == 0) {
 					<ul class="sub-menu">
 
 						<li>
-							<a href="liste-membres-part.php">
+							<a href="/panel/liste-membres-part.php">
 								<span class="title">Resultats Partie </span>
 							</a>
 						</li>
 						<li>
-							<a href="contact.php">
+							<a href="/panel/contact.php">
 								<span class="title">Contact Us </span>
 							</a>
 						</li>
@@ -276,7 +276,7 @@ if (strlen($idmembresession) == 0) {
 				</li>
 
 				<li>
-					<a href="quick-geo.php">
+					<a href="/panel/quick-geo.php">
 						<div class="item-content">
 							<div class="item-media">
 								<i class="ti-search"></i>
@@ -288,7 +288,7 @@ if (strlen($idmembresession) == 0) {
 					</a>
 				</li>
 				<li>
-					<a href="quick-part.php">
+					<a href="/panel/quick-part.php">
 						<div class="item-content">
 							<div class="item-media">
 								<i class="ti-search"></i>
@@ -300,7 +300,7 @@ if (strlen($idmembresession) == 0) {
 					</a>
 				</li>
 				<li>
-					<a href="quickview.php">
+					<a href="/panel/quickview.php">
 						<div class="item-content">
 							<div class="item-media">
 								<i class="fa fa-id-card-o"></i>
@@ -312,7 +312,7 @@ if (strlen($idmembresession) == 0) {
 					</a>
 				</li>
 				<li>
-					<a href="chat.php">
+					<a href="/panel/chat.php">
 						<div class="item-content">
 							<div class="item-media">
 								<i class="fa fa-whatsapp"></i>
@@ -357,7 +357,7 @@ else
 			</div>
 			<ul class="main-navigation-menu">
 				<li>
-					<a href="dashboard.php">
+					<a href="/panel/dashboard.php">
 						<div class="item-content">
 							<div class="item-media">
 								<i class="ti-home"></i>
@@ -412,17 +412,17 @@ else
 					<ul class="sub-menu">
 
 						<li>
-							<a href="ajout-activite.php">
+							<a href="/panel/ajout-activite.php">
 								<span class="title"> Créer une Activité </span>
 							</a>
 						</li>
 						<li>
-							<a href="prochaines-activites.php">
+							<a href="/panel/prochaines-activites.php">
 								<span class="title"> Prochaines Activités </span>
 							</a>
 						</li>
 						<li>
-							<a href="liste-activites.php">
+							<a href="/panel/liste-activites.php">
 								<span class="title"> Gérer les Activités </span>
 							</a>
 						</li>
@@ -447,23 +447,23 @@ else
 					<ul class="sub-menu">
 
 						<li>
-							<a href="ajout-competences.php">
+							<a href="/panel/ajout-competences.php">
 								<span class="title"> Gestion des Competences </span>
 							</a>
 						</li>
 
 						<li>
-							<a href="ajout-loisirs.php">
+							<a href="/panel/ajout-loisirs.php">
 								<span class="title"> Gestion des Loisirs </span>
 							</a>
 						</li>
 						<li>
-							<a href="ajout-blindes.php">
+							<a href="/panel/ajout-blindes.php">
 								<span class="title"> Gestion des Blindes </span>
 							</a>
 						</li>
 						<li>
-							<a href="ajout-structures.php">
+							<a href="/panel/ajout-structures.php">
 								<span class="title"> Gestion des Structures </span>
 							</a>
 						</li>
@@ -484,12 +484,12 @@ else
 					<ul class="sub-menu">
 
 						<li>
-							<a href="ajout-challenge.php">
+							<a href="/panel/ajout-challenge.php">
 								<span class="title"> Ajouter challenge</span>
 							</a>
 						</li>
 						<li>
-							<a href="gestion-challenge.php">
+							<a href="/panel/gestion-challenge.php">
 								<span class="title"> Gérer les challenges </span>
 							</a>
 						</li>
@@ -595,7 +595,7 @@ else
 				</li> -->
 
 				<li>
-					<a href="quickview.php">
+					<a href="/panel/quickview.php">
 						<div class="item-content">
 							<div class="item-media">
 								<i class="fa fa-id-card-o"></i>
@@ -607,7 +607,7 @@ else
 					</a>
 				</li>
 				<li>
-					<a href="chat.php">
+					<a href="/panel/chat.php">
 						<div class="item-content">
 							<div class="item-media">
 								<i class="fa fa-whatsapp"></i>

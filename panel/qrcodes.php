@@ -63,27 +63,10 @@ if (strlen($_SESSION['login']) == 0) {
                             <div class="col-sm-4">
                                 <a href="/qrcode/index.php" class="dashboard-card card-blue">
                                     <div class="card-icon"><i class="fa fa-qrcode"></i></div>
-                                    <div class="card-title">Création</div>
+                                    <div class="card-title">Création QR & NFC Membre</div>
                                     <div class="card-description">Générer des QRcodes ou NFC</div>
                                 </a>
                             </div>
-                            <div class="col-sm-4">
-                                <a href="/qrcode/read_qrcode.php" class="dashboard-card card-green">
-                                    <div class="card-icon"><i class="fa fa-upload"></i></div>
-                                    <div class="card-title">Importer</div>
-                                    <div class="card-description">Scanner ou charger un QR code</div>
-                                </a>
-                            </div>
-                            <div class="col-sm-4">
-                                <a href="/qrcode/verify_qrcode.php" class="dashboard-card card-orange">
-                                    <div class="card-icon"><i class="fa fa-check"></i></div>
-                                    <div class="card-title">Valider</div>
-                                    <div class="card-description">Contrôler et valider les QR codes</div>
-                                </a>
-                            </div>
-                        </div>
-
-                        <div class="row">
                             <div class="col-sm-4">
                                 <a href="/qrcode/verify_membre.php" class="dashboard-card card-purple">
                                     <div class="card-icon"><i class="fa fa-user"></i></div>
@@ -92,27 +75,34 @@ if (strlen($_SESSION['login']) == 0) {
                                 </a>
                             </div>
                             <div class="col-sm-4">
-                                <a href="/qrcode/affectation.php" class="dashboard-card card-teal">
-                                    <div class="card-icon"><i class="fa fa-link"></i></div>
-                                    <div class="card-title">Affectation</div>
-                                    <div class="card-description">Lier un QR code à un membre</div>
-                                </a>
-                            </div>
-                            <div class="col-sm-4">
-                                <a href="/qrcode/nfc.php" class="dashboard-card card-red">
-                                    <div class="card-icon"><i class="fa fa-rss"></i></div>
-                                    <div class="card-title">NFC</div>
-                                    <div class="card-description">Gestion et lecture des puces NFC</div>
+                                <a href="/qrcode/liste_assignations.php" class="dashboard-card card-blue">
+                                    <div class="card-icon"><i class="fa fa-list"></i></div>
+                                    <div class="card-title">Liste & Assignations PokeCard</div>
+                                    <div class="card-description">Voir les QR codes et leurs propriétaires</div>
                                 </a>
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-sm-4">
-                                <a href="/qrcode/liste_assignations.php" class="dashboard-card card-blue">
-                                    <div class="card-icon"><i class="fa fa-list"></i></div>
-                                    <div class="card-title">Liste Assignations</div>
-                                    <div class="card-description">Voir les QR codes et leurs propriétaires</div>
+                                <a href="/qrcode/read_qrcode.php" class="dashboard-card card-green">
+                                    <div class="card-icon"><i class="fa fa-upload"></i></div>
+                                    <div class="card-title">Création PokeCard</div>
+                                    <div class="card-description">Scanner ou charger un QR code</div>
+                                </a>
+                            </div>
+                            <div class="col-sm-4">
+                                <a href="/qrcode/verify_qrcode.php" class="dashboard-card card-orange">
+                                    <div class="card-icon"><i class="fa fa-check"></i></div>
+                                    <div class="card-title">Verif PokeCard</div>
+                                    <div class="card-description">Contrôler et valider les QR codes</div>
+                                </a>
+                            </div>
+                            <div class="col-sm-4">
+                                <a href="/qrcode/affectation.php" class="dashboard-card card-teal">
+                                    <div class="card-icon"><i class="fa fa-link"></i></div>
+                                    <div class="card-title">Affectation PokeCard -> Membre</div>
+                                    <div class="card-description">Lier un QR code à un membre</div>
                                 </a>
                             </div>
                         </div>

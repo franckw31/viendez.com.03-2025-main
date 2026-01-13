@@ -348,13 +348,13 @@ h5.over-title {
 /* ---------------------------------------------------------------------- */
 .navbar {
   position: absolute;
-  top: -5;
+  top: 0;
   width: 100%;
   z-index: 1089;
   border: none;
   margin-bottom: 0;
   height: 72px;
-opacity:0.8;
+  opacity: 1;
 }
 .navbar .loading-bar-wrapper {
   position: absolute;

@@ -7,7 +7,7 @@
 			<i class="ti-align-justify"></i>
 		</a>
 		<a class="navbar-brand" href="/index.php">
-			<img src="assets/images/toulouse.jfif" height="120" width="120" >
+			<img src="/panel/assets/images/toulouse.jfif" height="120" width="120" >
 			<!-- <h2 style="padding-top:20%; color:#fff ">Admin</h2> --> 
 		</a>
 		<a href="#" class="sidebar-toggler pull-right visible-md visible-lg" data-toggle-class="app-sidebar-closed" data-toggle-target="#app">
@@ -33,7 +33,7 @@
 				{														
 				?>	
 				<li class="current-user" style="padding: 0 10px;">
-					<a href="voir-membre.php?id=<?php echo $id;?>">
+					<a href="/panel/voir-membre.php?id=<?php echo $id;?>">
 						<img src="../images/faces/<?php  echo $row['photo'];?>" width="50" height="50" style="border-radius: 5px;">
 					</a>
 				</li>
@@ -44,7 +44,7 @@
 					</a>
 					<ul class="dropdown-menu dropdown-dark">
 						<li>
-							<a href="voir-membre.php?id=<?php  echo $id;?>">
+							<a href="/panel/voir-membre.php?id=<?php  echo $id;?>">
 								Modifier Informations
 							</a>
 						</li>

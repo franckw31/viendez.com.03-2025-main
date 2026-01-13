@@ -1653,11 +1653,11 @@ if (!$member) {
                                                                                                 <table id="example4" class="display" style="width:100%">
                                                                                                     <thead>
                                                                                                         <tr>
-                                                                                                            <th>Identifiant
+                                                                                                            <th>QRcode
                                                                                                             </th>
-                                                                                                            <th>Nom
+                                                                                                            <th>Valeur
                                                                                                             </th>
-                                                                                                            <th>Commentaire
+                                                                                                            <th>Date
                                                                                                             </th>
                                                                                                             <th>Supprimer
                                                                                                             </th>
@@ -1676,7 +1676,7 @@ if (!$member) {
                                                                                                                         <?php echo $row2['nom']; ?>
                                                                                                                     </td>
                                                                                                                     <td>
-                                                                                                                        <?php echo $row2['commentaire']; ?>
+                                                                                                                        <?php echo $row2['valeur']; ?>
                                                                                                                     </td>
                                                                                                                     <td>
                                                                                                                         <?php echo $row['date']; ?>

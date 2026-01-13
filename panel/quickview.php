@@ -330,17 +330,17 @@ if (strlen($_SESSION['login']) == 0) {
 
 						<div class="row">
 							<div class="col-sm-4">
-								<div class="dashboard-card card-yellow">
+								<a href="voir-membre.php?id=<?php echo $user_id; ?>&tab=col" class="dashboard-card card-yellow">
 									<div class="card-icon" style="color: #ffcc00 !important;"><i class="fa fa-star"></i></div>
-									<div class="card-title">Points de Fidélité</div>
+									<div class="card-title">Point(s) de Fidélité</div>
 									<div class="card-stat" style="font-size: 24px; color: #ffcc00 !important;">
 										<?php 
-										$q_pts = mysqli_query($con, "SELECT SUM(points) as total_points FROM participation WHERE `id-membre` = '$user_id'");
+										$q_pts = mysqli_query($con, "SELECT SUM(valeur) as total_points FROM `collections-individu` WHERE `id-indiv` = '$user_id'");
 										$r_pts = mysqli_fetch_array($q_pts);
 										echo intval($r_pts['total_points']);
 										?>
 									</div>
-								</div>
+								</a>
 							</div>
 							<div class="col-sm-4">
 								<a href="voir-membre.php?id=<?php echo $user_id; ?>&tab=portefeuille" class="dashboard-card card-green">

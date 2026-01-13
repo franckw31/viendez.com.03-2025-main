@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 
     // Trouver le portefeuille (collections)
-    $stmt = $conx->prepare('SELECT id_collection, nom FROM collections WHERE id_collection = ? OR nom = ? LIMIT 1');
+    $stmt = $conx->prepare('SELECT id_collection, nom, valeur FROM collections WHERE id_collection = ? OR nom = ? LIMIT 1');
     $wallet_id_int = ctype_digit($wallet_code) ? intval($wallet_code) : 0;
     $stmt->bind_param('is', $wallet_id_int, $wallet_code);
     $stmt->execute();
@@ -55,6 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         echo json_encode(['success' => false, 'message' => 'Carte portefeuille introuvable.']);
         exit;
     }
+
+    $wallet_valeur = isset($wallet['valeur']) ? intval($wallet['valeur']) : 1;
 
     // Trouver le membre
     if ($passwd !== '') {
@@ -101,8 +103,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 
     // Insérer l'association
-    $stmt = $conx->prepare('INSERT INTO `collections-individu` (id_col, `id-indiv`, co) VALUES (?, ?, "Auto")');
-    $stmt->bind_param('ii', $wallet_id, $member_id);
+    $stmt = $conx->prepare('INSERT INTO `collections-individu` (id_col, `id-indiv`, co, valeur) VALUES (?, ?, "Auto", ?)');
+    $stmt->bind_param('iii', $wallet_id, $member_id, $wallet_valeur);
     $ok = $stmt->execute();
     $stmt->close();
 
