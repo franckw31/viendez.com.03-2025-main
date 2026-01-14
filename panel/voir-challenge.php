@@ -1,39 +1,40 @@
 <?php
 session_start();
-error_reporting(0);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 include('include/config.php');
-if(strlen($_SESSION['id']==0)) {
+if(strlen($_SESSION['id']) == 0) {
  header('location:logout.php');exit;
   } else{
-$id=intval($_GET['id']);// get value
-$nom=$_POST['chal_nom'];
-	$com=$_POST['chal_com'];
-	$deb=$_POST['chal_deb'];
-    $fin=$_POST['chal_fin'];
-    $org=$_POST['chal_org'];
+$id=intval($_GET['id']);
 if(isset($_POST['submit']))
 {
-	$nom=$_POST['chal_nom'];
+	$nom=$_POST['titre_challenge'];
 	$com=$_POST['chal_com'];
 	$deb=$_POST['chal_deb'];
     $fin=$_POST['chal_fin'];
     $org=$_POST['chal_org'];
-$sql=mysqli_query($con,"update  challenge set chal_nom='$nom',chal_com='$com',chal_deb='$deb',chal_fin='$fin',chal_org='$org' where chal_id='$id'");
+$sql=mysqli_query($con,"update  challenge set titre_challenge='$nom',chal_com='$com',chal_deb='$deb',chal_fin='$fin',chal_org='$org' where id_challenge='$id'");
 $_SESSION['msg']="MAJ Ok !!";
 } 
 if(isset($_POST['submit2']))
 {
-$compet=$_POST['compet'];
-echo $compet;
-$sql2=mysqli_query($con,"INSERT INTO `challenge-partie` (chapar_id_chal, chapar_id_part) VALUES ('$id', '$compet')");
-//$sql=mysqli_query($con,"insert into competences(nom) values('$doctorspecilization')");
-$_SESSION['msg']="Doctor Specialization added successfully !!";
+	$activite_id = intval($_POST['compet']);
+	$sql2 = mysqli_query($con, "UPDATE `activite` SET `id_challenge` = '$id' WHERE `id-activite` = '$activite_id'");
+	
+	if($sql2) {
+		$_SESSION['msg'] = "Activité associée au challenge avec succès!";
+	} else {
+		$_SESSION['msg'] = "Erreur lors de l'association de l'activité!";
+	}
 }
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 	<head>
-		<title>Admin | Edit Joueur</title>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Admin | Visualisation Challenge</title>
 		
 		<link href="http://fonts.googleapis.com/css?family=Lato:300,400,400italic,600,700|Raleway:300,400,500,600,700|Crete+Round:400italic" rel="stylesheet" type="text/css" />
 		<link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
@@ -50,306 +51,487 @@ $_SESSION['msg']="Doctor Specialization added successfully !!";
 		<link rel="stylesheet" href="assets/css/styles.css">
 		<link rel="stylesheet" href="assets/css/plugins.css">
 		<link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
-		<script type="text/javascript">
-function valid()
-{
- if(document.adddoc.npass.value!= document.adddoc.cfpass.value)
-{
-alert("Password and Confirm Password Field do not match  !!");
-document.adddoc.cfpass.focus();
-return false;
-}
-return true;
-}
-</script>
+		<style>
+			* {
+				box-sizing: border-box;
+			}
+			
+			body {
+				font-size: 16px;
+				padding-bottom: 120px; /* avoid footer overlap */
+			}
 
+			.challenge-info {
+				display: grid;
+				gap: 15px;
+			}
+			
+			.info-row {
+				display: flex;
+				flex-direction: column;
+				padding: 12px 0;
+				border-bottom: 1px solid #eee;
+			}
+			
+			.info-label {
+				font-weight: 600;
+				color: #333;
+				margin-bottom: 5px;
+				font-size: 14px;
+			}
+			
+			.info-value {
+				color: #666;
+				word-break: break-word;
+				font-size: 15px;
+			}
 
-<script>
-function checkemailAvailability() {
-$("#loaderIcon").show();
-jQuery.ajax({
-url: "check_availability.php",
-data:'emailid='+$("#docemail").val(),
-type: "POST",
-success:function(data){
-$("#email-availability-status").html(data);
-$("#loaderIcon").hide();
-},
-error:function (){}
-});
-}
-</script>
+			.action-buttons {
+				display: flex;
+				gap: 10px;
+				flex-wrap: wrap;
+				margin-top: 15px;
+			}
+			
+			.action-buttons .btn {
+				flex: 1;
+				min-width: 120px;
+				font-size: 14px;
+				padding: 8px 12px;
+			}
+
+			.table-responsive-custom {
+				overflow-x: auto;
+				-webkit-overflow-scrolling: touch;
+				width: 100%;
+			}
+
+			.panel {
+				margin-bottom: 20px;
+			}
+
+			.panel-heading {
+				padding: 15px;
+			}
+
+			.panel-body {
+				padding: 15px;
+			}
+
+			.form-label {
+				font-weight: 500;
+				margin-bottom: 8px;
+				font-size: 14px;
+			}
+
+			.form-control {
+				font-size: 14px;
+				padding: 8px 12px;
+			}
+
+			.btn-sm {
+				padding: 5px 10px;
+				font-size: 12px;
+			}
+
+			/* Tablet (768px and above) */
+			@media (min-width: 768px) {
+				body {
+					font-size: 16px;
+					padding-bottom: 120px;
+				}
+
+				.info-row {
+					flex-direction: row;
+					align-items: center;
+					padding: 15px 0;
+				}
+				
+				.info-label {
+					min-width: 150px;
+					margin-bottom: 0;
+					font-size: 15px;
+				}
+
+				.info-value {
+					font-size: 16px;
+				}
+
+				.panel-heading {
+					padding: 20px;
+				}
+
+				.panel-body {
+					padding: 20px;
+				}
+
+				.action-buttons {
+					gap: 15px;
+				}
+
+				.action-buttons .btn {
+					min-width: 140px;
+					font-size: 15px;
+					padding: 10px 15px;
+				}
+
+				.form-label {
+					font-size: 15px;
+				}
+
+				.form-control {
+					font-size: 15px;
+					padding: 10px 15px;
+				}
+			}
+
+			/* Mobile (max 576px) */
+			@media (max-width: 576px) {
+				body {
+					font-size: 14px;
+					padding-bottom: 160px;
+				}
+
+				.wrap-content {
+					padding: 10px !important;
+				}
+
+				.action-buttons {
+					flex-direction: column;
+					gap: 8px;
+				}
+				
+				.action-buttons .btn {
+					width: 100%;
+					min-width: auto;
+					font-size: 13px;
+					padding: 10px 12px;
+				}
+
+				.panel {
+					margin-bottom: 15px;
+				}
+
+				.panel-heading {
+					padding: 12px;
+				}
+
+				.panel-body {
+					padding: 12px;
+				}
+
+				.info-row {
+					padding: 10px 0;
+					flex-direction: column;
+				}
+
+				.info-label {
+					font-size: 13px;
+					margin-bottom: 5px;
+					min-width: auto;
+				}
+
+				.info-value {
+					font-size: 14px;
+				}
+
+				.table {
+					font-size: 12px;
+					margin-bottom: 0;
+				}
+
+				.table td, .table th {
+					padding: 8px 5px;
+					vertical-align: middle;
+				}
+
+				.btn-sm {
+					padding: 4px 8px;
+					font-size: 11px;
+				}
+
+				.form-label {
+					font-size: 13px;
+					margin-bottom: 6px;
+				}
+
+				.form-control {
+					font-size: 14px;
+					padding: 8px 10px;
+				}
+
+				.mainTitle {
+					font-size: 24px;
+					margin-bottom: 15px;
+				}
+
+				.breadcrumb {
+					font-size: 12px;
+					margin-bottom: 15px;
+				}
+
+				.mb-3 {
+					margin-bottom: 15px;
+				}
+
+				.mt-3 {
+					margin-top: 20px;
+				}
+
+				.mt-1 {
+					margin-top: 15px;
+				}
+			}
+
+			/* Extra small devices (max 320px) */
+			@media (max-width: 320px) {
+				.wrap-content {
+					padding: 5px !important;
+				}
+
+				.mainTitle {
+					font-size: 20px;
+				}
+
+				.btn-sm {
+					padding: 3px 6px;
+					font-size: 10px;
+				}
+
+				.table {
+					font-size: 11px;
+				}
+
+				.table td, .table th {
+					padding: 5px 3px;
+				}
+			}
+
+			/* Select personnalisé */
+			.form-control-lg {
+				min-height: 120px;
+				padding: 12px 15px;
+			}
+
+			select.form-control-lg {
+				min-height: 60px;
+			}
+
+			/* Override footer to avoid overlap on this page */
+			#app > footer {
+				position: static;
+				margin-top: 20px;
+				opacity: 1;
+				margin-left: 0;
+			}
+			@media (min-width: 992px) {
+				#app > footer {
+					margin-left: 0;
+				}
+			}
+
+			/* Footer on a single line */
+			#app > footer .footer-inner {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				flex-wrap: nowrap;
+				gap: 12px;
+				line-height: 40px;
+				min-height: 40px;
+				padding: 0 16px;
+				font-size: 12px;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+		</style>
 	</head>
 	<body>
 		<div id="app">		
 <?php include('include/sidebar.php');?>
 			<div class="app-content">
-				
-						<?php include('include/header.php');?>
-					
-				<!-- end: TOP NAVBAR -->
-				<div class="main-content" >
-					<div class="wrap-content container" id="container">
-						<!-- start: PAGE TITLE -->
+				<?php include('include/header.php');?>
+				<div class="main-content">
+					<div class="wrap-content container-fluid" id="container">
 						<section id="page-title">
-							<div class="row">
-								<div class="col-sm-8">
-									<h1 class="mainTitle">Admin | Visualisation Challenge</h1>
-																	</div>
-								<ol class="breadcrumb">
-									<li>
-										<span>Admin</span>
-									</li>
-									<li class="active">
-										<span>Edition</span>
-									</li>
-								</ol>
+							<div class="row mb-3">
+								<div class="col-12 col-sm-8">
+									<h1 class="mainTitle">Visualisation Challenge</h1>
+								</div>
+								<div class="col-12">
+									<ol class="breadcrumb mb-0">
+										<li class="breadcrumb-item"><a href="dashboard.php">Admin</a></li>
+										<li class="breadcrumb-item active">Visualisation</li>
+									</ol>
+								</div>
 							</div>
 						</section>
-						<!-- end: PAGE TITLE -->
-						<!-- start: BASIC EXAMPLE -->
-						<div class="container-fluid container-fullw bg-white">
+
+						<div class="container-fluid bg-white p-0">
 							<div class="row">
-								<div class="col-md-12">
-									
-									<div class="row margin-top-30">
-										<div class="col-lg-6 col-md-12">
-											<div class="panel panel-white">
-												<div class="panel-heading">
-													   <h3 class="panel-title">Edition</h3> 
-												</div> 
-												<div class="panel-body">
-								<p style="color:red;"><?php echo htmlentities($_SESSION['msg']);?>
-								<?php echo htmlentities($_SESSION['msg']="");?></p>	
-											<!--		<form role="form" name="dcotorspcl" method="post" > -->
-														<div class="form-group">
-															<!-- <label for="exampleInputEmail1">
-																Voir Individu
-															</label> -->
-
-								<?php  
-
-								$id=intval($_GET['id']);
-								
-								$sql=mysqli_query($con,"SELECT * FROM `challenge` WHERE `chal_id` = '$id'");
-							//	$sql=mysqli_query($con,"select chal_nom,chal_com from challenge where 'chal_id'='$id'");
-								while($row=mysqli_fetch_array($sql))
-								{														
-								?>	
-								
-																							
-														<table class="table table-bordered">
-														<tr>
-														<th></th>
-														<td colspan="3"></td>
-														</tr>
-														<tr>
-															<th>Nom</th>
-															<td><?php echo $row['chal_nom'];?></td>
-															<td><a href="edit-individu.php?id=<?php echo $row['id'];?>">Modifier Challenge </a></td>
-														</tr>
-														<tr>
-															<th>Commentaire</th>
-															<td colspan="3"><?php echo $row['chal_com'];?></td>
-														</tr>
-														<tr>
-															<th>Nom Organisateur</th>
-															<td colspan="3"><?php echo $row['chal_org'];?></td>
-														</tr>
-														<tr>
-															<th>Date de début</th>
-															<td colspan="3"><?php echo $row['chal_deb'];?></td>
-														</tr>
-														<tr>
-															<th>Date de fin</th>
-															<td colspan="3"><?php echo $row['chal_fin'];?></td>
-														</tr>
-														</table>
-														
-
-								<?php
-								}
-								?>
-														</div>
-														
-														<a href="manage-individu.php">    ------------------------- Quitter ------------------------- </a>
-													<!--	<button type="submit" name="submit" class="btn btn-o btn-primary">
-															Update
-														</button> -->
-												<!--	</form> -->
+								<div class="col-12">
+									<div class="panel panel-white">
+										<div class="panel-heading">
+											<h3 class="panel-title">Détails du Challenge</h3> 
+										</div> 
+										<div class="panel-body">
+											<?php if(isset($_SESSION['msg']) && !empty($_SESSION['msg'])): ?>
+												<div class="alert alert-info alert-dismissible fade show" role="alert">
+													<?php echo htmlspecialchars($_SESSION['msg']); 
+													$_SESSION['msg']="";
+													?>
+													<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 												</div>
-											</div>
-										</div>
-											
-											</div>
-										</div>
-									<div class="col-lg-12 col-md-12">
-											<div class="panel panel-white">
-																							
+											<?php endif; ?>
+
+											<div class="challenge-info">
+												<?php  
+													$id=intval($_GET['id']);
+													$sql=mysqli_query($con,"SELECT * FROM `challenge` WHERE `id_challenge` = '$id'");
+													while($row=mysqli_fetch_array($sql)) {
+												?>	
+													<div class="info-row">
+														<span class="info-label">Titre:</span>
+														<span class="info-value"><?php echo htmlspecialchars($row['titre_challenge']);?></span>
+													</div>
+													<div class="info-row">
+														<span class="info-label">Commentaire:</span>
+														<span class="info-value"><?php echo htmlspecialchars($row['chal_com']);?></span>
+													</div>
+													<div class="info-row">
+														<span class="info-label">Organisateur:</span>
+														<span class="info-value"><?php echo htmlspecialchars($row['chal_org']);?></span>
+													</div>
+													<div class="info-row">
+														<span class="info-label">Date de début:</span>
+														<span class="info-value"><?php echo $row['chal_deb'];?></span>
+													</div>
+													<div class="info-row">
+														<span class="info-label">Date de fin:</span>
+														<span class="info-value"><?php echo $row['chal_fin'];?></span>
+													</div>
+													<div class="action-buttons">
+														<a href="edit-challenge.php?id=<?php echo $row['id_challenge'];?>" class="btn btn-primary btn-sm">
+															<i class="fa fa-edit"></i> <span class="d-none d-sm-inline">Modifier</span>
+														</a>
+														<a href="gestion-challenge.php" class="btn btn-default btn-sm">
+															<i class="fa fa-arrow-left"></i> <span class="d-none d-sm-inline">Retour</span>
+														</a>
+													</div>
+												<?php
+													}
+												?>
 											</div>
 										</div>
 									</div>
-									
-									
-									
-								<!-- form -->
-								<div class="panel-heading">
-									<h3 class="panel-title">Parties du challenge :</h3> 
-								</div> 
-									
+								</div>
+							</div>
 
+							<div class="row mt-1">
+								<div class="col-12">
+									<div class="panel panel-white">
+										<div class="panel-heading">
+											<h3 class="panel-title">Parties du Challenge</h3> 
+										</div>
+										<div class="panel-body">
+											<div class="table-responsive-custom">
+												<table id="activitiesTable" class="table table-hover table-striped">
+													<thead class="table-light">
+														<tr>
+															<th>Nom</th>
+															<th class="d-none d-md-table-cell">Ville</th>
+															<th class="d-none d-md-table-cell">Date</th>
+															<th class="text-center">Action</th>
+														</tr>
+													</thead>
+													<tbody>
+														<?php 
+															$ret=mysqli_query($con,"SELECT * FROM `activite` WHERE `id_challenge` = '$id' ORDER BY `date_depart` DESC");
+															
+															if($ret && mysqli_num_rows($ret) > 0) {
+																while($row=mysqli_fetch_array($ret)) {
+														?>
+															<tr>
+																<td><?php echo htmlspecialchars($row['titre-activite'] ?? 'N/A'); ?></td>
+																<td class="d-none d-md-table-cell"><?php echo htmlspecialchars($row['ville'] ?? '-'); ?></td>
+																<td class="d-none d-md-table-cell"><?php echo substr($row['date_depart'] ?? '-', 0, 10); ?></td>
+																<td class="text-center">
+																	<a href="voir-activite.php?uid=<?php echo $row['id-activite']; ?>" class="btn btn-sm btn-primary">
+																		<i class="fa fa-eye"></i>
+																	</a>
+																	<a href="delete-activite.php?id=<?php echo $row['id-activite']; ?>&challenge_id=<?php echo $id; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Confirmer la suppression ?');">
+																		<i class="fa fa-trash"></i>
+																	</a>
+																</td>
+															</tr>
+														<?php 
+														}
+														} else {
+														?>
+															<tr>
+																<td colspan="4" class="text-center text-muted py-4">Aucune activité associée à ce challenge</td>
+															</tr>
+														<?php } ?>
+													</tbody>
+													</tbody>
+												</table>
 
-		<div class="row">
-								<div class="col-md-12">
-									<!-- <h5 class="over-title margin-bottom-15">-> <span class="text-bold">Gestion des Competences</span></h5> -->
-								
-<div class="container-fluid container-fullw bg-white">
-							<div class="row">
-								<div class="col-md-12">
-									
-									<div class="row margin-top-30">
-										<div class="col-lg-8 col-md-12">
-											<div class="panel panel-white">
-											<!--	<div class="panel-heading">
-													<h5 class="panel-title">Ajout Personne</h5>
-												</div> -->
-												<div class="panel-body">															
-												<div id="layoutSidenav_content"> 
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
 
-
-								
-									<main>
-                    <div class="container-fluid px-4">  
-				        
-                    <!--    <h1 class="mt-4">Gestion des Competences</h1> -->
-                        <ol class="breadcrumb mb-4">
-                            <li class="breadcrumb-item"><a href="dashboard.php">Dashboard</a></li>
-                            <li class="breadcrumb-item active">Tournois</li>
-                        </ol>
-            
-                        <div class="card mb-4">
-                         <!--   <div class="card-header">
-                                <i class="fas fa-table me-1"></i>
-                                Registered User Details
-                            </div> -->
-                            <div class="card-body">
-                                <table id="datatablesSimple">
-                                    <thead>
-                                        <tr>
-                                  <th>Nom</th>
-                                  <th>Ville </th>
-                                  <th>Date</th>
-								  <th>Supprimer</th>
-                                      </tr>
-                                    </thead>
-                                    <tfoot>
-                                      <tr>
-                                  <th>Nom</th>
-                                  <th>Ville </th>
-                                  <th>Date </th>
-								  <th>Supprimer</th>
-                                        </tr>
-                                    </tfoot>
-                                    <tbody>
-                                              <?php $ret=mysqli_query($con,"SELECT * FROM `challenge-partie` WHERE `chapar_id_chal` = '$id'");
-                              $cnt=1;
-							  
-                              while($row=mysqli_fetch_array($ret))
-                              {?>
-						  
-						          <?php
-												  $id2=$row['chapar_id_part'];
-													$sql2=mysqli_query($con,"SELECT * FROM `vol` WHERE `id` = '$id2'");
-													while($row2=mysqli_fetch_array($sql2))
-                                                       { ?>
-												   <tr>
-												       <td><?php echo $row2['codevol'];?></td>
-												       <td><?php echo $row2['destination'];?></td>
-													   <td><?php echo $row2['date_depart'];?></td>
-													  <?php } ?>
-						  
-						  
-                               
-								  <td>
-                                     
-                                     <a href="voir-partie.php?uid=<?php echo $id2;?>" class="btn btn-transparent btn-xs" tooltip-placement="top" tooltip="Edit"><i class="fa fa-pencil"></i></a>
-                          <i class="fas fa-edit"></i></a> 
-                                     <a href="ajout-challenge.php?id=<?php echo $row['chapar_id']?>&del=deleteind" onClick="return confirm('Are you sure you want to delete?')"class="btn btn-transparent btn-xs tooltips" tooltip-placement="top" tooltip="Remove"><i class="fa fa-times fa fa-white"></i></a>
-												
-								  </td>
-                              </tr>
-                              <?php $cnt=$cnt+1; }?>
-                                      
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </main>
-				
-				</div>
-				</div>
-				</div>
-				</div>
-				</div>
-				</div>
-				</div>
-				</div>
-									
+							<div class="row mt-3">
+								<div class="col-12">
+									<div class="panel panel-white">
+										<div class="panel-heading">
+											<h3 class="panel-title">Ajouter une Partie</h3> 
+										</div>
+										<div class="panel-body">
+											<form role="form" name="adddoc" method="post">
+												<div class="form-group mb-3">
+													<label for="compet" class="form-label">Sélectionner une Partie</label>
+													<select name="compet" id="compet" class="form-control form-control-lg" required>
+														<option value="">-- Choisir une partie --</option>
+														<?php 
+															$ret2=mysqli_query($con,"SELECT * FROM `activite` ORDER BY `date_depart` DESC");
+															while($row2=mysqli_fetch_array($ret2)) {
+														?>
+															<option value="<?php echo htmlspecialchars($row2['id-activite']);?>">
+																<?php echo htmlspecialchars($row2['titre-activite']); ?>
+															</option>
+														<?php } ?>
+													</select>
+												</div>
+												<div class="d-grid gap-2 d-sm-flex">
+													<button type="submit" name="submit2" id="submit2" class="btn btn-primary">
+														<i class="fa fa-plus"></i> Ajouter Partie
+													</button>
+													<a href="gestion-challenge.php" class="btn btn-secondary">
+														<i class="fa fa-arrow-left"></i> Retour à la liste
+													</a>
+												</div>
+											</form>
+										</div>
+									</div>
 								</div>
 							</div>
 						</div>
-						<!-- end: BASIC EXAMPLE -->
-						
-						<form role="form" name="adddoc" method="post" onSubmit="return valid();">
-														<div class="form-group">
-															<label for="compet">
-																Ajout Partie
-															</label>
-															<select name="compet" class="form-control" required="true">
-														<!--		<option value="compet">Select Competence</option> -->
-																<option value="compet">Select Partie</option>
-														<?php $ret2=mysqli_query($con,"select * from vol");
-															while($row2=mysqli_fetch_array($ret2))
-																{
-														?>
-																										
-																<option value="<?php echo htmlentities($row2['id']);?>">
-																	<?php echo htmlentities($row2['codevol']);?>
-																</option>
-																$indiv=
-																<?php } ?>
-																
-															</select>
-														</div>
-														<button type="submit" name="submit2" id="submit2" class="btn btn-o btn-primary">
-															Ajout Comp
-														</button>
-									</form>
-						
-						<!-- end: SELECT BOXES -->
-						
 					</div>
 				</div>
 			</div>
-			<!-- start: FOOTER -->
-	<?php include('include/footer.php');?>
-			<!-- end: FOOTER -->
-		
-			<!-- start: SETTINGS -->
-	<?php include('include/setting.php');?>
-			
-			<!-- end: SETTINGS -->
+		<?php include('include/footer.php');?>
+		<?php include('include/setting.php');?>
 		</div>
-		<!-- start: MAIN JAVASCRIPTS -->
+
 		<script src="vendor/jquery/jquery.min.js"></script>
 		<script src="vendor/bootstrap/js/bootstrap.min.js"></script>
 		<script src="vendor/modernizr/modernizr.js"></script>
 		<script src="vendor/jquery-cookie/jquery.cookie.js"></script>
 		<script src="vendor/perfect-scrollbar/perfect-scrollbar.min.js"></script>
 		<script src="vendor/switchery/switchery.min.js"></script>
-		<!-- end: MAIN JAVASCRIPTS -->
-		<!-- start: JAVASCRIPTS REQUIRED FOR THIS PAGE ONLY -->
 		<script src="vendor/maskedinput/jquery.maskedinput.min.js"></script>
 		<script src="vendor/bootstrap-touchspin/jquery.bootstrap-touchspin.min.js"></script>
 		<script src="vendor/autosize/autosize.min.js"></script>
@@ -358,23 +540,36 @@ error:function (){}
 		<script src="vendor/select2/select2.min.js"></script>
 		<script src="vendor/bootstrap-datepicker/bootstrap-datepicker.min.js"></script>
 		<script src="vendor/bootstrap-timepicker/bootstrap-timepicker.min.js"></script>
-		<!-- end: JAVASCRIPTS REQUIRED FOR THIS PAGE ONLY -->
-		<!-- start: CLIP-TWO JAVASCRIPTS -->
 		<script src="assets/js/main.js"></script>
-		<!-- start: JavaScript Event Handlers for this page -->
 		<script src="assets/js/form-elements.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+		<script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest" crossorigin="anonymous"></script>
 		<script>
 			jQuery(document).ready(function() {
 				Main.init();
 				FormElements.init();
 			});
+
+			// Enable search and column sorting on the activities table
+			document.addEventListener('DOMContentLoaded', function() {
+				var table = document.querySelector('#activitiesTable');
+				if (table) {
+									new simpleDatatables.DataTable(table, {
+										searchable: true,
+										fixedHeight: false,
+										perPage: 10,
+										perPageSelect: [10,25,50,100],
+						columns: [
+							// Enable sorting on all columns
+							{ select: 0, sortable: true },
+							{ select: 1, sortable: true },
+							{ select: 2, sortable: true },
+							{ select: 3, sortable: false }
+						]
+					});
+				}
+			});
 		</script>
-		<!-- end: JavaScript Event Handlers for this page -->
-		<!-- end: CLIP-TWO JAVASCRIPTS -->
-		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
-        <script src="../js/scripts.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest" crossorigin="anonymous"></script>
-        <script src="../js/datatables-simple-demo.js"></script>
 	</body>
 </html>
 <?php } ?>

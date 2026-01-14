@@ -46,7 +46,7 @@ while ($row = mysqli_fetch_assoc($result_all)) {
 }
 
 // Get groups the user belongs to
-$sql_groups = "SELECT g.id, g.name,
+$sql_groups = "SELECT g.id, g.name, g.created_by, g.activity_id,
                (SELECT COUNT(*) FROM `chat_messages` cm 
                 JOIN `chat_group_members` gm2 ON cm.group_id = gm2.group_id
                 WHERE cm.group_id = g.id 

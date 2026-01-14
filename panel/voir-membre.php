@@ -1,4 +1,8 @@
 <?php
+// DEBUG: Affichage des erreurs PHP pour diagnostic temporaire
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 session_start();
 // Debugging output removed for production
 include('include/config.php');
@@ -9,7 +13,13 @@ if (strlen($_SESSION['id']) == 0) {
     exit;
 }
 
+
 $id = intval($_GET['id']); // get value
+
+// Définir si l'utilisateur courant est admin ou le membre lui-même
+$is_admin = (isset($_SESSION['role']) && ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'superadmin'));
+$is_self = (isset($_SESSION['id']) && intval($_SESSION['id']) === $id);
+
 
 // Ajoutez cette fonction au début du fichier, après les includes
 function updateMemberBalance($membre_id, $con) {
@@ -54,33 +64,79 @@ if (isset($_POST['submit']) ) {
 
     // Pour chaque champ, prendre POST sinon valeur actuelle
     $fields = [
-        'pseudo', 'email', 'telephone', 'fname', 'lname', 'posting_date', 'association_date', 'rue', 'password', 'ville', 'CodeV', 'verification', 'naissance_date',
+        'pseudo', 'email', 'telephone', 'fname', 'lname', 'posting_date', 'association_date', 'rue', 'ville', 'CodeV', 'verification', 'naissance_date',
         'def_com', 'def_str', 'def_nbj', 'def_buy', 'def_rak', 'def_bou', 'def_rec', 'def_jet', 'def_recave_jetons', 'def_recave_montant', 'def_bon', 'def_add', 'def_ant', 'def_cha'
     ];
     $values = [];
     foreach ($fields as $f) {
-        $values[$f] = isset($_POST[$f]) ? mysqli_real_escape_string($con, $_POST[$f]) : $current[$f];
+        if (isset($_POST[$f])) {
+            $v = mysqli_real_escape_string($con, $_POST[$f]);
+            // Pour les dates, si vide, mettre NULL
+            if (in_array($f, ['posting_date', 'association_date', 'naissance_date']) && ($v === '' || strtolower($v) === 'null')) {
+                $values[$f] = null;
+            } else {
+                $values[$f] = $v;
+            }
+        } else {
+            $values[$f] = $current[$f];
+        }
+    }
+    // Gestion du mot de passe
+    if ($is_admin || $is_self) {
+        // Si le champ password n'est pas dans POST, on garde l'ancien mot de passe
+        if (!isset($_POST['password']) || $_POST['password'] === '') {
+            $values['password'] = $current['password'];
+        } else {
+            $values['password'] = mysqli_real_escape_string($con, $_POST['password']);
+        }
     }
     try {
-        $stmt = mysqli_prepare($con, "UPDATE `membres` SET 
-            pseudo = ?, email = ?, telephone = ?, fname = ?, 
-            lname = ?, posting_date = ?, association_date = ?, 
-            rue = ?, password = ?, ville = ?, CodeV = ?,
-            verification = ?, naissance_date = ?,
-            def_com = ?, def_str = ?, def_nbj = ?, def_buy = ?, def_rak = ?, def_bou = ?, def_rec = ?, def_jet = ?, def_recave_jetons = ?, def_recave_montant = ?, def_bon = ?, def_add = ?, def_ant = ?, def_cha = ?
-            WHERE `id-membre` = ?");
+        // Construction dynamique de la requête et des paramètres
+        $update_fields = [
+            'pseudo', 'email', 'telephone', 'fname', 'lname', 'posting_date', 'association_date', 'rue'
+        ];
+        if ($is_admin || $is_self) {
+            $update_fields[] = 'password';
+        }
+        $update_fields = array_merge($update_fields, [
+            'ville', 'CodeV', 'verification', 'naissance_date',
+            'def_com', 'def_str', 'def_nbj', 'def_buy', 'def_rak', 'def_bou', 'def_rec', 'def_jet',
+            'def_recave_jetons', 'def_recave_montant', 'def_bon', 'def_add', 'def_ant', 'def_cha'
+        ]);
+
+        $set_sql = [];
+        foreach ($update_fields as $f) {
+            $set_sql[] = "$f = ?";
+        }
+        $set_sql = implode(", ", $set_sql);
+        $sql = "UPDATE `membres` SET $set_sql WHERE `id-membre` = ?";
+        $stmt = mysqli_prepare($con, $sql);
         if (!$stmt) {
             error_log('ERROR: prepare failed in submit: ' . mysqli_error($con));
             $_SESSION['error'] = 'Erreur préparation SQL: ' . mysqli_error($con);
             header('Location: voir-membre.php?id=' . $id);
             exit();
         }
-        $bind_ok = mysqli_stmt_bind_param($stmt, 'ssssssssssssssiiiiiiiiiiiiii',
-            $values['pseudo'], $values['email'], $values['telephone'], $values['fname'],
-            $values['lname'], $values['posting_date'], $values['association_date'],
-            $values['rue'], $values['password'], $values['ville'], $values['CodeV'],
-            $values['verification'], $values['naissance_date'],
-            $values['def_com'], $values['def_str'], $values['def_nbj'], $values['def_buy'], $values['def_rak'], $values['def_bou'], $values['def_rec'], $values['def_jet'], $values['def_recave_jetons'], $values['def_recave_montant'], $values['def_bon'], $values['def_add'], $values['def_ant'], $values['def_cha'], $id);
+        // Construction dynamique des types et des paramètres
+        $params = [];
+        $types = '';
+        foreach ($update_fields as $f) {
+            // Déterminer le type pour chaque champ
+            if (in_array($f, ['def_str', 'def_nbj', 'def_buy', 'def_rak', 'def_bou', 'def_rec', 'def_jet', 'def_recave_jetons', 'def_recave_montant', 'def_bon', 'def_add', 'def_ant', 'def_cha', 'verification'])) {
+                $types .= 'i';
+                $params[] = intval($values[$f]);
+            } elseif (in_array($f, ['posting_date', 'association_date', 'naissance_date'])) {
+                $types .= 's';
+                $params[] = ($values[$f] === null ? null : $values[$f]);
+            } else {
+                $types .= 's';
+                $params[] = $values[$f];
+            }
+        }
+        $types .= 'i'; // pour l'id-membre à la fin
+        $params[] = $id;
+
+        $bind_ok = mysqli_stmt_bind_param($stmt, $types, ...$params);
         if (!$bind_ok) {
             error_log('ERROR: bind_param failed in submit: ' . mysqli_error($con));
             $_SESSION['error'] = 'Erreur bind_param: ' . mysqli_error($con);
@@ -89,11 +145,12 @@ if (isset($_POST['submit']) ) {
         }
         if (!mysqli_stmt_execute($stmt)) {
             error_log('ERROR: execute failed in submit: ' . mysqli_stmt_error($stmt));
-            throw new Exception("Erreur lors de la mise à jour: " . mysqli_stmt_error($stmt));
+            $_SESSION['error'] = 'Erreur execute: ' . mysqli_stmt_error($stmt);
+            header('Location: voir-membre.php?id=' . $id);
+            exit();
         }
         $affected = mysqli_stmt_affected_rows($stmt);
         $_SESSION['msg'] = ($affected > 0) ? "Mise à jour effectuée avec succès" : "Aucune modification effectuée";
-        // debug block removed for production
         if (headers_sent($file, $line)) { error_log("WARNING: headers already sent in $file:$line"); }
         header('Location: voir-membre.php?id=' . $id);
         exit();
@@ -645,9 +702,11 @@ if (!$sql) {
         $member = null;
     }
 }
-// Debug output if requested
-if (isset($_GET['debug']) && $_GET['debug'] == '1') {
-    echo '<pre style="background:#fff8e1;padding:10px;border:1px solid #eee;color:#000;margin-top:10px;">DEBUG INFO:\nQuery: ' . htmlentities($query) . '\nMySQL error: ' . htmlentities(mysqli_error($con)) . '\nNum rows: ' . intval($num) . '\nRow: ' . htmlentities(print_r($member, true)) . '</pre>';
+// Sécurité affichage mot de passe : masquer sauf admin ou self
+if (isset($member['password'])) {
+    if (!$is_admin && !$is_self) {
+        $member['password'] = '******';
+    }
 }
 if (!$member) {
     // Provide defaults to avoid template errors
@@ -886,7 +945,12 @@ if (!$member) {
                                                                             </tr>
                                                                             <tr>
                                                                                 <th style="color: #ffffff !important;">Mot de passe</th>
-                                                                                <td><input class="form-control" id="password" name="password" type="text" value="<?php echo $member['password']; ?>">
+                                                                                <td>
+                                                                                <?php if ($is_admin || $is_self): ?>
+                                                                                    <input class="form-control" id="password" name="password" type="text" value="<?php echo $member['password']; ?>">
+                                                                                <?php else: ?>
+                                                                                    <input class="form-control" id="password" name="password" type="text" value="******" readonly disabled>
+                                                                                <?php endif; ?>
                                                                                 </td>
                                                                                 <th style="color: #ffffff !important;">Date nais</th>
                                                                                 <td><input class="form-control" id="naissance_date" name="naissance_date" type="date" value="<?php echo $member['naissance_date']; ?>">
@@ -970,7 +1034,7 @@ if (!$member) {
 
                                                                             </tr>
                                                                             <tr>
-                                                                                <td style="text-align:left; display:none;">
+                                                                                <td style="display: none; text-align: left;">
                                                                                     <button type="submit" name="submit" id="submit" class="btn btn-oo btn-primary">
                                                                                         Mise à jour</button>
                                                                                 </td>

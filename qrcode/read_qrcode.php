@@ -24,31 +24,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         exit;
     }
     
-    $nom = isset($_POST['nom']) ? trim($_POST['nom']) : '';
-    
-    if (empty($nom)) {
+    $nom_origine = isset($_POST['nom']) ? trim($_POST['nom']) : '';
+
+    if (empty($nom_origine)) {
         echo json_encode(['success' => false, 'message' => 'Le contenu est vide']);
         exit;
     }
-    
+
     // Déterminer la valeur : 2 si commence par http, sinon 1
-    $valeur = (strpos($nom, 'http') === 0) ? 1 : 2;
+    $valeur = (strpos($nom_origine, 'http') === 0) ? 1 : 2;
+
+    // Vérifier si les 16 derniers caractères existent déjà (doublon)
+    $last16 = substr($nom_origine, -16);
+    $stmt_check = $conx->prepare("SELECT id_collection FROM collections WHERE RIGHT(nom, 16) = ? LIMIT 1");
+    if ($stmt_check === false) {
+        echo json_encode(['success' => false, 'message' => 'Erreur de préparation (check doublon): ' . $conx->error]);
+        exit;
+    }
+    $stmt_check->bind_param("s", $last16);
+    $stmt_check->execute();
+    $stmt_check->store_result();
+    if ($stmt_check->num_rows > 0) {
+        $stmt_check->close();
+        echo json_encode(['success' => false, 'message' => 'Ce QR code a déjà été enregistré.']);
+        exit;
+    }
+    $stmt_check->close();
 
     // Si l'URL commence par https ou http et contient '=', extraire ce qui est après le dernier '='
-    if ((strpos($nom, 'https') === 0 || strpos($nom, 'http') === 0) && strpos($nom, '=') !== false) {
-        $nom = substr($nom, strrpos($nom, '=') + 1);
+    $nom = $nom_origine;
+    if ((strpos($nom_origine, 'https') === 0 || strpos($nom_origine, 'http') === 0) && strpos($nom_origine, '=') !== false) {
+        $nom = substr($nom_origine, strrpos($nom_origine, '=') + 1);
     }
-    
-    // Préparer et exécuter la requête
+
+    // Préparer et exécuter la requête d'insertion
     $stmt = $conx->prepare("INSERT INTO collections (nom, valeur) VALUES (?, ?)");
-    
     if ($stmt === false) {
         echo json_encode(['success' => false, 'message' => 'Erreur de préparation: ' . $conx->error]);
         exit;
     }
-    
     $stmt->bind_param("si", $nom, $valeur);
-    
     if ($stmt->execute()) {
         echo json_encode([
             'success' => true,
@@ -58,7 +73,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     } else {
         echo json_encode(['success' => false, 'message' => 'Erreur lors de l\'enregistrement: ' . $stmt->error]);
     }
-    
     $stmt->close();
     exit;
 }
@@ -319,8 +333,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 <h3>📖 Contenu détecté:</h3>
                 <div class="result-content" id="resultContent"></div>
                 <div class="result-actions">
-                    <button class="copy-btn" onclick="copyToClipboard()">📋 Copier</button>
-                    <button class="open-btn" onclick="openLink()" id="openBtn" style="display: none;">🔗 Ouvrir</button>
                     <button class="open-btn" onclick="saveResult()" id="saveBtn" style="background: #4caf50;">💾 Enregistrer</button>
                 </div>
                 <div id="saveStatus"></div>
@@ -399,12 +411,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             document.getElementById('resultContent').textContent = content;
             document.getElementById('resultContainer').style.display = 'block';
             
-            // Afficher le bouton "Ouvrir" si c'est une URL
-            if (content.startsWith('http://') || content.startsWith('https://')) {
-                document.getElementById('openBtn').style.display = 'inline-block';
-            } else {
-                document.getElementById('openBtn').style.display = 'none';
-            }
+            // Bouton Ouvrir supprimé
         }
         
         function showError(message) {
@@ -412,26 +419,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             document.getElementById('errorAlert').style.display = 'block';
         }
         
-        function copyToClipboard() {
-            const text = document.getElementById('resultContent').textContent;
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = event.target;
-                const originalText = btn.textContent;
-                btn.textContent = '✓ Copié!';
-                setTimeout(() => {
-                    btn.textContent = originalText;
-                }, 2000);
-            }).catch(() => {
-                alert('Erreur lors de la copie');
-            });
-        }
-        
-        function openLink() {
-            const url = document.getElementById('resultContent').textContent;
-            if (url.startsWith('http://') || url.startsWith('https://')) {
-                window.open(url, '_blank');
-            }
-        }
+        // Fonctions Copier et Ouvrir supprimées
         
         function saveResult() {
             const content = document.getElementById('resultContent').textContent;
@@ -455,6 +443,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     saveStatus.innerHTML = '<div style="color: #4caf50; margin-top: 10px; font-weight: 500;">✓ Enregistré avec succès! (ID: ' + data.id + ')</div>';
                     btn.textContent = '✓ Enregistré';
                     btn.style.background = '#45a049';
+                    setTimeout(() => {
+                        resetScanner();
+                    }, 1200); // Relance un scan après 1,2s
                 } else {
                     saveStatus.innerHTML = '<div style="color: #f44336; margin-top: 10px; font-weight: 500;">✗ Erreur: ' + data.message + '</div>';
                     btn.textContent = '💾 Enregistrer';
@@ -475,6 +466,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             document.getElementById('successAlert').style.display = 'none';
             document.getElementById('resultContainer').style.display = 'none';
             lastScannedValue = '';
+            // Réactiver le bouton Enregistrer
+            const btn = document.getElementById('saveBtn');
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = '💾 Enregistrer';
+                btn.style.background = '#4caf50';
+            }
+            document.getElementById('saveStatus').innerHTML = '';
             startScanning();
         }
         

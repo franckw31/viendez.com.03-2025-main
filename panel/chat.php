@@ -181,9 +181,7 @@ $_SESSION['is_admin'] = $is_admin;
                                             <!-- Contacts will be loaded here -->
                                         </div>
                                         <div class="group-list" id="group-list" style="display:none;">
-                                            <?php if ($is_admin): ?>
                                             <div class="create-group-btn" onclick="openCreateGroupModal()">+ Créer un Groupe</div>
-                                            <?php endif; ?>
                                             <div id="groups-container"></div>
                                         </div>
                                     </div>
@@ -304,8 +302,10 @@ $_SESSION['is_admin'] = $is_admin;
         });
 
         const isAdmin = <?php echo $is_admin ? 'true' : 'false'; ?>;
+        const userId = <?php echo $user_id; ?>;
         let currentContactId = null;
         let currentGroupId = null;
+        let currentGroupCreator = null;
         let allContacts = [];
         let lastMessageId = 0;
         let lastSyncTime = '2000-01-01 00:00:00';
@@ -533,7 +533,7 @@ $_SESSION['is_admin'] = $is_admin;
                     let activeClass = currentGroupId == group.id ? 'active' : '';
                     let escapedName = (group.name || '').replace(/'/g, "\\'");
                     groupHtml += `
-                        <div class="contact-item ${activeClass}" id="group-${group.id}" onclick="selectGroup(${group.id}, '${escapedName}')">
+                        <div class="contact-item ${activeClass}" id="group-${group.id}" onclick="selectGroup(${group.id}, '${escapedName}', ${group.created_by})">
                             <div class="contact-photo" style="background:#075e54; color:white; display:flex; align-items:center; justify-content:center; font-weight:bold;">${(group.name || '?').charAt(0)}</div>
                             <span>${group.name}</span>
                             ${badge}
@@ -581,9 +581,10 @@ $_SESSION['is_admin'] = $is_admin;
             loadMessages();
         }
 
-        function selectGroup(id, name) {
+        function selectGroup(id, name, creator = null) {
             showTab('groups');
             currentGroupId = id;
+            currentGroupCreator = creator;
             currentContactId = null;
             lastMessageId = 0;
             lastSyncTime = '2000-01-01 00:00:00';
@@ -591,7 +592,8 @@ $_SESSION['is_admin'] = $is_admin;
             $('#chat-messages').html('');
             $('#header-name').text(name);
             $('#header-photo').hide();
-            if (isAdmin) {
+            // Show manage button if user is admin or group creator
+            if (isAdmin || (currentGroupCreator && currentGroupCreator == userId)) {
                 $('#manage-group-btn').show();
             } else {
                 $('#manage-group-btn').hide();

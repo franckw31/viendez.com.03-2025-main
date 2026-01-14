@@ -74,7 +74,7 @@ if (strlen($_SESSION['id']) == 0) {
         .owner-found { color: #2c3e50; font-weight: bold; font-size: 20px; }
         #assignationTable { font-size: 20px; }
         #assignationTable thead th { font-size: 18px; }
-        code { font-size: 18px !important; }
+        code { font-size: 22px !important; }
         .app-content { overflow-x: hidden; }
         .main-content { overflow-x: hidden; }
         #assignationTable { 
@@ -126,7 +126,7 @@ if (strlen($_SESSION['id']) == 0) {
                                                                         <table id="assignationTable" class="table table-hover w-100">
                                                                             <thead>
                                                                                 <tr>
-                                                                                    <th style="width: 35%;">QRcode (Nom)</th>
+                                                                                    <th style="width: 35%;">QRcode</th>
                                                                                     <th style="width: 15%;">Valeur</th>
                                                                                     <th style="width: 30%;">Propriétaire</th>
                                                                                     <th style="width: 20%;">Actions</th>
@@ -231,7 +231,7 @@ if (strlen($_SESSION['id']) == 0) {
                 language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/fr-FR.json' },
                 dom: '<"row"<"col"B><"col"f>>rt<"row"<"col"i><"col"p>>',
                 pageLength: 10,
-                order: [[0, 'asc']],
+                order: [[2, 'asc']],
                 responsive: true,
                 autoWidth: false
             });

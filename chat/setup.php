@@ -31,12 +31,20 @@ $sql_groups = "CREATE TABLE IF NOT EXISTS `chat_groups` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `created_by` int(11) NOT NULL,
+  `activity_id` int(11) DEFAULT NULL,
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;";
 
 if (mysqli_query($conx, $sql_groups)) {
     echo "Table chat_groups created successfully.<br>";
+}
+
+// Add activity_id column if it doesn't exist
+$check_col = mysqli_query($conx, "SHOW COLUMNS FROM `chat_groups` LIKE 'activity_id'");
+if (mysqli_num_rows($check_col) == 0) {
+    mysqli_query($conx, "ALTER TABLE `chat_groups` ADD `activity_id` INT(11) DEFAULT NULL");
+    echo "Column activity_id added to chat_groups.<br>";
 }
 
 // Create chat_group_members table

@@ -7,18 +7,6 @@ if (!isset($_SESSION['id']) || !isset($_POST['group_name']) || !isset($_POST['me
 }
 
 $user_id = $_SESSION['id'];
-$is_admin = false;
-$res = mysqli_query($conx, "SELECT `droits` FROM `membres` WHERE `id-membre` = $user_id");
-if ($row = mysqli_fetch_assoc($res)) {
-    if ($user_id == 265 || $row['droits'] == '2') {
-        $is_admin = true;
-    }
-}
-
-if (!$is_admin) {
-    die(json_encode(['error' => 'Permission denied']));
-}
-
 $group_name = mysqli_real_escape_string($conx, $_POST['group_name']);
 $creator_id = $_SESSION['id'];
 $members = $_POST['members']; // Array of member IDs

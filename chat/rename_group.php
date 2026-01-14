@@ -19,7 +19,29 @@ if ($row = mysqli_fetch_assoc($res)) {
     }
 }
 
-if (!$is_admin) {
+// Check if user is group creator
+$is_creator = false;
+$activity_id = null;
+$res_group = mysqli_query($conx, "SELECT `created_by`, `activity_id` FROM `chat_groups` WHERE `id` = $group_id");
+if ($row_group = mysqli_fetch_assoc($res_group)) {
+    if ($row_group['created_by'] == $current_user_id) {
+        $is_creator = true;
+    }
+    $activity_id = $row_group['activity_id'];
+}
+
+// Check if user is activity organizer
+$is_activity_organizer = false;
+if (!$is_admin && !$is_creator && $activity_id) {
+    $res_activity = mysqli_query($conx, "SELECT `id-membre` FROM `activite` WHERE `id-activite` = $activity_id");
+    if ($row_activity = mysqli_fetch_assoc($res_activity)) {
+        if ($row_activity['id-membre'] == $current_user_id) {
+            $is_activity_organizer = true;
+        }
+    }
+}
+
+if (!$is_admin && !$is_creator && !$is_activity_organizer) {
     die(json_encode(['error' => 'Permission denied']));
 }
 
