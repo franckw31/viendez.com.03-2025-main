@@ -10,9 +10,19 @@ if (strlen($_SESSION['id']) == 0) {
 } else {
     // Traitement du changement de propriétaire
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-        $id_col = intval($_POST['id_col']);
+        $id_col = isset($_POST['id_col']) ? intval($_POST['id_col']) : 0;
+        if ($id_col === 0) {
+            $_SESSION['msg'] = "Aucune carte sélectionnée pour l'action.";
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit;
+        }
         if ($_POST['action'] === 'assign') {
             $id_indiv = intval($_POST['id_membre']);
+            if ($id_indiv === 0) {
+                $_SESSION['msg'] = "Choisissez un membre pour assigner.";
+                header("Location: " . $_SERVER['PHP_SELF']);
+                exit;
+            }
             $check = mysqli_query($con, "SELECT * FROM `collections-individu` WHERE id_col = $id_col");
             if (mysqli_num_rows($check) > 0) {
                 mysqli_query($con, "UPDATE `collections-individu` SET `id-indiv` = $id_indiv WHERE id_col = $id_col");
@@ -24,8 +34,12 @@ if (strlen($_SESSION['id']) == 0) {
             }
             $_SESSION['msg'] = "Propriétaire mis à jour !";
         } elseif ($_POST['action'] === 'unassign') {
-            mysqli_query($con, "DELETE FROM `collections-individu` WHERE id_col = $id_col");
-            $_SESSION['msg'] = "Assignation supprimée !";
+            $ok = mysqli_query($con, "DELETE FROM `collections-individu` WHERE id_col = $id_col");
+            if ($ok && mysqli_affected_rows($con) > 0) {
+                $_SESSION['msg'] = "Assignation supprimée !";
+            } else {
+                $_SESSION['msg'] = "Aucune assignation trouvée ou erreur : " . mysqli_error($con);
+            }
         }
         header("Location: " . $_SERVER['PHP_SELF']);
         exit;
@@ -96,7 +110,7 @@ if (strlen($_SESSION['id']) == 0) {
         ?>
         <div class="app-content">
             <?php include(dirname(__DIR__) . '/panel/include/header.php'); ?>
-            <div class="main-content">
+                    <div class="main-content">
                 <div class="wrap-content container" id="container">
                     <section id="page-title">
                         <div class="row">
@@ -105,6 +119,9 @@ if (strlen($_SESSION['id']) == 0) {
                             </div>
                         </div>
                     </section>
+                            <?php if(!empty($_SESSION['msg'])): ?>
+                                <div class="alert alert-info"><?php echo htmlspecialchars($_SESSION['msg']); unset($_SESSION['msg']); ?></div>
+                            <?php endif; ?>
                     <div class="container-fluid container-fullw bg-white">
                         <div class="row">
                             <div class="col-md-12">
@@ -183,7 +200,7 @@ if (strlen($_SESSION['id']) == 0) {
     <div class="modal fade" id="editModal" tabindex="-1" role="dialog" aria-labelledby="editModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content" style="font-size: 20px;">
-                <form method="POST">
+                <form method="POST" id="assignForm">
                     <div class="modal-header">
                         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
@@ -196,8 +213,8 @@ if (strlen($_SESSION['id']) == 0) {
                         
                         <div class="form-group mb-3">
                             <label for="id_membre">Nouveau Propriétaire :</label>
-                            <select name="id_membre" id="id_membre" class="form-control" style="height: 50px; font-size: 18px;" required>
-                                <option value="">-- Choisir un membre --</option>
+                            <select name="id_membre" id="id_membre" class="form-control" style="height: 50px; font-size: 18px;">
+                                <option value="">-- Choisir un membre (pour assigner) --</option>
                                 <?php foreach($members_list as $member): ?>
                                     <option value="<?php echo $member['id-membre']; ?>">
                                         <?php echo htmlspecialchars($member['pseudo']); ?>
@@ -207,9 +224,10 @@ if (strlen($_SESSION['id']) == 0) {
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" name="action" value="unassign" class="btn btn-danger pull-left" onclick="return confirm('Supprimer l\'assignation ?');">Désassigner</button>
+                        <input type="hidden" name="action" id="modal_action" value="">
+                        <button type="button" id="btn-unassign" class="btn btn-danger pull-left" onclick="if(confirm('Supprimer l\'assignation ?')) { document.getElementById('modal_action').value='unassign'; document.getElementById('assignForm').submit(); }">Désassigner</button>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                        <button type="submit" name="action" value="assign" class="btn btn-success">Enregistrer</button>
+                        <button type="button" id="btn-assign" class="btn btn-success" onclick="document.getElementById('modal_action').value='assign'; document.getElementById('assignForm').submit();">Enregistrer</button>
                     </div>
                 </form>
             </div>

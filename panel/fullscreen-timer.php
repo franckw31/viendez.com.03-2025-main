@@ -2,6 +2,7 @@
 session_start();
 error_reporting(0);
 include('include/config.php');
+// Vérification de session
 
 // Vérification de session
 if (strlen($_SESSION['id']) == 0) {
@@ -400,8 +401,8 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
         </div> -->
 
         <!-- ZONE STATS JOUEURS -->
-        <div id="zone-stats" style="font-size: 3vw; color: rgba(11, 245, 65, 0.83); margin-top: 20px; font-weight: bold; position: relative; z-index: 2000;">
-            <?php echo $active_players; ?> <a href="fullscreen-player.php?uid=<?php echo $id; ?>" style="color:white; text-decoration:underline; cursor:pointer;">Joueurs</a> / <?php echo $total_players; ?> &nbsp;, &nbsp; <span style="color:white">Stack Moyen </span> <?php echo number_format($avg_stack, 0, ',', ' '); ?>
+        <div id="zone-stats" style="font-size: calc(3vw + 4px) !important; color: rgba(11, 245, 65, 0.83); margin-top: 20px; font-weight: bold; position: relative; z-index: 2000;">
+            <?php echo $active_players; ?> <a href="fullscreen-player.php?uid=<?php echo $id; ?>" style="color:white; text-decoration:underline; cursor:pointer;">Joueurs</a> / <?php echo $total_players; ?> &nbsp;, &nbsp; <span style="color:white">Stack M. </span> <strong style="color:#ff0000; font-size: calc(3vw + 4px); "><?php echo number_format($avg_stack, 0, ',', ' '); ?></strong>
         </div>
 
         <!-- ZONE ESTIMATION -->

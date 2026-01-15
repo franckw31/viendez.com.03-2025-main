@@ -113,6 +113,12 @@ if(isset($_GET['uid'])) {
         margin-top: 1vh;
         color: #ffc107;
     }
+    #level-stack {
+        font-size: 7vmin !important;
+        font-weight: 500;
+        margin-top: 0.5vh;
+        color: #ffffff;
+    }
     
     .ante-text {
         color: #00d2ff;
@@ -142,6 +148,7 @@ if(isset($_GET['uid'])) {
         <div id="level-name">Niveau --</div>
         <div id="timer-display">--:--</div>
         <div id="level-info">-- / --</div>
+        <div id="level-stack" style="font-size: 7vmin !important;"><span style="font-size: 5vmin;">Stack M.</span> <strong style="color:#ff0000; font-size: 7vmin;">--</strong></div>
     </div>
 </div>
 
@@ -226,6 +233,7 @@ function playBlindsMessage() {
     let sb = window.lastSB || '';
     let bb = window.lastBB || '';
     let durationMin = window.lastDurationMin || 0;
+    let avgStack = window.lastAvgStack || '';
     let text = "Rappel : Les blinde actuelle sont, ";
     if (sb && bb && durationMin > 0) {
         text += `${sb} et ${bb}, pour des niveaux de ${durationMin} minutes.`;
@@ -235,6 +243,9 @@ function playBlindsMessage() {
         text += `Niveau de ${durationMin} minutes.`;
     } else {
         text += `non disponibles actuellement.`;
+    }
+    if (avgStack) {
+        text += ` Le stack moyen est de ${avgStack}.`;
     }
     document.dispatchEvent(new CustomEvent('trigger-alert', { detail: { text: text } }));
 }
@@ -258,6 +269,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const display = document.getElementById('timer-display');
     const info = document.getElementById('level-info');
     const levelNameDisplay = document.getElementById('level-name');
+    const stackDisplay = document.getElementById('level-stack');
     const pauseInfo = document.getElementById('car-pause');
     const progressCircle = document.getElementById('progress-circle');
     
@@ -272,6 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Pour rappel blindes
     window.lastSB = '';
     window.lastBB = '';
+    window.lastAvgStack = '';
     window.lastDurationMin = 0;
 
     // 2. FONCTION ALERTE VOCALE
@@ -425,32 +438,20 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 window.lastDurationMin = 0;
             }
+            window.lastAvgStack = data.avg_stack || '';
             // Mise à jour Nom du Niveau
             if (data.level_name) levelNameDisplay.innerText = data.level_name;
             else levelNameDisplay.innerText = "Niveau --";
 
+            // Mise à jour Stack sous les blindes
+            if (stackDisplay && data.avg_stack !== undefined) {
+                stackDisplay.innerHTML = `<span style='color:white; font-size: 5vmin;'>Stack</span> <strong style='color:#ff0000; font-size: 7vmin;'>${data.avg_stack}</strong>`;
+            }
+
             // Mise à jour Stats Joueurs
             const statsZone = document.getElementById('zone-stats');
             if (statsZone && data.players_active !== undefined) {
-                statsZone.innerHTML = `<a href="#" id="speak-active-players" data-players="${data.players_active}" style="color:#00d2ff; text-decoration:underline; cursor:pointer;">${data.players_active}</a> <a href="fullscreen-player.php?uid=${uid}" style="color:white; text-decoration:underline; cursor:pointer;">Joueurs</a> / ${data.players_total} &nbsp;|&nbsp; <span style="color:white">Stack Moyen </span> <a href="#" id="speak-avg-stack" style="color:#00d2ff; text-decoration:underline; cursor:pointer;">${data.avg_stack}</a>`;
-                // Ajout du handler pour l'audio sur le stack moyen
-                const avgStackLink = document.getElementById('speak-avg-stack');
-                if (avgStackLink) {
-                    avgStackLink.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        let msg = `Le stack moyen actuel est de ${data.avg_stack}`;
-                        if (typeof responsiveVoice !== 'undefined') {
-                            responsiveVoice.speak(msg, 'French Male');
-                        } else if ('speechSynthesis' in window) {
-                            let utter = new SpeechSynthesisUtterance(msg);
-                            utter.lang = 'fr-FR';
-                            utter.rate = 0.95;
-                            window.speechSynthesis.speak(utter);
-                        } else {
-                            alert(msg);
-                        }
-                    });
-                }
+                statsZone.innerHTML = `<a href="#" id="speak-active-players" data-players="${data.players_active}" style="color:#00d2ff; text-decoration:underline; cursor:pointer;">${data.players_active}</a> <a href="fullscreen-player.php?uid=${uid}" style="color:white; text-decoration:underline; cursor:pointer;">Joueurs</a> / ${data.players_total}`;
 
                 // Ajout du handler pour l'audio sur le nombre de joueurs actifs (une seule fois)
                 const activePlayersLink = document.getElementById('speak-active-players');

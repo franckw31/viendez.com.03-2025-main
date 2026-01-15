@@ -1,6 +1,5 @@
 <?php
 session_start();
-echo "coucou";
 if (isset($_SESSION['Email_Session'])) {
     header("Location: /index.html");
     die();
@@ -11,47 +10,48 @@ require_once 'serveur-smtp/send.php';
 $msg = "";
 $Error_Pass="";
 if (isset($_POST['submit'])) {
-    $pseudo = mysqli_real_escape_string($conx, $_POST['pseudo']);
-    $email = mysqli_real_escape_string($conx, $_POST['Email']);
-    $Password = mysqli_real_escape_string($conx, $_POST['Password']);
-    $Confirm_Password = mysqli_real_escape_string($conx, $_POST['Conf-Password']);
-    $Code = mysqli_real_escape_string($conx, md5(rand()));
-    if (mysqli_num_rows(mysqli_query($conx, "SELECT * FROM membres where email='{$email}'")) > 0) {
+    $pseudo = trim($_POST['pseudo'] ?? '');
+    $email = trim($_POST['Email'] ?? '');
+    $Password = $_POST['Password'] ?? '';
+    $Confirm_Password = $_POST['Conf-Password'] ?? '';
+
+    $Code = bin2hex(random_bytes(16));
+
+    $stmt = $conx->prepare("SELECT 1 FROM membres WHERE email = ? LIMIT 1");
+    $stmt->bind_param('s', $email);
+    $stmt->execute();
+    $stmt->store_result();
+
+    if ($stmt->num_rows > 0) {
         $msg = "<div class='alert alert-danger'>Cet email : '{$email}' existe déjà.</div>";
     } else {
         if ($Password === $Confirm_Password) {
-            $query = "INSERT INTO membres (`pseudo`, `email`, `Password`, `CodeV`) values('$pseudo','$email','$Password','$Code')";
-            $result = mysqli_query($conx, $query);
-            if ($result) {
+            $hashedPassword = password_hash($Password, PASSWORD_DEFAULT);
+
+            $insert = $conx->prepare("INSERT INTO membres (`pseudo`, `email`, `Password`, `CodeV`) VALUES (?, ?, ?, ?)");
+            $insert->bind_param('ssss', $pseudo, $email, $hashedPassword, $Code);
+
+            if ($insert->execute()) {
                 $subject = 'Message de Poker31 - Vérification de compte';
                 $body = '<p>Bienvenue sur Poker31 ! Voici votre lien de vérification : <b><a href="http://poker31.org/reg/index.php?Verification=' . $Code . '">Cliquez ici pour vérifier votre compte</a></b></p>';
-                
+
                 $res = sendRealEmail($email, $subject, $body);
-                
+
                 if ($res['success']) {
                     $msg = "<div class='alert alert-info'>Nous avons envoyé un lien de vérification à votre adresse email.</div>";
                 } else {
                     $msg = "<div class='alert alert-danger'>Erreur lors de l'envoi de l'email : " . $res['message'] . "</div>";
                 }
-            }
-        } else {
-                    $mail->Body    = '<p> Ceci est le lien de verification<b><a href="http://poker31.org/index.php?Verification='.$Code.'">"http://poker31.org/index.php?Verification='.$Code.'"</a></b></p>';
-
-                    $mail->send();
-                    
-                } catch (Exception $e) {
-                    echo "Message could not be sent. Mailer Error: {$mail->ErrorInfo}";
-                }
-                $msg = "<div class='alert alert-info'>we've send a verification code on Your email Address</div>";
             } else {
-                $msg = "<div class='alert alert-danger'>Something was Wrong</div>";
-                
+                $msg = "<div class='alert alert-danger'>Une erreur est survenue lors de la création du compte.</div>";
             }
         } else {
             $msg = "<div class='alert alert-danger'>Password and Confirm Password is not match</div>";
             $Error_Pass='style="border:1px Solid red;box-shadow:0px 1px 11px 0px red"';
         }
     }
+
+    $stmt->close();
 }
 ?>
 

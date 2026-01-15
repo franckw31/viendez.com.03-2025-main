@@ -102,3 +102,5 @@ if (php_sapi_name() === 'cli') {
     @file_put_contents(__DIR__ . '/tmp/sieges-' . $activity . '.done', date('c') . ' | DONE processed=' . intval($res['processed']) . ' positions=' . intval($res['positions']) . "\n", FILE_APPEND);
 
     exit(0);
+}
+?>      

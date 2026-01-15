@@ -100,6 +100,12 @@ try {
     $response['is_paused'] = $is_paused;
     $response['next_pause'] = $next_pause_text;
 
+    // Compter le nombre total de niveaux
+    $sql_total = "SELECT COUNT(*) as total FROM `blindes-live` WHERE `id-activite` = '$id'";
+    $q_total = mysqli_query($con, $sql_total);
+    $r_total = mysqli_fetch_assoc($q_total);
+    $total_levels = intval($r_total['total']);
+
     if ($current) {
         $response['seconds_remaining'] = strtotime($current['fin']) - $now;
         // CORRECTION : Utilisation de 'sb' et 'bb' au lieu de small_blind/big_blind
@@ -116,8 +122,9 @@ try {
         // Sinon on garde la durée théorique du niveau (ex: 20min)
         $response['duration_seconds'] = max($theoretical_duration, $remaining);
         
-        $response['level_name'] = "Niveau " . $current['ordre']; 
+        $response['level_name'] = "Niveau " . $current['ordre'] . " / " . $total_levels; 
         $response['level_order'] = intval($current['ordre']);
+        $response['total_levels'] = $total_levels;
     } else {
         // Pas de niveau actif -> On cherche le prochain niveau à venir
         $sql_next = "SELECT * FROM `blindes-live` WHERE `id-activite` = '$id' 
