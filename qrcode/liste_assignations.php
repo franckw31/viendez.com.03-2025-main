@@ -53,7 +53,7 @@ if (strlen($_SESSION['id']) == 0) {
     }
 
     // Requête pour lister les QR codes et leurs propriétaires
-    $sql = "SELECT c.id_collection, c.nom, c.valeur, m.`id-membre`, m.pseudo, m.fname, m.lname 
+    $sql = "SELECT c.id_collection, c.nom, c.valeur, m.`id-membre`, m.pseudo, m.fname, m.lname, ci.`date` 
             FROM collections c
             LEFT JOIN `collections-individu` ci ON c.id_collection = ci.id_col
             LEFT JOIN membres m ON ci.`id-indiv` = m.`id-membre`
@@ -143,9 +143,10 @@ if (strlen($_SESSION['id']) == 0) {
                                                                         <table id="assignationTable" class="table table-hover w-100">
                                                                             <thead>
                                                                                 <tr>
-                                                                                    <th style="width: 35%;">QRcode</th>
-                                                                                    <th style="width: 15%;">Valeur</th>
-                                                                                    <th style="width: 30%;">Propriétaire</th>
+                                                                                    <th style="width: 30%;">QRcode</th>
+                                                                                    <th style="width: 12%;">Valeur</th>
+                                                                                    <th style="width: 23%;">Propriétaire</th>
+                                                                                    <th style="width: 15%;">Date</th>
                                                                                     <th style="width: 20%;">Actions</th>
                                                                                 </tr>
                                                                             </thead>
@@ -163,6 +164,13 @@ if (strlen($_SESSION['id']) == 0) {
                                                                                             <span class="owner-found"><?php echo htmlspecialchars($row['pseudo']); ?></span>
                                                                                         <?php else: ?>
                                                                                             <span class="owner-none">Non assigné</span>
+                                                                                        <?php endif; ?>
+                                                                                    </td>
+                                                                                    <td>
+                                                                                        <?php if ($row['date']): ?>
+                                                                                            <?php echo htmlspecialchars(date('d/m/Y', strtotime($row['date']))); ?>
+                                                                                        <?php else: ?>
+                                                                                            <span class="owner-none">-</span>
                                                                                         <?php endif; ?>
                                                                                     </td>
                                                                                     <td>

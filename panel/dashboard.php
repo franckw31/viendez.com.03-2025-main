@@ -14,6 +14,14 @@ if (strlen($_SESSION['login']) == 0) {
 		$r_u = mysqli_fetch_array($q_u);
 		$_SESSION['id'] = $r_u['id-membre'];
 	}
+	
+	// Vérifier si l'utilisateur est admin
+	$is_admin = false;
+	$q_admin = mysqli_query($con, "SELECT statut FROM membres WHERE `id-membre` = " . intval($_SESSION['id']));
+	$r_admin = mysqli_fetch_array($q_admin);
+	if ($r_admin && $r_admin['statut'] === 'admin') {
+		$is_admin = true;
+	}
 
 	?>
 	<!DOCTYPE html>
@@ -179,6 +187,25 @@ if (strlen($_SESSION['login']) == 0) {
 									<div class="card-icon"><i class="fa fa-qrcode"></i></div>
 									<div class="card-title">Gestion QRcodes</div>
 									<div class="card-description">Créer, imprimer et vérifier les codes</div>
+								</a>
+							</div>
+							<div class="col-sm-4">
+								<?php 
+								$result_current_act = mysqli_query($con, "SELECT `id-activite` FROM activite WHERE date_depart <= NOW()  ORDER BY date_depart DESC LIMIT 1");
+								$row_current_act = mysqli_fetch_array($result_current_act);
+								$current_act_id = isset($row_current_act['id-activite']) ? $row_current_act['id-activite'] : 0;
+								?>
+								<a href="fullscreen-timer.php?uid=<?php echo $current_act_id; ?>" class="dashboard-card card-blue">
+									<div class="card-icon"><i class="fa fa-hourglass-start"></i></div>
+									<div class="card-title">Activité en Cours</div>
+									<div class="card-description">Timer en plein écran</div>
+								</a>
+							</div>
+							<div class="col-sm-4">
+								<a href="fullscreen-player-simple.php?uid=<?php echo $current_act_id; ?>" class="dashboard-card card-red">
+									<div class="card-icon"><i class="fa fa-user-times"></i></div>
+									<div class="card-title">Éliminations Rapides</div>
+									<div class="card-description">Gérer les éliminations</div>
 								</a>
 							</div>
 						</div>

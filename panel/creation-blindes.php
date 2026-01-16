@@ -4,7 +4,7 @@ error_reporting(0);
 $_SESSION["cptblinde"] = '1';
 include ('include/config.php');
 $activite = intval($_GET['act']); // get value
-$source = intval($_GET['sou']); // get value
+$source = isset($_GET['sou']) ? rawurldecode($_GET['sou']) : ''; // get value (may be full URL)
 $zero = intval($_GET['zero']); // get value
 $req1 = mysqli_query($con, "SELECT  * FROM `activite` WHERE `id-activite` = '$activite' ");
 $req1b = mysqli_query($con, "DELETE FROM `blindes-live` WHERE `id-activite` = '$activite' ");
@@ -60,8 +60,10 @@ while ($res1 = mysqli_fetch_array($req1)) {
 }
 ;
 ?>
+<?php
+// Redirect back to source if provided, else fallback to activite view
+$redirectUrl = $source !== '' ? $source : "/panel/voir-activite.php?uid=" . $activite;
+?>
 <script language="JavaScript" type="text/javascript">
-    window.location.replace("/panel/voir-activite.php?uid=<?php echo $activite ?>");
-</script>';
-<!-- <script language="JavaScript" type="text/javascript"> window.location.replace("addon.php?id=<?php echo $id ?>&ac=<?php echo $id_activite ?>&source=<?php echo "https://poker31.org/panel/voir-activite.php?uid=" ?>");  -->
+    window.location.replace("<?php echo htmlspecialchars($redirectUrl, ENT_QUOTES, 'UTF-8'); ?>");
 </script>

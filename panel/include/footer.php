@@ -1,12 +1,8 @@
 <footer>
-			<div class="footer-inner">
-				<div class="float-start">
+			<div class="footer-inner" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: nowrap;">
 				<span class="text-bold text-uppercase"> C(2025) Franck W | <a href="/panel/dashboard.php">Dashboard</a></span>
-				</div>
-				<div class="float-end">
-					<span id="current-time"></span>
-					<span class="go-top"><i class="ti-angle-up"></i></span>
-				</div>
+				<span id="current-time"></span>
+				<span class="go-top"><i class="ti-angle-up"></i></span>
 			</div>
 		</footer>
 		<script>

@@ -12,6 +12,8 @@ if (strlen($_SESSION['id']) == 0) {
 
 $id = intval($_GET['uid']);
 $_SESSION["act"] = $id;
+$currentUrl = $_SERVER['REQUEST_URI'] ?? '';
+$resetBlindsUrl = 'https://viendez.com/panel/creation-blindes.php?zero=1&act=' . $id . '&sou=' . rawurlencode($currentUrl);
 
 // --- CALCUL DES STATS JOUEURS (STACK MOYEN & JOUEURS RESTANTS) ---
 $act_query = mysqli_query($con, "SELECT jetons, recave_jetons FROM activite WHERE `id-activite` = '$id'");
@@ -380,7 +382,13 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
     </a>
     
     <!-- Heure en haut à droite -->
-    <div class="top-right-clock" id="real-time-clock">Il est --:--</div>
+    <a href="<?php echo htmlspecialchars($resetBlindsUrl, ENT_QUOTES, 'UTF-8'); ?>" 
+       class="top-right-clock" 
+       id="real-time-clock"
+       onclick="return confirm('Êtes-vous sûr de vouloir réinitialiser les blindes ?');"
+       style="cursor: pointer; text-decoration: none; color: white;">
+        Il est --:--
+    </a>
     
     <div class="timer-container">
         

@@ -1,0 +1,549 @@
+<?php
+session_start();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+include('include/config.php');
+
+// Vérification de session
+if (strlen($_SESSION['id']) == 0) {
+    header('location:logout.php');
+    exit;
+}
+
+$id = intval($_GET['uid']);
+$_SESSION["act"] = $id;
+
+// Traitement annulation dernière élimination
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['annuler_derniere'])) {
+    try {
+        // Trouver la dernière élimination de cette activité
+        $q_derniere = mysqli_query($con, "SELECT e.id, e.id_participation, e.is_definitive FROM eliminations e 
+                                          WHERE e.id_activite = $id 
+                                          ORDER BY e.created_at DESC LIMIT 1");
+        
+        if (mysqli_num_rows($q_derniere) > 0) {
+            $derniere = mysqli_fetch_array($q_derniere);
+            $elim_id = intval($derniere['id']);
+            $participation_id = intval($derniere['id_participation']);
+            $is_definitive = intval($derniere['is_definitive']);
+            
+            // Supprimer l'élimination
+            $delete_result = mysqli_query($con, "DELETE FROM eliminations WHERE id = $elim_id");
+            
+            if ($delete_result) {
+                if ($is_definitive == 1) {
+                    // Réinitialiser classement et vainqueur
+                    mysqli_query($con, "UPDATE participation SET 
+                        classement = 0,
+                        `nom-membre-vainqueur` = '',
+                        `id-membre-vainqueur` = 0
+                        WHERE `id-participation` = $participation_id");
+                } else {
+                    // Réduire recave et réinitialiser vainqueur
+                    mysqli_query($con, "UPDATE participation SET 
+                        recave = GREATEST(0, recave - 1),
+                        `nom-membre-vainqueur` = '',
+                        `id-membre-vainqueur` = 0
+                        WHERE `id-participation` = $participation_id");
+                }
+                $_SESSION['msg'] = 'Dernière élimination annulée';
+            } else {
+                $_SESSION['msg'] = 'Erreur lors de l\'annulation: ' . mysqli_error($con);
+            }
+        } else {
+            $_SESSION['msg'] = 'Aucune élimination à annuler';
+        }
+    } catch (Exception $e) {
+        $_SESSION['msg'] = 'Exception: ' . $e->getMessage();
+    }
+    
+    header("Location: fullscreen-player-simple.php?uid=" . $id);
+    exit;
+}
+
+// Traitement de l'élimination
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminer'])) {
+    try {
+        $joueur_elimine = intval($_POST['id_joueur_elimine']);
+        $joueur_eliminant = intval($_POST['id_joueur_eliminant']);
+        $type_elimination = mysqli_real_escape_string($con, $_POST['type_elimination']); // 'definitive' ou 'recave'
+        
+        if ($joueur_elimine == 0 || $joueur_eliminant == 0) {
+            $_SESSION['msg'] = 'Erreur: Veuillez sélectionner les deux joueurs';
+            header("Location: fullscreen-player-simple.php?uid=" . $id);
+            exit;
+        }
+        
+        // Récupérer les informations du joueur éliminant
+        $q_eliminant = mysqli_query($con, "SELECT m.`id-membre`, m.pseudo FROM participation p 
+                                            LEFT JOIN membres m ON p.`id-membre` = m.`id-membre` 
+                                            WHERE p.`id-participation` = $joueur_eliminant");
+        $eliminant_data = mysqli_fetch_array($q_eliminant);
+        $eliminant_membre_id = intval($eliminant_data['id-membre']);
+        $eliminant_nom = mysqli_real_escape_string($con, $eliminant_data['pseudo']);
+        
+        // Récupérer les informations du joueur éliminé (victime)
+        $q = mysqli_query($con, "SELECT p.`id-participation`, p.`id-membre`, p.`nom-membre` 
+                                  FROM `participation` p 
+                                  WHERE p.`id-participation` = $joueur_elimine AND p.`id-activite` = $id");
+        
+        if (!$q) {
+            $_SESSION['msg'] = 'Erreur SQL SELECT: ' . mysqli_error($con);
+            header("Location: fullscreen-player-simple.php?uid=" . $id);
+            exit;
+        }
+        
+        if (mysqli_num_rows($q) > 0) {
+            $row = mysqli_fetch_array($q);
+            $participation_id = $row['id-participation'];
+            $victime_membre_id = intval($row['id-membre']);
+            $victime_nom = mysqli_real_escape_string($con, $row['nom-membre']);
+            
+            if ($type_elimination === 'definitive') {
+                // Enregistrer l'élimination définitive dans la table eliminations avec toutes les colonnes
+                $insert_elim = mysqli_query($con, "INSERT INTO `eliminations` 
+                    (id_participation, id_membre, nom_membre, id_membre_victime, nom_membre_victime, is_definitive, id_activite, created_at) 
+                    VALUES 
+                    ($participation_id, $eliminant_membre_id, '$eliminant_nom', $victime_membre_id, '$victime_nom', 1, $id, NOW())");
+                
+                if (!$insert_elim) {
+                    $_SESSION['msg'] = 'Erreur SQL INSERT elimination: ' . mysqli_error($con);
+                } else {
+                    // Calculer le classement
+                    $count_total_query = mysqli_query($con, "SELECT COUNT(*) as total FROM `participation` WHERE `id-activite` = '$id'");
+                    $row_total = mysqli_fetch_assoc($count_total_query);
+                    $total_joueurs = intval($row_total['total']);
+
+                    $count_elim_query = mysqli_query($con, "SELECT COUNT(*) as elimines FROM `participation` WHERE `id-activite` = '$id' AND `classement` > 0 AND `id-participation` != '$participation_id'");
+                    $row_elim = mysqli_fetch_assoc($count_elim_query);
+                    $nb_deja_elimines = intval($row_elim['elimines']);
+
+                    $classement = $total_joueurs - $nb_deja_elimines;
+                    if ($classement < 1) $classement = 1;
+                    
+                    // Mettre à jour avec classement, bounty et sorti(e) par
+                    $update_result = mysqli_query($con, "UPDATE participation SET 
+                        classement = $classement,
+                        `nom-membre-vainqueur` = '$eliminant_nom',
+                        `id-membre-vainqueur` = $eliminant_membre_id
+                        WHERE `id-participation` = $participation_id");
+                    
+                    if (!$update_result) {
+                        $_SESSION['msg'] = 'Erreur SQL UPDATE classement: ' . mysqli_error($con);
+                    } else {
+                        $_SESSION['msg'] = 'Élimination définitive enregistrée (Classé '.$classement.'e)';
+                    }
+                }
+            } else {
+                // Enregistrer une recave (élimination non définitive) dans la table eliminations
+                $insert_recave = mysqli_query($con, "INSERT INTO `eliminations` 
+                    (id_participation, id_membre, nom_membre, id_membre_victime, nom_membre_victime, is_definitive, id_activite, created_at) 
+                    VALUES 
+                    ($participation_id, $eliminant_membre_id, '$eliminant_nom', $victime_membre_id, '$victime_nom', 0, $id, NOW())");
+                
+                if (!$insert_recave) {
+                    $_SESSION['msg'] = 'Erreur SQL INSERT recave: ' . mysqli_error($con);
+                } else {
+                    // Mettre à jour recave et bounty (sorti(e) par)
+                    $update_recave = mysqli_query($con, "UPDATE participation SET 
+                        recave = recave + 1,
+                        `nom-membre-vainqueur` = '$eliminant_nom',
+                        `id-membre-vainqueur` = $eliminant_membre_id
+                        WHERE `id-participation` = $participation_id");
+                    
+                    if (!$update_recave) {
+                        $_SESSION['msg'] = 'Erreur SQL UPDATE recave: ' . mysqli_error($con);
+                    } else {
+                        $_SESSION['msg'] = 'Recave enregistrée';
+                    }
+                }
+            }
+        } else {
+            $_SESSION['msg'] = 'Joueur non trouvé dans cette activité';
+        }
+    } catch (Exception $e) {
+        $_SESSION['msg'] = 'Exception: ' . $e->getMessage();
+    }
+    
+    // Redirection pour éviter la resoumission du formulaire
+    header("Location: fullscreen-player-simple.php?uid=" . $id);
+    exit;
+}
+
+// Récupérer le titre de l'activité
+$act_query = mysqli_query($con, "SELECT `titre-activite` FROM `activite` WHERE `id-activite` = '$id'");
+$act_row = mysqli_fetch_array($act_query);
+$activity_title = $act_row['titre-activite'];
+
+// Récupérer la liste des joueurs actifs (non définitivement éliminés)
+$joueurs_query = mysqli_query($con, "
+    SELECT 
+        p.`id-participation`,
+        m.pseudo,
+        m.fname,
+        m.lname,
+        p.recave
+    FROM participation p
+    LEFT JOIN membres m ON p.`id-membre` = m.`id-membre`
+    WHERE p.`id-activite` = $id
+    AND p.`id-participation` NOT IN (
+        SELECT id_participation FROM eliminations WHERE is_definitive = 1
+    )
+    ORDER BY m.pseudo ASC
+");
+
+$joueurs = [];
+while ($row = mysqli_fetch_assoc($joueurs_query)) {
+    $joueurs[] = $row;
+}
+
+?>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Éliminations - <?php echo htmlspecialchars($activity_title); ?></title>
+    
+    <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
+    
+    <style>
+        :root {
+            --font-main: 'Raleway', sans-serif;
+            --color-blue: #00d2ff;
+            --color-red: #ff3333;
+            --color-green: #00ff00;
+            --color-yellow: #ffc107;
+        }
+
+        body {
+            background-color: #1a1a1a;
+            color: white;
+            margin: 0;
+            padding: 20px;
+            font-family: var(--font-main);
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('bg.png');
+            background-size: cover;
+            background-position: center;
+            opacity: 0.1;
+            z-index: -1;
+        }
+
+        .header-title {
+            text-align: center;
+            color: var(--color-blue);
+            text-transform: uppercase;
+            font-weight: 700;
+            font-size: 3.5em;
+            margin-bottom: 30px;
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .alert {
+            background-color: rgba(0, 210, 255, 0.1);
+            border: 2px solid var(--color-blue);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .joueurs-list {
+            margin-bottom: 30px;
+        }
+
+        .joueur-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-left: 4px solid var(--color-blue);
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .joueur-item:hover {
+            background: rgba(0, 210, 255, 0.1);
+            border-left-color: var(--color-green);
+            transform: translateX(5px);
+        }
+
+        .joueur-info {
+            flex: 1;
+        }
+
+        .joueur-name {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--color-blue);
+        }
+
+        .joueur-recave {
+            font-size: 0.9em;
+            color: #aaa;
+            margin-top: 5px;
+        }
+
+        .btn-eliminer {
+            background-color: var(--color-red);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-eliminer:hover {
+            background-color: #ff5555;
+            box-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #2a2a2a;
+            border: 2px solid var(--color-blue);
+            border-radius: 10px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            box-shadow: 0 0 30px rgba(0, 210, 255, 0.3);
+        }
+
+        .modal-title {
+            font-size: 1.8em;
+            color: var(--color-blue);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .modal-section {
+            margin-bottom: 25px;
+        }
+
+        .modal-label {
+            font-size: 1.6em;
+            color: white;
+            margin-bottom: 10px;
+            display: block;
+            font-weight: 600;
+        }
+
+        .joueurs-select {
+            width: 100%;
+            padding: 20px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid var(--color-blue);
+            color: white;
+            border-radius: 5px;
+            font-size: 1.6em;
+            font-family: var(--font-main);
+        }
+
+        .joueurs-select option {
+            background: #1a1a1a;
+            color: white;
+        }
+
+        .elimination-types {
+            display: flex;
+            gap: 10px;
+        }
+
+        .type-btn {
+            flex: 1;
+            padding: 25px;
+            border: 2px solid #444;
+            background: rgba(255, 255, 255, 0.05);
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.6em;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .type-btn.active {
+            border-color: var(--color-green);
+            background: rgba(0, 255, 0, 0.2);
+            color: var(--color-green);
+        }
+
+        .type-btn.red {
+            border-color: var(--color-red);
+        }
+
+        .type-btn.red.active {
+            background: rgba(255, 51, 51, 0.2);
+            color: var(--color-red);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-confirm {
+            flex: 1;
+            padding: 20px;
+            background-color: var(--color-blue);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1.6em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-confirm:hover {
+            background-color: #00e8ff;
+            box-shadow: 0 0 10px rgba(0, 210, 255, 0.7);
+        }
+
+        .btn-cancel {
+            flex: 1;
+            padding: 20px;
+            background-color: #444;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 1.6em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-cancel:hover {
+            background-color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-title">
+        <i class="fa fa-user-times"></i> Éliminations <span style="color: #aaa; font-size: 0.8em;">- <?php echo htmlspecialchars($activity_title); ?></span>
+    </div>
+
+    <div class="container">
+        <?php if (!empty($_SESSION['msg'])): ?>
+            <div class="alert">
+                <strong>✓</strong> <?php echo htmlspecialchars($_SESSION['msg']); ?>
+                <?php unset($_SESSION['msg']); ?>
+            </div>
+        <?php endif; ?>
+
+        <div class="joueurs-list">
+            <h3 style="color: var(--color-blue); margin-bottom: 20px; font-size: 1.5em;">
+                Enregistrer une Élimination (<?php echo count($joueurs); ?> joueurs actifs)
+            </h3>
+
+            <?php if (count($joueurs) > 0): ?>
+                <form method="POST" id="eliminationForm">
+                    <div class="modal-section" style="margin-bottom: 25px;">
+                        <label class="modal-label">Joueur Éliminé:</label>
+                        <select class="joueurs-select" name="id_joueur_elimine" required>
+                            <option value="">-- Sélectionner le joueur éliminé --</option>
+                            <?php foreach ($joueurs as $j): ?>
+                                <option value="<?php echo $j['id-participation']; ?>">
+                                    <?php echo htmlspecialchars($j['pseudo']); ?> (Recaves: <?php echo $j['recave']; ?>)
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="modal-section" style="margin-bottom: 25px;">
+                        <label class="modal-label">Joueur Éliminant:</label>
+                        <select class="joueurs-select" name="id_joueur_eliminant" required>
+                            <option value="">-- Sélectionner le joueur éliminant --</option>
+                            <?php foreach ($joueurs as $j): ?>
+                                <option value="<?php echo $j['id-participation']; ?>">
+                                    <?php echo htmlspecialchars($j['pseudo']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="modal-section" style="margin-bottom: 25px;">
+                        <label class="modal-label">Type d'Élimination:</label>
+                        <div class="elimination-types">
+                            <button type="button" class="type-btn active" data-type="recave">
+                                <i class="fa fa-refresh"></i> Recave
+                            </button>
+                            <button type="button" class="type-btn red" data-type="definitive">
+                                <i class="fa fa-power-off"></i> Définitive
+                            </button>
+                        </div>
+                        <input type="hidden" name="type_elimination" id="typeElimination" value="recave">
+                    </div>
+
+                    <div class="modal-buttons">
+                        <button type="submit" name="eliminer" class="btn-confirm">
+                            <i class="fa fa-check"></i> Confirmer
+                        </button>
+                    </div>
+                </form>
+
+                <form method="POST" style="margin-top: 20px;">
+                    <button type="submit" name="annuler_derniere" class="btn-cancel" style="width: 100%; padding: 15px;">
+                        <i class="fa fa-undo"></i> Annuler dernière élimination
+                    </button>
+                </form>
+            <?php else: ?>
+                <div style="text-align: center; padding: 40px; color: #aaa;">
+                    <i class="fa fa-check-circle" style="font-size: 3em; margin-bottom: 10px; display: block;"></i>
+                    Aucun joueur actif
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <script>
+        // Gestion des boutons de type d'élimination
+        document.querySelectorAll('.type-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById('typeElimination').value = this.dataset.type;
+            });
+        });
+    </script>
+</body>
+</html>

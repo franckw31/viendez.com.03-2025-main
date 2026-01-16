@@ -299,7 +299,7 @@ if (strlen($_SESSION['login']) == 0) {
 							<div class="col-sm-4">
 								<div class="dashboard-card card-orange">
 									<div class="card-icon"><i class="fa fa-cutlery"></i></div>
-									<div class="card-title">Variante du Rake</div>
+									<div class="card-title">PAF Obligatoire</div>
 									<div class="card-stat" style="font-size: 14px; font-weight: normal; text-align: left; padding-left: 20px;">
 										<form method="post">
 											<input type="hidden" name="quick_reg" value="1">
@@ -307,7 +307,7 @@ if (strlen($_SESSION['login']) == 0) {
 											$user_id = intval($_SESSION['id']);
 											$id_act = intval($row_act['id-activite']);
 											$q_rake = mysqli_query($con, "SELECT * FROM rake ORDER BY id_rake ASC");
-											$q_p_rake = mysqli_query($con, "SELECT `id_rake` FROM participation WHERE `id-membre` = '$user_id' AND `id-activite` = '$id_act'");
+											$q_p_rake = mysqli_query($con, "SELECT `id_rake` FROM activite WHERE `id-activite` = '$id_act'");
 											$r_p_rake = mysqli_fetch_array($q_p_rake);
 											$current_rake = $r_p_rake ? $r_p_rake['id_rake'] : 1;
 
