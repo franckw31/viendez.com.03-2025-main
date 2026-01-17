@@ -101,14 +101,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminer'])) {
             
             if ($type_elimination === 'definitive') {
                 // Enregistrer l'élimination définitive dans la table eliminations avec toutes les colonnes
-                $insert_elim = mysqli_query($con, "INSERT INTO `eliminations` 
+                $sql_elim = "INSERT INTO `eliminations` 
                     (id_participation, id_membre, nom_membre, id_membre_victime, nom_membre_victime, is_definitive, id_activite, created_at) 
                     VALUES 
-                    ($participation_id, $eliminant_membre_id, '$eliminant_nom', $victime_membre_id, '$victime_nom', 1, $id, NOW())");
+                    ($participation_id, $eliminant_membre_id, '$eliminant_nom', $victime_membre_id, '$victime_nom', 1, $id, NOW())";
+                
+                error_log("DEBUG - SQL DEFINITIVE: " . $sql_elim);
+                $insert_elim = mysqli_query($con, $sql_elim);
                 
                 if (!$insert_elim) {
                     $_SESSION['msg'] = 'Erreur SQL INSERT elimination: ' . mysqli_error($con);
+                    error_log("DEBUG - INSERT FAILED: " . mysqli_error($con));
                 } else {
+                    error_log("DEBUG - INSERT SUCCESS");
                     // Calculer le classement
                     $count_total_query = mysqli_query($con, "SELECT COUNT(*) as total FROM `participation` WHERE `id-activite` = '$id'");
                     $row_total = mysqli_fetch_assoc($count_total_query);
@@ -136,14 +141,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['eliminer'])) {
                 }
             } else {
                 // Enregistrer une recave (élimination non définitive) dans la table eliminations
-                $insert_recave = mysqli_query($con, "INSERT INTO `eliminations` 
+                $sql_recave = "INSERT INTO `eliminations` 
                     (id_participation, id_membre, nom_membre, id_membre_victime, nom_membre_victime, is_definitive, id_activite, created_at) 
                     VALUES 
-                    ($participation_id, $eliminant_membre_id, '$eliminant_nom', $victime_membre_id, '$victime_nom', 0, $id, NOW())");
+                    ($participation_id, $eliminant_membre_id, '$eliminant_nom', $victime_membre_id, '$victime_nom', 0, $id, NOW())";
+                
+                error_log("DEBUG - SQL RECAVE: " . $sql_recave);
+                $insert_recave = mysqli_query($con, $sql_recave);
                 
                 if (!$insert_recave) {
                     $_SESSION['msg'] = 'Erreur SQL INSERT recave: ' . mysqli_error($con);
+                    error_log("DEBUG - INSERT RECAVE FAILED: " . mysqli_error($con));
                 } else {
+                    error_log("DEBUG - INSERT RECAVE SUCCESS");
                     // Mettre à jour recave et bounty (sorti(e) par)
                     $update_recave = mysqli_query($con, "UPDATE participation SET 
                         recave = recave + 1,
@@ -203,7 +213,7 @@ while ($row = mysqli_fetch_assoc($joueurs_query)) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Éliminations - <?php echo htmlspecialchars($activity_title); ?></title>
+    <title>Actions - <?php echo htmlspecialchars($activity_title); ?></title>
     
     <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
@@ -247,6 +257,28 @@ while ($row = mysqli_fetch_assoc($joueurs_query)) {
             font-size: 3.5em;
             margin-bottom: 30px;
             text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+        }
+
+        .back-link {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            display: inline-block;
+            color: var(--color-blue);
+            text-decoration: none;
+            font-size: 1.2em;
+            padding: 10px 20px;
+            border: 2px solid var(--color-blue);
+            border-radius: 8px;
+            transition: all 0.3s;
+            z-index: 1000;
+            background-color: rgba(26, 26, 26, 0.9);
+        }
+
+        .back-link:hover {
+            background-color: var(--color-blue);
+            color: #1a1a1a;
+            transform: translateX(-5px);
         }
 
         .container {
@@ -457,8 +489,12 @@ while ($row = mysqli_fetch_assoc($joueurs_query)) {
     </style>
 </head>
 <body>
+    <a href="dashboard.php" class="back-link">
+        <i class="fa fa-arrow-left"></i> Retour
+    </a>
+
     <div class="header-title">
-        <i class="fa fa-user-times"></i> Éliminations <span style="color: #aaa; font-size: 0.8em;">- <?php echo htmlspecialchars($activity_title); ?></span>
+        <i class="fa fa-user-times"></i> Action <span style="color: #aaa; font-size: 0.9em;">- <?php echo htmlspecialchars($activity_title); ?></span>
     </div>
 
     <div class="container">
@@ -475,13 +511,13 @@ while ($row = mysqli_fetch_assoc($joueurs_query)) {
             </h3>
 
             <?php if (count($joueurs) > 0): ?>
-                <form method="POST" id="eliminationForm">
+                <form method="POST" action="fullscreen-player-simple.php?uid=<?php echo $id; ?>" id="eliminationForm" onsubmit="return confirmEliminationForm()">
                     <div class="modal-section" style="margin-bottom: 25px;">
                         <label class="modal-label">Joueur Éliminé:</label>
-                        <select class="joueurs-select" name="id_joueur_elimine" required>
+                        <select class="joueurs-select" name="id_joueur_elimine" id="joueurElimine" required>
                             <option value="">-- Sélectionner le joueur éliminé --</option>
                             <?php foreach ($joueurs as $j): ?>
-                                <option value="<?php echo $j['id-participation']; ?>">
+                                <option value="<?php echo $j['id-participation']; ?>" data-pseudo="<?php echo htmlspecialchars($j['pseudo']); ?>">
                                     <?php echo htmlspecialchars($j['pseudo']); ?> (Recaves: <?php echo $j['recave']; ?>)
                                 </option>
                             <?php endforeach; ?>
@@ -490,10 +526,10 @@ while ($row = mysqli_fetch_assoc($joueurs_query)) {
 
                     <div class="modal-section" style="margin-bottom: 25px;">
                         <label class="modal-label">Joueur Éliminant:</label>
-                        <select class="joueurs-select" name="id_joueur_eliminant" required>
+                        <select class="joueurs-select" name="id_joueur_eliminant" id="joueurEliminant" required>
                             <option value="">-- Sélectionner le joueur éliminant --</option>
                             <?php foreach ($joueurs as $j): ?>
-                                <option value="<?php echo $j['id-participation']; ?>">
+                                <option value="<?php echo $j['id-participation']; ?>" data-id="<?php echo $j['id-participation']; ?>" data-pseudo="<?php echo htmlspecialchars($j['pseudo']); ?>">
                                     <?php echo htmlspecialchars($j['pseudo']); ?>
                                 </option>
                             <?php endforeach; ?>
@@ -514,7 +550,7 @@ while ($row = mysqli_fetch_assoc($joueurs_query)) {
                     </div>
 
                     <div class="modal-buttons">
-                        <button type="submit" name="eliminer" class="btn-confirm">
+                        <button type="submit" name="eliminer" value="1" class="btn-confirm">
                             <i class="fa fa-check"></i> Confirmer
                         </button>
                     </div>
@@ -544,6 +580,53 @@ while ($row = mysqli_fetch_assoc($joueurs_query)) {
                 document.getElementById('typeElimination').value = this.dataset.type;
             });
         });
+
+        // Filtrer la liste des éliminants pour ne pas afficher le joueur éliminé
+        document.getElementById('joueurElimine').addEventListener('change', function() {
+            const eliminéId = this.value;
+            const selectEliminant = document.getElementById('joueurEliminant');
+            const options = selectEliminant.querySelectorAll('option[data-id]');
+            
+            options.forEach(option => {
+                if (option.getAttribute('data-id') === eliminéId) {
+                    option.style.display = 'none';
+                    option.disabled = true;
+                } else {
+                    option.style.display = '';
+                    option.disabled = false;
+                }
+            });
+            
+            // Réinitialiser la sélection de l'éliminant si c'est le même que l'éliminé
+            if (selectEliminant.value === eliminéId) {
+                selectEliminant.value = '';
+            }
+        });
+
+        // Confirmation avant soumission
+        function confirmEliminationForm() {
+            const selectElimine = document.getElementById('joueurElimine');
+            const selectEliminant = document.getElementById('joueurEliminant');
+            const typeElimination = document.getElementById('typeElimination').value;
+            
+            if (!selectElimine.value || !selectEliminant.value) {
+                alert('Veuillez sélectionner les deux joueurs');
+                return false;
+            }
+            
+            const pseudoElimine = selectElimine.options[selectElimine.selectedIndex].getAttribute('data-pseudo');
+            const pseudoEliminant = selectEliminant.options[selectEliminant.selectedIndex].getAttribute('data-pseudo');
+            
+            const typeTexte = typeElimination === 'definitive' ? 'DÉFINITIVE' : 'RECAVE';
+            
+            const message = `Confirmer l'élimination ?\n\n` +
+                          `👤 Éliminé: ${pseudoElimine}\n` +
+                          `⚔️  Éliminant: ${pseudoEliminant}\n` +
+                          `📋 Type: ${typeTexte}\n\n` +
+                          `Voulez-vous continuer ?`;
+            
+            return confirm(message);
+        }
     </script>
 </body>
 </html>

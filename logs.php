@@ -2,6 +2,51 @@
 require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/include/functions_logs.php';
 
+// Fonction pour géolocaliser une IP
+function getCity($ip) {
+    // Vérifier si c'est une IP locale
+    if (in_array($ip, array('127.0.0.1', '::1', 'localhost'))) {
+        return 'Local';
+    }
+    
+    // Utiliser l'API ip-api.com (gratuit, max 45 req/min)
+    static $cache = array();
+    
+    if (isset($cache[$ip])) {
+        return $cache[$ip];
+    }
+    
+    $url = 'https://get.geojs.io/v1/ip/geo/' . urlencode($ip) . '.json';
+    $context = stream_context_create(array(
+        'http' => array(
+            'timeout' => 3,
+            'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        ),
+        'ssl' => array(
+            'verify_peer' => false,
+            'verify_peer_name' => false
+        )
+    ));
+    
+    $response = @file_get_contents($url, false, $context);
+    if ($response) {
+        $data = json_decode($response, true);
+        if ($data && isset($data['city']) && !empty($data['city'])) {
+            $city = $data['city'];
+            if (isset($data['country_name']) && !empty($data['country_name'])) {
+                $city .= ' (' . $data['country_name'] . ')';
+            }
+        } else {
+            $city = 'Inconnu';
+        }
+    } else {
+        $city = 'N/A';
+    }
+    
+    $cache[$ip] = $city;
+    return $city;
+}
+
 // Check if user is admin (ID 265)
 if (!isset($_SESSION['id']) || $_SESSION['id'] != 265) {
     // For now, let's just allow it if we are in dev, but normally:
@@ -42,6 +87,7 @@ $result = mysqli_query($conx, $query);
                     <th>Source</th>
                     <th>Détails</th>
                     <th>IP</th>
+                    <th>Ville</th>
                 </tr>
             </thead>
             <tbody>
@@ -53,7 +99,7 @@ $result = mysqli_query($conx, $query);
                     <td><strong><?php echo htmlspecialchars($row['source']); ?></strong></td>
                     <td><?php echo htmlspecialchars($row['details']); ?></td>
                     <td><?php echo $row['ip_address']; ?></td>
-                </tr>
+                    <td><?php echo getCity($row['ip_address']); ?></td>
                 <?php endwhile; ?>
             </tbody>
         </table>

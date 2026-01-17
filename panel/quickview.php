@@ -48,6 +48,22 @@ if (strlen($_SESSION['login']) == 0) {
 		$r_u = mysqli_fetch_array($q_u);
 		$_SESSION['id'] = $r_u['id-membre'];
 	}
+	
+	// Vérifier si l'utilisateur est admin et récupérer sa photo
+	$is_admin = false;
+	$user_photo = null;
+	$user_pseudo = $_SESSION['login'];
+	if (isset($_SESSION['id']) && $_SESSION['id'] > 0) {
+		$q_admin = mysqli_query($con, "SELECT `droits`, `photo`, `pseudo` FROM `membres` WHERE `id-membre` = " . intval($_SESSION['id']));
+		if ($q_admin && mysqli_num_rows($q_admin) > 0) {
+			$r_admin = mysqli_fetch_array($q_admin);
+			if ($r_admin && isset($r_admin['droits']) && intval($r_admin['droits']) === 2) {
+				$is_admin = true;
+			}
+			$user_photo = isset($r_admin['photo']) ? $r_admin['photo'] : null;
+			$user_pseudo = isset($r_admin['pseudo']) ? $r_admin['pseudo'] : $_SESSION['login'];
+		}
+	}
 	$user_id = $_SESSION['id'];
 	log_activity($con, "Quickview Access", "Activity ID: $id_act");
 
@@ -177,7 +193,18 @@ if (strlen($_SESSION['login']) == 0) {
 								<div class="col-sm-12 text-center">
 									<!-- <h1 class="mainTitle">Tableau de Bord</h1> -->
                                      <span class="mainDescription">.</span>
-									<h2 class="mainTitle" style="color:white" >Bienvenue sur votre espace d'inscription</h2>
+									<div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+										<a href="voir-membre.php?id=<?php echo $_SESSION['id']; ?>" style="text-decoration: none;">
+											<?php if ($user_photo && !empty($user_photo)) { ?>
+												<img src="/images/faces/<?php echo htmlspecialchars($user_photo, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($_SESSION['login']); ?>" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #00d2ff;">
+											<?php } else { ?>
+												<div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: bold; border: 3px solid #00d2ff;">
+													<?php echo strtoupper(substr($_SESSION['login'], 0, 1)); ?>
+												</div>
+											<?php } ?>
+										</a>
+										<h2 class="mainTitle" style="color:white; margin: 0; font-size: 3.5em;" ><?php echo $is_admin ? 'Bienvenue Admin' : ('Bienvenue ' . htmlspecialchars($user_pseudo)); ?></h2>
+									</div>
 									<a href="fullscreen-timer.php?uid=<?php echo $id_act; ?>" style="text-decoration: none;">
 										<h1 style="color: #3c6fdfff; font-weight: bold; margin-top: 10px; text-transform: uppercase; letter-spacing: 3px; font-size: 32px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
 											<?php echo htmlentities($row_act['titre-activite']); ?>

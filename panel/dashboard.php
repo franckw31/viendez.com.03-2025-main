@@ -1,6 +1,7 @@
 <?php
 session_start();
-error_reporting(0);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 include('include/config.php');
 
 if (strlen($_SESSION['login']) == 0) {
@@ -15,12 +16,20 @@ if (strlen($_SESSION['login']) == 0) {
 		$_SESSION['id'] = $r_u['id-membre'];
 	}
 	
-	// Vérifier si l'utilisateur est admin
+	// Vérifier si l'utilisateur est admin et récupérer sa photo
 	$is_admin = false;
-	$q_admin = mysqli_query($con, "SELECT statut FROM membres WHERE `id-membre` = " . intval($_SESSION['id']));
-	$r_admin = mysqli_fetch_array($q_admin);
-	if ($r_admin && $r_admin['statut'] === 'admin') {
-		$is_admin = true;
+	$user_photo = null;
+	$user_pseudo = $_SESSION['login'];
+	if (isset($_SESSION['id']) && $_SESSION['id'] > 0) {
+		$q_admin = mysqli_query($con, "SELECT `droits`, `photo`, `pseudo` FROM `membres` WHERE `id-membre` = " . intval($_SESSION['id']));
+		if ($q_admin && mysqli_num_rows($q_admin) > 0) {
+			$r_admin = mysqli_fetch_array($q_admin);
+			if ($r_admin && isset($r_admin['droits']) && intval($r_admin['droits']) === 2) {
+				$is_admin = true;
+			}
+			$user_photo = isset($r_admin['photo']) ? $r_admin['photo'] : null;
+			$user_pseudo = isset($r_admin['pseudo']) ? $r_admin['pseudo'] : $_SESSION['login'];
+		}
 	}
 
 	?>
@@ -63,16 +72,21 @@ if (strlen($_SESSION['login']) == 0) {
 						<!-- Page Title -->
 						<section id="page-title">
 							<div class="row">
-								<div class="col-sm-8">
+								<div class="col-sm-12 text-center">
 									<!-- <h1 class="mainTitle">Tableau de Bord</h1> -->
                                      <span class="mainDescription">.</span>
-									<h2 class="mainTitle" style="color:white" >Bienvenue sur votre espace d'admin</h2>
-                                    
-								</div>
-								<!-- <ol class="breadcrumb">
-									<li><span>Admin</span></li>
-									<li class="active"><span>Dashboard</span></li>
-								</ol> -->
+									<div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+								<a href="voir-membre.php?id=<?php echo $_SESSION['id']; ?>" style="text-decoration: none;">
+									<?php if ($user_photo && !empty($user_photo)) { ?>
+										<img src="/images/faces/<?php echo htmlspecialchars($user_photo, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($_SESSION['login']); ?>" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #00d2ff;">
+									<?php } else { ?>
+										<div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: bold; border: 3px solid #00d2ff;">
+											<?php echo strtoupper(substr($_SESSION['login'], 0, 1)); ?>
+										</div>
+									<?php } ?>
+								</a>
+								<h2 class="mainTitle" style="color:white; margin: 0; font-size: 3.5em;" ><?php echo $is_admin ? 'Bienvenue Admin' : ('Bienvenue ' . htmlspecialchars($user_pseudo)); ?></h2>
+							</div>
 							</div>
 						</section>
 
@@ -81,7 +95,6 @@ if (strlen($_SESSION['login']) == 0) {
 							<div class="col-sm-4">
 								<a href="prochaines-activites.php" class="dashboard-card card-blue">
 									<div class="card-icon"><i class="fa fa-rocket" style="background: linear-gradient(45deg, #FF512F 0%, #DD2476 50%, #FF512F 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; display: inline-block;"></i></div>
-									<div class="card-title">Prochaines Activités</div>
 									<div class="card-stat">
 										<?php 
 										$result_next = mysqli_query($con, "SELECT COUNT(*) as total FROM activite WHERE date_depart >= CURDATE()");
@@ -126,6 +139,7 @@ if (strlen($_SESSION['login']) == 0) {
 						
 						<!-- Gestion -->
 						<div class="row">
+							<?php if ($is_admin) { ?>
 							<div class="col-sm-4">
 								<a href="liste-membres-container.php" class="dashboard-card">
 									<div class="card-icon"><i class="fa fa-user"></i></div>
@@ -139,6 +153,7 @@ if (strlen($_SESSION['login']) == 0) {
 									<div class="card-description">Ajouter, modifier ou supprimer des membres</div>
 								</a>
 							</div>
+							<?php } ?>
 							<div class="col-sm-4">
 								<a href="liste-membres-challenge-itm.php" class="dashboard-card card-purple">
 									<div class="card-icon"><i class="fa fa-trophy"></i></div>
@@ -171,6 +186,7 @@ if (strlen($_SESSION['login']) == 0) {
 									<div class="card-description">Consulter les règles du club</div>
 								</a>
 							</div>
+							<?php if ($is_admin) { ?>
 							<div class="col-sm-4">
 								<a href="quick-part.php" class="dashboard-card">
 									<div class="card-icon"><i class="fa fa-search"></i></div>
@@ -178,10 +194,12 @@ if (strlen($_SESSION['login']) == 0) {
 									<div class="card-description">Trouver un membre ou une info</div>
 								</a>
 							</div>
+							<?php } ?>
 						</div>
 
 						<!-- QR Codes -->
 						<div class="row">
+							<?php if ($is_admin) { ?>
 							<div class="col-sm-4">
 								<a href="/panel/qrcodes.php" class="dashboard-card card-green">
 									<div class="card-icon"><i class="fa fa-qrcode"></i></div>
@@ -189,6 +207,7 @@ if (strlen($_SESSION['login']) == 0) {
 									<div class="card-description">Créer, imprimer et vérifier les codes</div>
 								</a>
 							</div>
+							<?php } ?>
 							<div class="col-sm-4">
 								<?php 
 								$result_current_act = mysqli_query($con, "SELECT `id-activite` FROM activite WHERE date_depart <= NOW()  ORDER BY date_depart DESC LIMIT 1");
@@ -201,6 +220,7 @@ if (strlen($_SESSION['login']) == 0) {
 									<div class="card-description">Timer en plein écran</div>
 								</a>
 							</div>
+							<?php if ($is_admin) { ?>
 							<div class="col-sm-4">
 								<a href="fullscreen-player-simple.php?uid=<?php echo $current_act_id; ?>" class="dashboard-card card-red">
 									<div class="card-icon"><i class="fa fa-user-times"></i></div>
@@ -208,6 +228,7 @@ if (strlen($_SESSION['login']) == 0) {
 									<div class="card-description">Gérer les éliminations</div>
 								</a>
 							</div>
+							<?php } ?>
 						</div>
 
 					</div>
