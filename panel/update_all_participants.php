@@ -30,15 +30,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
     
-    $sql = "UPDATE participation 
-            SET valide = ?,
-                `option` = CASE WHEN ? = 'Actif' THEN 'Présent' ELSE 'Réservation' END
-            WHERE `id-membre` = ? AND `id-activite` = ?";
-            
-    $stmt = mysqli_prepare($conn, $sql);
-    if (!$stmt) {
-        error_log("Failed to prepare statement: " . mysqli_error($conn));
-        echo json_encode(['success' => false, 'error' => 'Failed to prepare statement']);
+    mysqli_set_charset($conn, 'utf8mb4');
+    
+    // Vérifier les permissions : seul un admin ou l'organisateur de l'activité peut modifier
+    $current_user_id = $_SESSION['id'];
+    $is_admin = false;
+    $is_organizer = false;
+    
+    // Vérifier si l'utilisateur est admin (droits = 2)
+    $admin_check = mysqli_query($conn, "SELECT droits FROM membres WHERE `id-membre` = " . (int)$current_user_id);
+    if (!$admin_check) {
+        error_log("Admin check failed: " . mysqli_error($conn));
+        echo json_encode(['success' => false, 'error' => 'Erreur SQL']);
+        mysqli_close($conn);
+        exit;
+    }
+    
+    $admin_row = mysqli_fetch_assoc($admin_check);
+    $is_admin = ($admin_row && (int)$admin_row['droits'] == 2);
+    
+    // Vérifier si l'utilisateur est l'organisateur de l'activité
+    $organizer_check = mysqli_query($conn, "SELECT `id-membre` FROM activite WHERE `id-activite` = " . (int)$id_activite);
+    if (!$organizer_check) {
+        error_log("Organizer check failed: " . mysqli_error($conn));
+        echo json_encode(['success' => false, 'error' => 'Erreur SQL']);
+        mysqli_close($conn);
+        exit;
+    }
+    $organizer_row = mysqli_fetch_assoc($organizer_check);
+    $is_organizer = ($organizer_row && (int)$organizer_row['id-membre'] == (int)$current_user_id);
+    
+    // Rejeter si l'utilisateur n'a pas les permissions
+    if (!$is_admin && !$is_organizer) {
+        http_response_code(403);
+        error_log("Permission denied for user $current_user_id trying to modify activity $id_activite");
+        echo json_encode(['success' => false, 'error' => 'Vous n\'avez pas la permission de modifier cette activité']);
+        mysqli_close($conn);
         exit;
     }
     
@@ -49,14 +76,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id_membre = (int)$update['id_membre'];
             $valide = $update['valide'];
             
-            error_log("Processing update for member $id_membre: " . print_r($update, true));
+            error_log("Processing update for member $id_membre with valide=$valide");
             
-            mysqli_stmt_bind_param($stmt, "ssii", 
-                $valide,
-                $valide,
-                $id_membre,
-                $id_activite
-            );
+            // Déterminer la valeur de 'option' en fonction de 'valide'
+            $option = ($valide === 'Actif') ? 'Présent' : 'Réservation';
+            
+            $sql = "UPDATE participation 
+                    SET valide = ?, `option` = ?, `ds` = NOW()
+                    WHERE `id-membre` = ? AND `id-activite` = ?";
+            
+            $stmt = mysqli_prepare($conn, $sql);
+            if (!$stmt) {
+                throw new Exception("Failed to prepare statement: " . mysqli_error($conn));
+            }
+            
+            mysqli_stmt_bind_param($stmt, "ssii", $valide, $option, $id_membre, $id_activite);
             
             if (!mysqli_stmt_execute($stmt)) {
                 throw new Exception("Failed to update member $id_membre: " . mysqli_stmt_error($stmt));
@@ -64,6 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $affected = mysqli_stmt_affected_rows($stmt);
             error_log("Updated member $id_membre - Affected rows: $affected");
+            mysqli_stmt_close($stmt);
         }
         
         mysqli_commit($conn);
@@ -75,7 +110,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         error_log("Error during update: " . $e->getMessage());
         echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     } finally {
-        mysqli_stmt_close($stmt);
         mysqli_close($conn);
     }
 }

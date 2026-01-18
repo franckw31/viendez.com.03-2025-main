@@ -191,8 +191,6 @@ if (strlen($_SESSION['login']) == 0) {
 						<section id="page-title">
 							<div class="row">
 								<div class="col-sm-12 text-center">
-									<!-- <h1 class="mainTitle">Tableau de Bord</h1> -->
-                                     <span class="mainDescription">.</span>
 									<div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
 										<a href="voir-membre.php?id=<?php echo $_SESSION['id']; ?>" style="text-decoration: none;">
 											<?php if ($user_photo && !empty($user_photo)) { ?>
@@ -206,7 +204,7 @@ if (strlen($_SESSION['login']) == 0) {
 										<h2 class="mainTitle" style="color:white; margin: 0; font-size: 3.5em;" ><?php echo $is_admin ? 'Bienvenue Admin' : ('Bienvenue ' . htmlspecialchars($user_pseudo)); ?></h2>
 									</div>
 									<a href="fullscreen-timer.php?uid=<?php echo $id_act; ?>" style="text-decoration: none;">
-										<h1 style="color: #3c6fdfff; font-weight: bold; margin-top: 10px; text-transform: uppercase; letter-spacing: 3px; font-size: 32px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+										<h1 style="color: hsl(51, 72%, 56%); font-weight: bold; margin-top: 10px; text-transform: uppercase; letter-spacing: 3px; font-size: 32px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
 											<?php echo htmlentities($row_act['titre-activite']); ?>
 										</h1>
 									</a>
@@ -226,13 +224,7 @@ if (strlen($_SESSION['login']) == 0) {
 									<div class="card-title"> Rdv: <?php echo date('d/m/Y H:i', strtotime($row_act['date_depart'])); ?></div>
 									<div class="card-stat" style="font-size: 18px;">Buy-in: <?php echo htmlentities($row_act['buyin']); ?>€ , Rake: <?php echo htmlentities($row_act['rake']); ?>€</div>
 									<div class="card-stat" style="font-size: 18px;">Recave(s): <?php echo htmlentities($row_act['recave']); ?> (<?php echo htmlentities($row_act['recave_montant']); ?>€)</div>
-									<div class="card-description" style="color: rgba(255,255,255,0.8); margin-top: 5px;">
-										<?php 
-										$q_total_next = mysqli_query($con, "SELECT COUNT(*) as total FROM activite WHERE date_depart >= CURDATE()");
-										$r_total_next = mysqli_fetch_array($q_total_next);
-										echo $r_total_next['total'];
-										?> activités à venir
-									</div>
+									<div class="card-stat" style="font-size: 18px;">Bounty: <?php echo htmlentities($row_act['bounty']); ?>€</div>
 								</a>
 							</div>
 							<div class="col-sm-4">
@@ -359,7 +351,7 @@ if (strlen($_SESSION['login']) == 0) {
 							<div class="col-sm-4">
 								<a href="voir-membre.php?id=<?php echo $user_id; ?>&tab=col" class="dashboard-card card-yellow">
 									<div class="card-icon" style="color: #ffcc00 !important;"><i class="fa fa-star"></i></div>
-									<div class="card-title">Point(s) de Fidélité</div>
+									<div class="card-title">Ticket(s) de Tombola</div>
 									<div class="card-stat" style="font-size: 24px; color: #ffcc00 !important;">
 										<?php 
 										$q_pts = mysqli_query($con, "SELECT SUM(valeur) as total_points FROM `collections-individu` WHERE `id-indiv` = '$user_id'");
@@ -479,11 +471,11 @@ if (strlen($_SESSION['login']) == 0) {
 											<input type="hidden" name="latereg" id="latereg_input" value="<?php echo $current_latereg; ?>">
 											<div class="radio clip-radio radio-primary" style="margin-bottom: 15px;">
 												<input type="radio" id="reg_inscrit" name="status" value="Inscrit" <?php echo ($is_registered) ? 'checked' : ''; ?> onchange="handleRegistration(this)">
-												<label for="reg_inscrit" style="color: lime; font-weight: bold; font-size: 18px;">INSCRIPTION</label>
+												<label for="reg_inscrit" style="color: #529d18; font-weight: bold; font-size: 18px;">INSCRIPTION</label>
 											</div>
 											<div class="radio clip-radio radio-primary" style="margin-bottom: 15px;">
 												<input type="radio" id="reg_option" name="status" value="Option" <?php echo ($current_status == 'Option') ? 'checked' : ''; ?> onchange="this.form.submit()">
-												<label for="reg_option" style="color: #FFCC00; font-weight: bold; font-size: 18px;">OPTION</label>
+												<label for="reg_option" style="color: rgb(255, 145, 0); font-weight: bold; font-size: 18px;">OPTION</label>
 											</div>
 											<div class="radio clip-radio radio-primary radio-lightred" style="margin-bottom: 5px;">
 												<input type="radio" id="reg_none" name="status" value="None" <?php echo ($current_status == 'None' || $current_status == 'Desinscrit') ? 'checked' : ''; ?> onchange="this.form.submit()">
@@ -491,7 +483,7 @@ if (strlen($_SESSION['login']) == 0) {
 											</div>
 											<div style="margin-top: 10px; text-align: center;">
 												<a href="chat.php<?php echo $target_group_id ? '?group_id='.$target_group_id : ''; ?>" style="color: #007bff; text-decoration: underline !important; font-weight: bold; font-size: 16px;">
-													<i class="fa fa-comments"></i> Accéder au Chat du Tournoi
+													<i class="fa fa-comments"></i> Consulter les messages
 													<?php if ($unread_count > 0): ?>
 														<span class="badge badge-danger" style="background-color: #d9534f;"><?php echo $unread_count; ?></span>
 													<?php endif; ?>

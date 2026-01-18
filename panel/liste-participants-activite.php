@@ -1,18 +1,24 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
 session_start();
-// error_reporting(0);
-include('include/config.php');
 
 if (strlen($_SESSION['id']) == 0) {
     header('location:logout.php');
 } else {
-    define('DB_CONFIG', [
-        'host'     => 'localhost',
-        'user'     => 'root',
-        'password' => 'Kookies7*',
-        'name'     => 'dbs9616600',
-        'charset'  => 'utf8mb4'
-    ]);
+    if (!defined('DB_CONFIG')) {
+        define('DB_CONFIG', [
+            'host'     => 'localhost',
+            'user'     => 'root',
+            'password' => 'Kookies7*',
+            'name'     => 'dbs9616600',
+            'charset'  => 'utf8mb4'
+        ]);
+    }
+    
+    include('include/config.php');
     $qui = $_SESSION['id'];
 
     function getDBConnection() {
@@ -23,6 +29,53 @@ if (strlen($_SESSION['id']) == 0) {
             mysqli_set_charset($conn, DB_CONFIG['charset']);
         }
         return $conn;
+    }
+
+    function isUserAuthorized($user_id, $id_activite) {
+        static $auth_cache = [];
+        $cache_key = "$user_id:$id_activite";
+        
+        if (isset($auth_cache[$cache_key])) {
+            return $auth_cache[$cache_key];
+        }
+        
+        try {
+            $conn = getDBConnection();
+            
+            // Vérifier si l'utilisateur est admin (droits = 2)
+            $is_admin = false;
+            $admin_sql = "SELECT droits FROM membres WHERE `id-membre` = " . (int)$user_id . " LIMIT 1";
+            $admin_check = mysqli_query($conn, $admin_sql);
+            
+            if ($admin_check && mysqli_num_rows($admin_check) > 0) {
+                $admin_row = mysqli_fetch_assoc($admin_check);
+                $is_admin = ((int)$admin_row['droits'] == 2);
+            }
+            
+            // Si admin, autoriser directement
+            if ($is_admin) {
+                $auth_cache[$cache_key] = true;
+                return true;
+            }
+            
+            // Sinon, vérifier si l'utilisateur est l'organisateur de l'activité
+            $is_organizer = false;
+            if ($id_activite > 0) {
+                $org_sql = "SELECT `id-membre` FROM activite WHERE `id-activite` = " . (int)$id_activite . " LIMIT 1";
+                $organizer_check = mysqli_query($conn, $org_sql);
+                
+                if ($organizer_check && mysqli_num_rows($organizer_check) > 0) {
+                    $organizer_row = mysqli_fetch_assoc($organizer_check);
+                    $is_organizer = ((int)$organizer_row['id-membre'] == (int)$user_id);
+                }
+            }
+            
+            $auth_cache[$cache_key] = $is_organizer;
+            return $is_organizer;
+        } catch (Exception $e) {
+            error_log("isUserAuthorized exception: " . $e->getMessage());
+            return false;
+        }
     }
 
     function formatFrenchDate($dateStr) {
@@ -52,19 +105,6 @@ if (strlen($_SESSION['id']) == 0) {
         
         $id_activite = isset($_REQUEST['id_activite']) ? (int)$_REQUEST['id_activite'] : 0;
         $where_clause = $id_activite > 0 ? "WHERE p.`id-activite` = $id_activite" : "";
-        
-        // Get rake value for activity
-        $rake = 0;
-        if ($id_activite > 0) {
-            $rake_query = "SELECT rake FROM activite WHERE `id-activite` = $id_activite";
-            $rake_result = mysqli_query($conn, $rake_query);
-            if ($rake_result && $row = mysqli_fetch_assoc($rake_result)) {
-                $rake = (int)$row['rake'];
-            }
-        }
-        
-        // Pass rake value to JavaScript
-        echo "<script>var activityRake = " . json_encode($rake) . ";</script>";
         
         // Main query
         $query = "SELECT 
@@ -105,6 +145,27 @@ if (strlen($_SESSION['id']) == 0) {
         
         return $participants;
     }
+    
+    // Récupérer les infos pour les variables JavaScript
+    $id_activite_request = isset($_REQUEST['id_activite']) ? (int)$_REQUEST['id_activite'] : 0;
+    $rake_for_js = 0;
+    $is_authorized_for_js = false;
+    
+    if ($id_activite_request > 0) {
+        try {
+            $conn = getDBConnection();
+            $rake_query = "SELECT rake FROM activite WHERE `id-activite` = " . $id_activite_request;
+            $rake_result = mysqli_query($conn, $rake_query);
+            if ($rake_result && mysqli_num_rows($rake_result) > 0) {
+                $row = mysqli_fetch_assoc($rake_result);
+                $rake_for_js = (int)$row['rake'];
+            }
+            $is_authorized_for_js = isUserAuthorized($qui, $id_activite_request);
+        } catch (Exception $e) {
+            error_log("Error retrieving activity info: " . $e->getMessage());
+            $is_authorized_for_js = false;
+        }
+    }
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -125,6 +186,10 @@ if (strlen($_SESSION['id']) == 0) {
     <link rel="stylesheet" href="assets/css/plugins.css">
     <link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script>
+        var activityRake = <?= json_encode($rake_for_js) ?>;
+        var userCanEdit = <?= json_encode($is_authorized_for_js) ?>;
+    </script>
     <style>
         /* Base Styles */
         .col-small {
@@ -292,6 +357,17 @@ if (strlen($_SESSION['id']) == 0) {
             color: #999;
         }
         
+        .editable.disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+            background-color: #f0f0f0;
+        }
+        
+        .editable.disabled:hover::after {
+            content: '🔒';
+            color: #ccc;
+        }
+        
         .notification {
             position: fixed;
             top: 20px;
@@ -400,9 +476,9 @@ if (strlen($_SESSION['id']) == 0) {
                                                                                     ?></td>
                                                                                     <td class="editable checkbox-cell" data-field="latereg"><?= $row['latereg'] ? 'Oui' : 'Non' ?></td>
                                                                                     <td><?= formatFrenchDate($row['ds']) ?></td>
-                                                                                    <td class="editable col-small" data-field="buyin"><?= $row['buyin'] ?></td>
-                                                                                    <td class="editable col-small" data-field="bounty"><?= $row['bounty'] ?></td>
-                                                                                    <td class="editable col-small" data-field="rake"><?= $row['rake'] ?></td>
+                                                                                    <td class="col-small"><?= $row['buyin'] ?></td>
+                                                                                    <td class="col-small"><?= $row['bounty'] ?></td>
+                                                                                    <td class="col-small"><?= $row['rake'] ?></td>
                                                                                     <td class="editable col-small" data-field="cout_in"><?= $row['cout_in'] ?></td>
                                                                                     <td class="editable col-small" data-field="classement"><?= $row['classement'] ?></td>
                                                                                     <td class="editable col-small" data-field="gain"><?= $row['gain'] ?></td>
@@ -485,15 +561,24 @@ if (strlen($_SESSION['id']) == 0) {
                             if (callback) callback(true);
                         } else {
                             alert('Erreur : ' + (data.error || 'Erreur inconnue'));
+                            console.error('Server error:', data);
                             if (callback) callback(false);
                         }
                     } catch(e) {
-                        console.error(e);
+                        console.error('JSON parse error:', e);
+                        console.error('Response was:', response);
+                        alert('Erreur JSON: ' + response);
                         if (callback) callback(false);
                     }
                 },
-                error: function() {
-                    alert('Erreur lors de la mise à jour');
+                error: function(xhr, status, error) {
+                    console.error('AJAX error:', {
+                        status: status,
+                        error: error,
+                        statusCode: xhr.status,
+                        responseText: xhr.responseText
+                    });
+                    alert('Erreur serveur: ' + xhr.responseText);
                     if (callback) callback(false);
                 }
             });
@@ -525,6 +610,13 @@ if (strlen($_SESSION['id']) == 0) {
             Main.init();
             FormElements.init();
             calculateTotals();
+            
+            // Appliquer la classe "disabled" aux cellules éditables si l'utilisateur n'est pas autorisé
+            if (!userCanEdit) {
+                $('.editable').addClass('disabled');
+                $('#saveAllChanges').prop('disabled', true).css('opacity', '0.5').css('cursor', 'not-allowed');
+                $('.present-checkbox').prop('disabled', true);
+            }
 
             // Fonction de recherche simple
             $('#tableSearch').on('keyup', function() {
@@ -573,6 +665,12 @@ if (strlen($_SESSION['id']) == 0) {
                 e.preventDefault();
                 e.stopPropagation();
                 
+                // Vérifier les permissions
+                if (!userCanEdit) {
+                    alert('Vous n\'avez pas la permission de modifier cette activité.\nSeuls l\'administrateur et l\'organisateur peuvent modifier les données.');
+                    return;
+                }
+                
                 const cell = $(this);
                 if (cell.find('input').length) return;
                 
@@ -619,6 +717,14 @@ if (strlen($_SESSION['id']) == 0) {
 
             // Click handler for present checkbox
             $(document).on('change', '.present-checkbox', function(e) {
+                // Vérifier les permissions
+                if (!userCanEdit) {
+                    // Restaurer l'état précédent
+                    $(this).prop('checked', !$(this).prop('checked'));
+                    alert('Vous n\'avez pas la permission de modifier cette activité.\nSeuls l\'administrateur et l\'organisateur peuvent modifier les données.');
+                    return;
+                }
+                
                 const checkbox = $(this);
                 const row = checkbox.closest('tr');
                 const id_membre = row.data('id');
@@ -634,8 +740,20 @@ if (strlen($_SESSION['id']) == 0) {
             });
 
             // Save All button handler
-            $('#saveAllChanges').on('click', function() {
+            $('#saveAllChanges').on('click', function(e) {
+                e.preventDefault();
+                console.log('Save All button clicked');
+                console.log('userCanEdit:', userCanEdit);
+                console.log('Button disabled:', $(this).prop('disabled'));
+                
+                // Vérifier les permissions
+                if (!userCanEdit) {
+                    alert('Vous n\'avez pas la permission de modifier cette activité.\nSeuls l\'administrateur et l\'organisateur peuvent modifier les données.');
+                    return;
+                }
+                
                 const activite_id = $('select[name="id_activite"]').val();
+                console.log('Activity ID:', activite_id);
                 
                 if (!activite_id) {
                     alert('Veuillez sélectionner une activité');
@@ -655,10 +773,18 @@ if (strlen($_SESSION['id']) == 0) {
                     });
                 });
 
+                console.log('Updates to send:', updates);
+                
                 if (!updates.length) {
                     alert('Aucune donnée à mettre à jour');
                     return;
                 }
+
+                console.log('Sending AJAX request...');
+                console.log('Data to send:', {
+                    id_activite: activite_id,
+                    updates: JSON.stringify(updates)
+                });
 
                 $.ajax({
                     url: 'update_all_participants.php',
@@ -668,22 +794,31 @@ if (strlen($_SESSION['id']) == 0) {
                         updates: JSON.stringify(updates)
                     },
                     success: function(response) {
+                        console.log('Raw response:', response);
                         try {
                             const data = JSON.parse(response);
+                            console.log('Parsed response:', data);
                             if (data.success) {
                                 showNotification('Toutes les modifications ont été enregistrées');
                                 setTimeout(() => location.reload(), 1500);
                             } else {
                                 alert('Erreur: ' + (data.error || 'Erreur inconnue'));
+                                console.error('Server error:', data);
                             }
                         } catch(e) {
-                            console.error(e);
-                            alert('Erreur lors de la mise à jour');
+                            console.error('JSON parse error:', e);
+                            console.error('Response:', response);
+                            alert('Erreur JSON: ' + response);
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error({xhr, status, error});
-                        alert('Erreur lors de la mise à jour');
+                        console.error('AJAX error details:', {
+                            status: status,
+                            error: error,
+                            statusCode: xhr.status,
+                            responseText: xhr.responseText
+                        });
+                        alert('Erreur serveur: ' + (xhr.responseText || status));
                     }
                 });
             });

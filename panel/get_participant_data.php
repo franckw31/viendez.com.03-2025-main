@@ -13,6 +13,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     
     $conn = mysqli_connect('localhost', 'root', 'Kookies7*', 'dbs9616600');
     
+    if (!$conn) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Erreur de connexion']);
+        exit;
+    }
+    
+    mysqli_set_charset($conn, 'utf8mb4');
+    
     $sql = "SELECT p.*, 
             (a.buyin + a.bounty + a.rake + (CASE WHEN p.challenger = 1 THEN 5 ELSE 0 END)) as cout_in
             FROM participation p 
@@ -20,6 +28,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             WHERE p.`id-membre` = ? AND p.`id-activite` = ?";
             
     $stmt = mysqli_prepare($conn, $sql);
+    
+    if (!$stmt) {
+        http_response_code(500);
+        echo json_encode(['success' => false, 'error' => 'Erreur de préparation SQL']);
+        mysqli_close($conn);
+        exit;
+    }
+    
     mysqli_stmt_bind_param($stmt, "ii", $id_membre, $id_activite);
     
     if (mysqli_stmt_execute($stmt)) {
@@ -31,5 +47,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         echo json_encode(['success' => false, 'error' => mysqli_error($conn)]);
     }
     
+    mysqli_stmt_close($stmt);
     mysqli_close($conn);
 }
