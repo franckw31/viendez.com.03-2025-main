@@ -162,6 +162,7 @@ if (strlen($_SESSION['login']) == 0) {
 		
 		<!-- Modern Dashboard CSS -->
 		<link rel="stylesheet" href="assets/css/modern-dashboard.css">
+		<link rel="stylesheet" href="assets/css/card-bg.css">
 		<style>
 			.clip-radio.radio-square label:before, 
 			.clip-radio.radio-square label:after {
@@ -173,6 +174,8 @@ if (strlen($_SESSION['login']) == 0) {
 			.radio-lightred label:before {
 				border-color: #ff6666 !important;
 			}
+
+			/* Motif déplacé vers assets/css/card-bg.css pour réutilisation */
 		</style>
 	</head>
 
@@ -191,6 +194,35 @@ if (strlen($_SESSION['login']) == 0) {
 						<section id="page-title">
 							<div class="row">
 								<div class="col-sm-12 text-center">
+									<?php
+									// Compter les messages non lus du groupe de chat de l'activité
+									$months = ["", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+									$d_obj = strtotime($row_act['date_depart']);
+									$formatted_date = date('j', $d_obj) . ' ' . $months[intval(date('n', $d_obj))];
+									$id_orga = $row_act['id-membre'];
+									$q_orga_pseudo = mysqli_query($con, "SELECT pseudo FROM membres WHERE `id-membre` = '$id_orga' LIMIT 1");
+									$r_orga_pseudo = mysqli_fetch_array($q_orga_pseudo);
+									$expected_group_name = $formatted_date . " " . ($r_orga_pseudo ? $r_orga_pseudo['pseudo'] : "");
+									
+									$q_target_grp = mysqli_query($con, "SELECT id FROM chat_groups WHERE name = '".mysqli_real_escape_string($con, $expected_group_name)."' ORDER BY id DESC LIMIT 1");
+									$r_target_grp = mysqli_fetch_array($q_target_grp);
+									$target_group_id = $r_target_grp ? $r_target_grp['id'] : null;
+									
+									$unread_activity_messages = 0;
+									if ($target_group_id) {
+										$q_unread_activity = mysqli_query($con, "
+											SELECT COUNT(*) as total 
+											FROM chat_messages m
+											JOIN chat_group_members gm ON m.group_id = gm.group_id
+											WHERE m.group_id = '$target_group_id'
+											AND gm.member_id = '$user_id' 
+											AND m.sender_id != '$user_id'
+											AND m.timestamp > gm.last_read_at
+										");
+										$r_unread_activity = mysqli_fetch_array($q_unread_activity);
+										$unread_activity_messages = intval($r_unread_activity['total']);
+									}
+									?>
 									<div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
 										<a href="voir-membre.php?id=<?php echo $_SESSION['id']; ?>" style="text-decoration: none;">
 											<?php if ($user_photo && !empty($user_photo)) { ?>
@@ -201,7 +233,14 @@ if (strlen($_SESSION['login']) == 0) {
 												</div>
 											<?php } ?>
 										</a>
-										<h2 class="mainTitle" style="color:white; margin: 0; font-size: 3.5em;" ><?php echo $is_admin ? 'Bienvenue Admin' : ('Bienvenue ' . htmlspecialchars($user_pseudo)); ?></h2>
+										<div style="position: relative;">
+											<h2 class="mainTitle" style="color:white; margin: 0; font-size: 3.5em;" ><?php echo $is_admin ? 'Bienvenue Admin' : ('Bienvenue ' . htmlspecialchars($user_pseudo)); ?></h2>
+											<?php if ($unread_activity_messages > 0): ?>
+												<a href="../panel/chat.php?group_id=<?php echo $target_group_id; ?>" style="text-decoration: none;">
+													<span style="position: absolute; top: -10px; right: -30px; background-color: #d9534f; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; cursor: pointer; transition: background-color 0.3s;" onmouseover="this.style.backgroundColor='#c9302c'" onmouseout="this.style.backgroundColor='#d9534f'"><i class="fa fa-envelope"></i> <?php echo $unread_activity_messages; ?></span>
+												</a>
+											<?php endif; ?>
+										</div>
 									</div>
 									<a href="fullscreen-timer.php?uid=<?php echo $id_act; ?>" style="text-decoration: none;">
 										<h1 style="color: hsl(51, 72%, 56%); font-weight: bold; margin-top: 10px; text-transform: uppercase; letter-spacing: 3px; font-size: 32px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
@@ -236,9 +275,9 @@ if (strlen($_SESSION['login']) == 0) {
 								</a>
 							</div>
 							<div class="col-sm-4">
-								<a href="#" class="dashboard-card card-green">
+								<a href="fullscreen.php?uid=<?php echo $id_act; ?>" class="dashboard-card card-green">
 									<div class="card-icon"><i class="fa fa-clock-o"></i></div>
-									<div class="card-title">Horaires</div>
+									<div class="card-title">Horaires / Voir Live</div>
 									<div class="card-stat" style="font-size: 18px;">Départ: <?php 
 										$start_ts = strtotime($row_act['date_depart']);
 										echo date('H:i', $start_ts);
@@ -350,13 +389,13 @@ if (strlen($_SESSION['login']) == 0) {
 						<div class="row">
 							<div class="col-sm-4">
 								<a href="voir-membre.php?id=<?php echo $user_id; ?>&tab=col" class="dashboard-card card-yellow">
-									<div class="card-icon" style="color: #ffcc00 !important;"><i class="fa fa-star"></i></div>
+									<div class="card-icon" style="color: orange !important;"><i class="fa fa-star"></i></div>
 									<div class="card-title">Ticket(s) de Tombola</div>
-									<div class="card-stat" style="font-size: 24px; color: #ffcc00 !important;">
+									<div class="card-stat" style="font-size: 24px; color:orange !important;">
 										<?php 
 										$q_pts = mysqli_query($con, "SELECT SUM(valeur) as total_points FROM `collections-individu` WHERE `id-indiv` = '$user_id'");
 										$r_pts = mysqli_fetch_array($q_pts);
-										echo intval($r_pts['total_points']);
+										echo intval($r_pts['total_points'])." Distribués";
 										?>
 									</div>
 								</a>
@@ -475,7 +514,7 @@ if (strlen($_SESSION['login']) == 0) {
 											</div>
 											<div class="radio clip-radio radio-primary" style="margin-bottom: 15px;">
 												<input type="radio" id="reg_option" name="status" value="Option" <?php echo ($current_status == 'Option') ? 'checked' : ''; ?> onchange="this.form.submit()">
-												<label for="reg_option" style="color: rgb(255, 145, 0); font-weight: bold; font-size: 18px;">OPTION</label>
+												<label for="reg_option" style="color: orange; font-weight: bold; font-size: 18px;">OPTION</label>
 											</div>
 											<div class="radio clip-radio radio-primary radio-lightred" style="margin-bottom: 5px;">
 												<input type="radio" id="reg_none" name="status" value="None" <?php echo ($current_status == 'None' || $current_status == 'Desinscrit') ? 'checked' : ''; ?> onchange="this.form.submit()">
@@ -568,6 +607,7 @@ if (strlen($_SESSION['login']) == 0) {
 		<!-- end: JAVASCRIPTS REQUIRED FOR THIS PAGE ONLY -->
 		<!-- start: CLIP-TWO JAVASCRIPTS -->
 		<script src="assets/js/main.js"></script>
+		<script src="assets/js/card-bg.js"></script>
 		<!-- start: JavaScript Event Handlers for this page -->
 		<script src="assets/js/form-elements.js"></script>
 		<script>
@@ -617,6 +657,19 @@ if (strlen($_SESSION['login']) == 0) {
 		</script>
 		<!-- end: JavaScript Event Handlers for this page -->
 		<!-- end: CLIP-TWO JAVASCRIPTS -->
+		<script>
+		  // Initialize reusable card background with defaults
+		  window.CardBackground && window.CardBackground.init({
+		    spacing: 60,
+		    rowHeight: 80,
+		    fontSize: 60,
+		    opacity: 0.18,
+		    alternateColors: true,
+		    colors: { even: 'white', odd: 'red' },
+		    suits: ['♠','♣','♥','♦'],
+		    staggerCycle: 4
+		  });
+		</script>
 	</body>
 
 	</html>

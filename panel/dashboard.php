@@ -56,6 +56,7 @@ if (strlen($_SESSION['login']) == 0) {
 		
 		<!-- Modern Dashboard CSS -->
 		<link rel="stylesheet" href="assets/css/modern-dashboard.css">
+		<link rel="stylesheet" href="assets/css/card-bg.css">
 	</head>
 
 	<body>
@@ -259,12 +260,27 @@ if (strlen($_SESSION['login']) == 0) {
 		<!-- end: JAVASCRIPTS REQUIRED FOR THIS PAGE ONLY -->
 		<!-- start: CLIP-TWO JAVASCRIPTS -->
 		<script src="assets/js/main.js"></script>
+		<script src="assets/js/card-bg.js"></script>
 		<!-- start: JavaScript Event Handlers for this page -->
 		<script src="assets/js/form-elements.js"></script>
 		<script>
 			jQuery(document).ready(function () {
 				Main.init();
 				FormElements.init();
+
+				// Initialize reusable card background
+				if (window.CardBackground) {
+					window.CardBackground.init({
+						spacing: 60,
+						rowHeight: 80,
+						fontSize: 60,
+						opacity: 0.18,
+						alternateColors: true,
+						colors: { even: 'white', odd: 'red' },
+						suits: ['♠','♣','♥','♦'],
+						staggerCycle: 4
+					});
+				}
 			});
 		</script>
 		<!-- end: JavaScript Event Handlers for this page -->
