@@ -41,6 +41,17 @@ if (isset($_GET['id'])) {
         log_activity($conx, "QR Code Viewed", "ID: $id, Content: " . $qr_content);
     }
 }
+
+// Pagination de l'historique (DISABLED - afficher tout)
+$items_per_page = 10000; // Très grand nombre pour afficher tout
+$current_page = 1;
+$offset = 0;
+
+// Compter le nombre total d'items
+$count_result = mysqli_query($conx, "SELECT COUNT(*) as total FROM qrcodes");
+$count_row = mysqli_fetch_assoc($count_result);
+$total_items = $count_row['total'];
+$total_pages = 1;
 ?>
 <!DOCTYPE html>
 vip<html lang="fr">
@@ -271,7 +282,7 @@ vip<html lang="fr">
             <p style="font-size: 0.85em; color: #666; text-align: left;">Sélectionnez jusqu'à 10 étiquettes.</p>
             <div style="text-align: left;">
                 <?php
-                $history = mysqli_query($conx, "SELECT * FROM qrcodes ORDER BY content ASC LIMIT 20");
+                $history = mysqli_query($conx, "SELECT * FROM qrcodes ORDER BY id DESC LIMIT $offset, $items_per_page");
                 while ($h = mysqli_fetch_assoc($history)) {
                     $h_pseudo = "Inconnu";
                     if (preg_match('/pseudo=([^&]+)/', $h['content'], $m_h)) {

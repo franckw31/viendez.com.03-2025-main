@@ -169,7 +169,7 @@ if (strlen($_SESSION['id'] == 0)) {
                                                                                 </td>
                                                                                 <td>
                                                                                     <!--    <a href="voir-activite.php?uid=<?php echo $row['id-activite']; ?>"> <i class="fas fa-edit"></i></a> -->
-                                                                                    <a href="liste-activites.php?del=<?php echo "1"; ?>&uid=<?php echo $row['id-activite']; ?>"
+                                                                                    <a href="liste-prochaines-activites.php?del=<?php echo "1"; ?>&uid=<?php echo $row['id-activite']; ?>"
                                                                                         onClick="return confirm('Do you really want to delete');"><i
                                                                                             class="fa fa-trash"
                                                                                             aria-hidden="true"></i></a>

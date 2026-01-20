@@ -888,6 +888,9 @@ if (!$member) {
                                                                                         <button type="button" class="btn btn-primary btn-sm" onclick="document.getElementById('fileToUpload_1').click();">
                                                                                             <i class="fa fa-camera"></i> Changer Photo
                                                                                         </button>
+                                                                                        <a href="gerer-avatars.php?id=<?php echo $id; ?>" class="btn btn-secondary btn-sm" style="margin-left: 10px;">
+                                                                                            <i class="fa fa-images"></i> Galerie Avatars
+                                                                                        </a>
                                                                                         <span id="upload-spinner_1" style="display:none; margin-left:10px;">
                                                                                             <i class="fa fa-spinner fa-spin"></i> Uploading...
                                                                                         </span>

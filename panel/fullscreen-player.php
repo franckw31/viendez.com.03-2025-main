@@ -53,6 +53,7 @@ $recave_montant = intval($act_row['recave_montant']);
     
     <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
+    <link rel="stylesheet" href="assets/css/card-bg.css">
     <!-- <link href="https://fonts.googleapis.com/css?family=Lato:300,400,700|Raleway:300,400,700" rel="stylesheet"> -->
 
     <style>
@@ -65,7 +66,7 @@ $recave_montant = intval($act_row['recave_montant']);
         }
 
         body {
-            background-color: #1a1a1a;
+            background: #000000 !important;
             color: white;
             margin: 0;
             padding: 20px;
@@ -76,21 +77,6 @@ $recave_montant = intval($act_row['recave_montant']);
             position: relative;
             display: flex;
             flex-direction: column;
-        }
-
-        body::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('bg.png');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            opacity: 0.2;
-            z-index: -1;
         }
 
         .header-title {
@@ -741,6 +727,26 @@ $recave_montant = intval($act_row['recave_montant']);
 
             // Vérification toutes les 5 secondes
             setInterval(checkUpdates, 5000);
+        });
+    </script>
+    
+    <!-- Card Background Script -->
+    <script src="assets/js/card-bg.js"></script>
+    <script>
+        jQuery(document).ready(function () {
+            // Initialize card background
+            if (window.CardBackground) {
+                window.CardBackground.init({
+                    spacing: 60,
+                    rowHeight: 80,
+                    fontSize: 60,
+                    opacity: 0.05,
+                    alternateColors: true,
+                    colors: { even: 'white', odd: 'red' },
+                    suits: ['♠','♣','♥','♦'],
+                    staggerCycle: 4
+                });
+            }
         });
     </script>
 </body>

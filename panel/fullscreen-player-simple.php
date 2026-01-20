@@ -494,7 +494,7 @@ while ($row = mysqli_fetch_assoc($joueurs_query)) {
     </a>
 
     <div class="header-title">
-        <i class="fa fa-user-times"></i> <span style="color: #aaa; font-size: 0.9em;">- <?php echo htmlspecialchars($activity_title); ?></span>
+        <i class="fa fa-user-times"></i> <a href="fullscreen-player.php?uid=<?php echo $id; ?>" style="text-decoration: none; color: #aaa; font-size: 0.9em; transition: color 0.3s; cursor: pointer;" onmouseover="this.style.color='#00d2ff'" onmouseout="this.style.color='#aaa'">- <?php echo htmlspecialchars($activity_title); ?></a>
     </div>
 
     <div class="container">

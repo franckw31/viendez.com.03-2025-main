@@ -553,21 +553,15 @@ if (strlen($_SESSION['id']) == 0) {
                     field: field,
                     value: value
                 },
+                dataType: 'json',
                 success: function(response) {
-                    try {
-                        const data = JSON.parse(response);
-                        if (data.success) {
-                            showNotification('Modification enregistrée');
-                            if (callback) callback(true);
-                        } else {
-                            alert('Erreur : ' + (data.error || 'Erreur inconnue'));
-                            console.error('Server error:', data);
-                            if (callback) callback(false);
-                        }
-                    } catch(e) {
-                        console.error('JSON parse error:', e);
-                        console.error('Response was:', response);
-                        alert('Erreur JSON: ' + response);
+                    console.log('Success response:', response);
+                    if (response.success) {
+                        showNotification('Modification enregistrée');
+                        if (callback) callback(true);
+                    } else {
+                        alert('Erreur : ' + (response.error || 'Erreur inconnue'));
+                        console.error('Server error:', response);
                         if (callback) callback(false);
                     }
                 },
@@ -576,9 +570,18 @@ if (strlen($_SESSION['id']) == 0) {
                         status: status,
                         error: error,
                         statusCode: xhr.status,
-                        responseText: xhr.responseText
+                        responseText: xhr.responseText,
+                        contentType: xhr.getResponseHeader('content-type')
                     });
-                    alert('Erreur serveur: ' + xhr.responseText);
+                    
+                    // Essayer de parser en JSON même en cas d'erreur
+                    try {
+                        const data = JSON.parse(xhr.responseText);
+                        alert('Erreur serveur: ' + (data.error || xhr.responseText));
+                    } catch(e) {
+                        alert('Erreur serveur: ' + xhr.responseText);
+                    }
+                    
                     if (callback) callback(false);
                 }
             });
@@ -789,26 +792,21 @@ if (strlen($_SESSION['id']) == 0) {
                 $.ajax({
                     url: 'update_all_participants.php',
                     method: 'POST',
+                    dataType: 'json',
                     data: {
                         id_activite: activite_id,
                         updates: JSON.stringify(updates)
                     },
                     success: function(response) {
                         console.log('Raw response:', response);
-                        try {
-                            const data = JSON.parse(response);
-                            console.log('Parsed response:', data);
-                            if (data.success) {
-                                showNotification('Toutes les modifications ont été enregistrées');
-                                setTimeout(() => location.reload(), 1500);
-                            } else {
-                                alert('Erreur: ' + (data.error || 'Erreur inconnue'));
-                                console.error('Server error:', data);
-                            }
-                        } catch(e) {
-                            console.error('JSON parse error:', e);
-                            console.error('Response:', response);
-                            alert('Erreur JSON: ' + response);
+                        console.log('Response type:', typeof response);
+                        
+                        if (response.success) {
+                            showNotification('Toutes les modifications ont été enregistrées');
+                            setTimeout(() => location.reload(), 1500);
+                        } else {
+                            alert('Erreur: ' + (response.error || 'Erreur inconnue'));
+                            console.error('Server error:', response);
                         }
                     },
                     error: function(xhr, status, error) {
@@ -816,9 +814,17 @@ if (strlen($_SESSION['id']) == 0) {
                             status: status,
                             error: error,
                             statusCode: xhr.status,
-                            responseText: xhr.responseText
+                            responseText: xhr.responseText,
+                            contentType: xhr.getResponseHeader('content-type')
                         });
-                        alert('Erreur serveur: ' + (xhr.responseText || status));
+                        
+                        // Essayer de parser en JSON même en cas d'erreur
+                        try {
+                            const data = JSON.parse(xhr.responseText);
+                            alert('Erreur serveur: ' + (data.error || xhr.responseText));
+                        } catch(e) {
+                            alert('Erreur serveur: ' + xhr.responseText);
+                        }
                     }
                 });
             });

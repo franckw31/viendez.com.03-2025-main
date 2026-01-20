@@ -57,7 +57,7 @@ body {
 
 /* Cards */
 .dashboard-card {
-    background: rgba(255, 255, 255, 0.7); /* Increased transparency */
+    background: rgba(255, 255, 255, 0.85); /* Increased opacity for better visibility */
     border-radius: var(--card-radius);
     box-shadow: var(--card-shadow);
     padding: 20px;

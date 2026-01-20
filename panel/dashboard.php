@@ -50,13 +50,13 @@ if (strlen($_SESSION['login']) == 0) {
 		<link href="vendor/select2/select2.min.css" rel="stylesheet" media="screen">
 		<link href="vendor/bootstrap-datepicker/bootstrap-datepicker3.standalone.min.css" rel="stylesheet" media="screen">
 		<link href="vendor/bootstrap-timepicker/bootstrap-timepicker.min.css" rel="stylesheet" media="screen">
-		<link rel="stylesheet" href="assets/css/styles.css">
-		<link rel="stylesheet" href="assets/css/plugins.css">
-		<link rel="stylesheet" href="assets/css/themes/theme-1.css" id="skin_color" />
+		<link rel="stylesheet" href="assets/css/styles.css?v=<?php echo time(); ?>">
+		<link rel="stylesheet" href="assets/css/plugins.css?v=<?php echo time(); ?>">
+		<link rel="stylesheet" href="assets/css/themes/theme-1.css?v=<?php echo time(); ?>" id="skin_color" />
 		
 		<!-- Modern Dashboard CSS -->
-		<link rel="stylesheet" href="assets/css/modern-dashboard.css">
-		<link rel="stylesheet" href="assets/css/card-bg.css">
+		<link rel="stylesheet" href="assets/css/modern-dashboard.css?v=<?php echo time(); ?>">
+		<link rel="stylesheet" href="assets/css/card-bg.css?v=<?php echo time(); ?>">
 	</head>
 
 	<body>
@@ -86,7 +86,7 @@ if (strlen($_SESSION['login']) == 0) {
 										</div>
 									<?php } ?>
 								</a>
-								<h2 class="mainTitle" style="color:white; margin: 0; font-size: 3.5em;" ><?php echo $is_admin ? 'Bienvenue Admin' : ('Bienvenue ' . htmlspecialchars($user_pseudo)); ?></h2>
+								<h2 class="mainTitle" style="color:white; margin: 0; font-size: 3.5em;" ><?php echo $is_admin ? '<a href="quickview.php" style="text-decoration: none; color: white;">Bienvenue Admin</a>' : ('Bienvenue ' . htmlspecialchars($user_pseudo)); ?></h2>
 							</div>
 							</div>
 						</section>

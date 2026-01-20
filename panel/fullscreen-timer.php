@@ -10,6 +10,12 @@ if (strlen($_SESSION['id']) == 0) {
     exit;
 }
 
+// Vérifier les droits admin
+$user_id = $_SESSION['id'];
+$user_query = mysqli_query($con, "SELECT droits FROM membres WHERE `id-membre` = " . intval($user_id));
+$user_row = mysqli_fetch_array($user_query);
+$is_admin = (intval($user_row['droits']) == 2);
+
 $id = intval($_GET['uid']);
 $_SESSION["act"] = $id;
 $currentUrl = $_SERVER['REQUEST_URI'] ?? '';
@@ -229,7 +235,7 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            opacity: 0.2; /* Opacité réduite pour la lisibilité */
+            opacity: 0.1;
             z-index: -1;
         }
 
@@ -382,13 +388,22 @@ if (isset($_POST['next_blind']) || isset($_POST['prev_blind']) || isset($_POST['
     </a>
     
     <!-- Heure en haut à droite -->
+    <?php if ($is_admin) { ?>
     <a href="<?php echo htmlspecialchars($resetBlindsUrl, ENT_QUOTES, 'UTF-8'); ?>" 
        class="top-right-clock" 
        id="real-time-clock"
        onclick="return confirm('Êtes-vous sûr de vouloir réinitialiser les blindes ?');"
-       style="cursor: pointer; text-decoration: none; color: white;">
+       style="cursor: pointer; text-decoration: none; color: white; opacity: 1;">
         Il est --:--
     </a>
+    <?php } else { ?>
+    <div class="top-right-clock" 
+         id="real-time-clock"
+         style="cursor: not-allowed; text-decoration: none; color: white; opacity: 0.5;"
+         title="Seuls les administrateurs peuvent réinitialiser les blindes">
+        Il est --:--
+    </div>
+    <?php } ?>
     
     <div class="timer-container">
         

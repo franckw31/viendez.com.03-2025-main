@@ -1,32 +1,44 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
+
 session_start();
-include('include/config.php');
+header('Content-Type: application/json');
 
-if (strlen($_SESSION['id']) == 0) {
-    http_response_code(401);
-    exit('Unauthorized');
-}
+try {
+    include('include/config.php');
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $id_membre = isset($_POST['id_membre']) ? (int)$_POST['id_membre'] : 0;
-    $id_activite = isset($_POST['id_activite']) ? (int)$_POST['id_activite'] : 0;
-    $field = isset($_POST['field']) ? $_POST['field'] : '';
-    $value = isset($_POST['value']) ? $_POST['value'] : '';
-    
-    $conn = mysqli_connect('localhost', 'root', 'Kookies7*', 'dbs9616600');
-    
-    if (!$conn) {
-        http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'Erreur de connexion à la base de données']);
+    if (strlen($_SESSION['id']) == 0) {
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
         exit;
     }
-    
-    mysqli_set_charset($conn, 'utf8mb4');
-    
-    // Vérifier les permissions : seul un admin ou l'organisateur de l'activité peut modifier
-    $current_user_id = $_SESSION['id'];
-    $is_admin = false;
-    $is_organizer = false;
+
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $id_membre = isset($_POST['id_membre']) ? (int)$_POST['id_membre'] : 0;
+        $id_activite = isset($_POST['id_activite']) ? (int)$_POST['id_activite'] : 0;
+        $field = isset($_POST['field']) ? $_POST['field'] : '';
+        $value = isset($_POST['value']) ? $_POST['value'] : '';
+        
+        error_log("update_field.php: POST data - id_membre=$id_membre, id_activite=$id_activite, field=$field, value=$value");
+        
+        $conn = mysqli_connect('localhost', 'root', 'Kookies7*', 'dbs9616600');
+        
+        if (!$conn) {
+            http_response_code(500);
+            $error = 'Erreur de connexion à la base de données: ' . mysqli_connect_error();
+            error_log("Database connection error: " . $error);
+            echo json_encode(['success' => false, 'error' => $error]);
+            exit;
+        }
+        
+        mysqli_set_charset($conn, 'utf8mb4');
+        
+        // Vérifier les permissions : seul un admin ou l'organisateur de l'activité peut modifier
+        $current_user_id = $_SESSION['id'];
+        $is_admin = false;
+        $is_organizer = false;
     
     // Vérifier si l'utilisateur est admin (droits = 2)
     $admin_check = mysqli_query($conn, "SELECT droits FROM membres WHERE `id-membre` = " . (int)$current_user_id);
@@ -128,23 +140,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (!$stmt) {
         http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'Erreur de préparation SQL: ' . mysqli_error($conn)]);
-        error_log("Prepare error: " . mysqli_error($conn));
+        $error_msg = mysqli_error($conn);
+        echo json_encode(['success' => false, 'error' => 'Erreur de préparation SQL: ' . $error_msg . ' | SQL: ' . $sql]);
+        error_log("Prepare error: " . $error_msg . " | SQL: " . $sql);
         mysqli_close($conn);
         exit;
     }
     
-    mysqli_stmt_bind_param($stmt, $param_type."ii", $value, $id_membre, $id_activite);
+    // Bind parameters with correct type order: value type, id_membre (int), id_activite (int)
+    $bind_types = $param_type . "ii";
+    mysqli_stmt_bind_param($stmt, $bind_types, $value, $id_membre, $id_activite);
     
     if (mysqli_stmt_execute($stmt)) {
         $affected = mysqli_stmt_affected_rows($stmt);
         error_log("Rows affected: $affected");
         echo json_encode(['success' => true, 'affected' => $affected]);
     } else {
-        error_log("Execute error: " . mysqli_stmt_error($stmt));
+        $error_msg = mysqli_stmt_error($stmt);
+        error_log("Execute error: " . $error_msg);
         http_response_code(500);
-        echo json_encode(['success' => false, 'error' => mysqli_stmt_error($stmt)]);
+        echo json_encode(['success' => false, 'error' => 'Erreur SQL: ' . $error_msg]);
     }
     
     mysqli_stmt_close($stmt);
-    mysqli_close($conn);
+    mysqli_close($conn);    }
+} catch (Exception $e) {
+    http_response_code(500);
+    error_log("Exception in update_field.php: " . $e->getMessage());
+    echo json_encode(['success' => false, 'error' => 'Exception: ' . $e->getMessage()]);
+} catch (Throwable $t) {
+    http_response_code(500);
+    error_log("Error in update_field.php: " . $t->getMessage());
+    echo json_encode(['success' => false, 'error' => 'Erreur: ' . $t->getMessage()]);
+}

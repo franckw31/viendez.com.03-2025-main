@@ -49,7 +49,7 @@
 							</a>
 						</li>
 						<li>
-							<a href="logout.php">
+							<a href="/panel/logout.php">
 								Logout
 							</a>
 						</li>
