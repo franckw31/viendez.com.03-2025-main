@@ -17,7 +17,7 @@ if (strlen($_SESSION['id']) == 0) {
 $id = intval($_GET['id']); // get value
 
 // Définir si l'utilisateur courant est admin ou le membre lui-même
-$is_admin = (isset($_SESSION['role']) && ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'superadmin'));
+$is_admin = (isset($_SESSION['role']) && ($_SESSION['role'] === 'admin' || $_SESSION['role'] === 'superadmin')) || (isset($_SESSION['id']) && intval($_SESSION['id']) === 265);
 $is_self = (isset($_SESSION['id']) && intval($_SESSION['id']) === $id);
 
 
@@ -618,11 +618,76 @@ if (isset($_FILES['fileToUpload']) && isset($_POST['id'])) {
     }
 }
 
-if (isset($_POST['submit4'])) {
+if (isset($_POST['submit4']) && $is_admin) {
     $col = $_POST['col'];
-    $sql2 = mysqli_query($con, "INSERT INTO `collections-individu` (`id-indiv`, `id_col`) VALUES ('$id', '$col')");
+    $sql2 = mysqli_query($con, "INSERT INTO `collections-individu` (`id-indiv`, `id_col`, `aff_rake`) VALUES ('$id', '$col', 0)");
     $_SESSION['msg'] = "Collection added successfully !!";
 }
+
+// Traiter la sauvegarde des valeurs Aff_Rake
+if (isset($_POST['save_aff_rake'])) {
+    try {
+        // Récupérer tous les IDs de collections-individu pour cet utilisateur
+        $sql_all = mysqli_query($con, "SELECT `id`, `aff_rake`, `id_col`, `date` FROM `collections-individu` WHERE `id-indiv` = '$id'");
+        if (!$sql_all) {
+            throw new Exception("Erreur requête SQL: " . mysqli_error($con));
+        }
+        
+        $checked_ids = isset($_POST['aff_rake']) && is_array($_POST['aff_rake']) ? array_map('intval', $_POST['aff_rake']) : array();
+        
+        // Parcourir toutes les collections et mettre à jour leur statut
+        while ($all_row = mysqli_fetch_array($sql_all)) {
+            $col_id = $all_row['id'];
+            $old_value = intval($all_row['aff_rake']);
+            $new_value = in_array($col_id, $checked_ids) ? 1 : 0;
+            
+            // Si la valeur passe de 0 à 1, ajouter un enregistrement portefeuille
+            if ($old_value == 0 && $new_value == 1) {
+                // Récupérer la valeur de la collection
+                $id_col = $all_row['id_col'];
+                $sql_col = mysqli_query($con, "SELECT `valeur` FROM `collections` WHERE `id_collection` = '$id_col'");
+                if ($sql_col && mysqli_num_rows($sql_col) > 0) {
+                    $col_row = mysqli_fetch_array($sql_col);
+                    $montant = $col_row['valeur'];
+                    
+                    // Ajouter l'enregistrement portefeuille (id_type_mvt = 6 = Crédit Tombola)
+                    $date_mvt = $all_row['date'];
+                    $insert_portefeuille = mysqli_query($con, "INSERT INTO `portefeuille` (`id_mvt_membre`, `id_type_mvt`, `montant`, `date_mvt`) VALUES ('$id', 6, '$montant', '$date_mvt')");
+                    if (!$insert_portefeuille) {
+                        throw new Exception("Erreur insertion portefeuille: " . mysqli_error($con));
+                    }
+                }
+            }
+            // Si la valeur passe de 1 à 0, supprimer l'enregistrement portefeuille correspondant
+            else if ($old_value == 1 && $new_value == 0) {
+                // Récupérer la valeur de la collection
+                $id_col = $all_row['id_col'];
+                $sql_col = mysqli_query($con, "SELECT `valeur` FROM `collections` WHERE `id_collection` = '$id_col'");
+                if ($sql_col && mysqli_num_rows($sql_col) > 0) {
+                    $col_row = mysqli_fetch_array($sql_col);
+                    $montant = $col_row['valeur'];
+                    
+                    // Supprimer l'enregistrement portefeuille correspondant (Crédit Tombola avec même montant et date)
+                    $date_mvt = $all_row['date'];
+                    $delete_portefeuille = mysqli_query($con, "DELETE FROM `portefeuille` WHERE `id_mvt_membre` = '$id' AND `id_type_mvt` = 6 AND `montant` = '$montant' AND `date_mvt` = '$date_mvt'");
+                    if (!$delete_portefeuille) {
+                        throw new Exception("Erreur suppression portefeuille: " . mysqli_error($con));
+                    }
+                }
+            }
+            
+            // Mettre à jour le statut aff_rake
+            $update_result = mysqli_query($con, "UPDATE `collections-individu` SET `aff_rake` = $new_value WHERE `id` = '$col_id' AND `id-indiv` = '$id'");
+            if (!$update_result) {
+                throw new Exception("Erreur mise à jour: " . mysqli_error($con));
+            }
+        }
+        $_SESSION['msg'] = "Paramètres Aff_Rake sauvegardés avec succès";
+    } catch (Exception $e) {
+        $_SESSION['error'] = "Erreur lors de la sauvegarde: " . $e->getMessage();
+    }
+}
+
 
 if (isset($_POST['submitnotif'])) {
     try {
@@ -843,7 +908,7 @@ if (!$member) {
                                     <a href="#" id="css3" class="btnnav" onmouseover="afficher('css3')">Notifs</a>
                                     <a href="#" id="js" class="btnnav" onmouseover="afficher('js')">Compét.</a>
                                     <a href="#" id="php" class="btnnav" onmouseover="afficher('php')">Loisirs</a>
-                                    <a href="#" id="col" class="btnnav" onmouseover="afficher('col')">Collect.</a>
+                                    <a href="#" id="col" class="btnnav" onmouseover="afficher('col')">Tombolas</a>
                                     <a href="#" id="ks" class="btnnav" onmouseover="afficher('ks')">Activités</a>
                                     <a href="#" id="portefeuille" class="btnnav" onmouseover="afficher('portefeuille')">$$$</a>
                                 </div>
@@ -1196,6 +1261,7 @@ if (!$member) {
                                                                                         </optgroup>
                                                                                         <optgroup label="Crédit">
                                                                                             <option value="4">Gain</option>
+                                                                                            <option value="6">Tombola</option>
                                                                                             <option value="5">Gestion</option>
                                                                                         </optgroup>
                                                                                     </select>
@@ -1286,6 +1352,9 @@ if (!$member) {
                                                                                             case 4:
                                                                                                 echo 'Crédit Gain';
                                                                                             break;
+                                                                                            case 6:
+                                                                                                echo 'Crédit Tombola';
+                                                                                            break;
                                                                                             case 5:
                                                                                                 echo 'Crédit Gestion';
                                                                                             break;
@@ -1318,7 +1387,7 @@ if (!$member) {
         <?php
         // Calcul du solde directement (ne pas utiliser la colonne solde de la table membres)
         $solde_query = mysqli_query($con, "SELECT 
-            COALESCE(SUM(CASE WHEN id_type_mvt = 4 THEN montant ELSE 0 END), 0) + COALESCE(SUM(CASE WHEN id_type_mvt = 5 THEN montant ELSE 0 END), 0) -
+            COALESCE(SUM(CASE WHEN id_type_mvt = 4 THEN montant ELSE 0 END), 0) + COALESCE(SUM(CASE WHEN id_type_mvt = 6 THEN montant ELSE 0 END), 0) + COALESCE(SUM(CASE WHEN id_type_mvt = 5 THEN montant ELSE 0 END), 0) -
             COALESCE(SUM(CASE WHEN id_type_mvt = 1 THEN montant ELSE 0 END), 0) - COALESCE(SUM(CASE WHEN id_type_mvt = 2 THEN montant ELSE 0 END), 0) - COALESCE(SUM(CASE WHEN id_type_mvt = 3 THEN montant ELSE 0 END), 0)as balance
             FROM portefeuille 
             WHERE id_mvt_membre = $id");
@@ -1694,9 +1763,9 @@ if (!$member) {
                                                             <div class="row margin-top-30">
                                                                 <div class="col-lg-8 col-md-12">
                                                                     <div class="panel panel-white">
-                                                                        <!--	<div class="panel-heading">
-                                                                  <h5 class="panel-title">Ajout Personne</h5>
-                                                            </div> -->
+                                                                        <div class="panel-heading">
+                                                                            <h5 class="panel-title">Tombolas</h5>
+                                                                        </div>
                                                                         <div class="panel-body">
                                                                             <div id="layoutSidenav_content">
                                                                                 <main>
@@ -1704,10 +1773,16 @@ if (!$member) {
                                                                                         <!--    <h1 class="mt-4">Gestion des Competences</h1> -->
                                                                                         <ol class="breadcrumb mb-4">
                                                                                             <li class="breadcrumb-item">
-                                                                                                <a href="liste-membres.php">Membres</a>
+                                                                                                <?php 
+                                                                                                    $jou = mysqli_query($con, "SELECT * FROM `membres` WHERE `id-membre` = $id ");
+                                                                                                    while ($rjou = mysqli_fetch_array($jou)) { 
+                                                                                                        $nomjou = $rjou['pseudo'];
+                                                                                                        ?>
+                                                                                                        <a href="voir-membre.php?id=<?php echo $id; ?>"><?php echo $nomjou; ?></a>        
+                                                                                                        <?php } ?>
                                                                                             </li>
                                                                                             <li class="breadcrumb-item active">
-                                                                                                Collections
+                                                                                                Tickets de Tombolas
                                                                                             </li>
                                                                                         </ol>
                                                                                         <div class="card mb-4">
@@ -1717,7 +1792,8 @@ if (!$member) {
                                                                                 </div> -->
                                                                                             <div class="card-body">
                                                                                                 <!-- <table id="datatablesSimple"> -->
-                                                                                                <table id="example4" class="display" style="width:100%">
+                                                                                                <form method="post" id="tombolas_form">
+                                                                                                <table id="example4" class="table table-hover w-100">
                                                                                                     <thead>
                                                                                                         <tr>
                                                                                                             <th>QRcode
@@ -1726,8 +1802,14 @@ if (!$member) {
                                                                                                             </th>
                                                                                                             <th>Date
                                                                                                             </th>
+                                                                                                            <th>Titre Activité
+                                                                                                            </th>
+                                                                                                            <th>Réduction Rake
+                                                                                                            </th>
+                                                                                                            <?php if ($is_admin): ?>
                                                                                                             <th>Supprimer
                                                                                                             </th>
+                                                                                                            <?php endif; ?>
                                                                                                         </tr>
                                                                                                     </thead>
                                                                                                     <tbody>
@@ -1736,7 +1818,19 @@ if (!$member) {
                                                                                                         while ($row = mysqli_fetch_array($ret)) { ?>
                                                                                                             <?php
                                                                                                             $id2 = $row['id_col'];
+                                                                                                            $col_id = $row['id'];
+                                                                                                            $aff_rake_value = isset($row['aff_rake']) ? $row['aff_rake'] : 0;
                                                                                                             $sql2 = mysqli_query($con, "SELECT * FROM `collections` WHERE `id_collection` = '$id2'");
+                                                                                                            
+                                                                                                            // Récupérer le titre de l'activité correspondant à la date
+                                                                                                            $date_collection = $row['date'];
+                                                                                                            $sql_activite = mysqli_query($con, "SELECT `titre-activite` FROM `activite` WHERE DATE(`date_depart`) = DATE('$date_collection') LIMIT 1");
+                                                                                                            $activite_titre = '';
+                                                                                                            if ($sql_activite && mysqli_num_rows($sql_activite) > 0) {
+                                                                                                                $row_activite = mysqli_fetch_array($sql_activite);
+                                                                                                                $activite_titre = $row_activite['titre-activite'];
+                                                                                                            }
+                                                                                                            
                                                                                                             while ($row2 = mysqli_fetch_array($sql2)) { ?>
                                                                                                                 <tr>
                                                                                                                     <td>
@@ -1745,26 +1839,91 @@ if (!$member) {
                                                                                                                     <td>
                                                                                                                         <?php echo $row2['valeur']; ?>
                                                                                                                     </td>
-                                                                                                                    <td>
-                                                                                                                        <?php echo $row['date']; ?>
+                                                                                                                    <td data-order="<?= strtotime($row['date']) ?>">
+                                                                                                                        <?= date('d/m/Y', strtotime($row['date'])) ?>
                                                                                                                     </td>
-                                                                                                                <?php } ?>
+                                                                                                                    <td>
+                                                                                                                        <?php echo $activite_titre ? htmlspecialchars($activite_titre) : '-'; ?>
+                                                                                                                    </td>
+                                                                                                                    <td>
+                                                                                                                        <input type="checkbox" name="aff_rake[]" value="<?php echo $col_id; ?>" class="form-check-input" <?php echo (intval($aff_rake_value) === 1 || $aff_rake_value === '1') ? 'checked' : ''; ?>>
+                                                                                                                    </td>
+                                                                                                                <?php if ($is_admin): ?>
                                                                                                                 <td>
-                                                                                                                    <!--<a href="edit-competences.php?id=<?php echo $row['id']; ?>" class="btn btn-transparent btn-xs" tooltip-placement="top" tooltip="Edit"><i class="fa fa-pencil"></i></a>
-                                                                                                                                                    <i class="fas fa-edit"></i></a> -->
                                                                                                                     <a href="ajout-collection.php?id=<?php echo $row['id'] ?>&del=deleteind" onClick="return confirm('Are you sure you want to delete?')" class="btn btn-transparent btn-xs tooltips" tooltip-placement="top" tooltip="Remove"><i class="fa fa-times fa fa-white"></i></a>
                                                                                                                 </td>
+                                                                                                                <?php endif; ?>
                                                                                                                 </tr>
+                                                                                                            <?php } ?>
                                                                                                             <?php $cnt = $cnt + 1;
                                                                                                             } ?>
                                                                                                     </tbody>
                                                                                                 </table>
+                                                                                                <div style="margin-top: 15px;">
+                                                                                                    <button type="submit" name="save_aff_rake" class="btn btn-primary">
+                                                                                                        <i class="fa fa-save"></i> Sauvegarder
+                                                                                                    </button>
+                                                                                                </div>
+                                                                                                </form>
+                                                                                                
+                                                                                                <!-- Tableau des tickets non affectés au Rake -->
+                                                                                                <div style="margin-top: 30px;">
+                                                                                                    <h4 style="color: white; margin-bottom: 15px;">Tickets Non Affectés au Rake</h4>
+                                                                                                    <table class="table table-hover w-100" style="color: white;">
+                                                                                                        <thead>
+                                                                                                            <tr>
+                                                                                                                <th>QRcode</th>
+                                                                                                                <th>Valeur</th>
+                                                                                                                <th>Date</th>
+                                                                                                                <th>Titre Activité</th>
+                                                                                                            </tr>
+                                                                                                        </thead>
+                                                                                                        <tbody>
+                                                                                                            <?php 
+                                                                                                            $ret_not_rake = mysqli_query($con, "SELECT * FROM `collections-individu` WHERE `id-indiv` = '$id' AND (`aff_rake` = 0 OR `aff_rake` IS NULL)");
+                                                                                                            if ($ret_not_rake && mysqli_num_rows($ret_not_rake) > 0) {
+                                                                                                                while ($row_not_rake = mysqli_fetch_array($ret_not_rake)) {
+                                                                                                                    $id2_not_rake = $row_not_rake['id_col'];
+                                                                                                                    $sql2_not_rake = mysqli_query($con, "SELECT * FROM `collections` WHERE `id_collection` = '$id2_not_rake'");
+                                                                                                                    
+                                                                                                                    // Récupérer le titre de l'activité correspondant à la date
+                                                                                                                    $date_col_not_rake = $row_not_rake['date'];
+                                                                                                                    $sql_act_not_rake = mysqli_query($con, "SELECT `titre-activite` FROM `activite` WHERE DATE(`date_depart`) = DATE('$date_col_not_rake') LIMIT 1");
+                                                                                                                    $titre_act_not_rake = '';
+                                                                                                                    if ($sql_act_not_rake && mysqli_num_rows($sql_act_not_rake) > 0) {
+                                                                                                                        $row_act_not_rake = mysqli_fetch_array($sql_act_not_rake);
+                                                                                                                        $titre_act_not_rake = $row_act_not_rake['titre-activite'];
+                                                                                                                    }
+                                                                                                                    
+                                                                                                                    while ($row2_not_rake = mysqli_fetch_array($sql2_not_rake)) {
+                                                                                                            ?>
+                                                                                                                <tr>
+                                                                                                                    <td><?php echo htmlspecialchars($row2_not_rake['nom']); ?></td>
+                                                                                                                    <td><?php echo number_format($row2_not_rake['valeur'], 2, ',', ' '); ?> €</td>
+                                                                                                                    <td data-order="<?= strtotime($row_not_rake['date']) ?>">
+                                                                                                                        <?= date('d/m/Y', strtotime($row_not_rake['date'])) ?>
+                                                                                                                    </td>
+                                                                                                                    <td><?php echo $titre_act_not_rake ? htmlspecialchars($titre_act_not_rake) : '-'; ?></td>
+                                                                                                                </tr>
+                                                                                                            <?php 
+                                                                                                                    }
+                                                                                                                }
+                                                                                                            } else {
+                                                                                                            ?>
+                                                                                                                <tr>
+                                                                                                                    <td colspan="4" style="text-align: center; color: #ccc;">Aucun ticket non affecté au Rake</td>
+                                                                                                                </tr>
+                                                                                                            <?php } ?>
+                                                                                                        </tbody>
+                                                                                                    </table>
+                                                                                                </div>
                                                                                             </div>
                                                                                         </div>
                                                                                     </div>
                                                                                 </main>
                                                                             </div>
                                                                         </div>
+                                                                        <?php if ($is_admin): ?>
                                                                         <form role="form" name="adddoc" method="post" onSubmit="return valid();">
                                                                             <div class="form-group">
                                                                                 <label for="col">
@@ -1790,6 +1949,7 @@ if (!$member) {
                                                                                 Ajout Coll.
                                                                             </button>
                                                                         </form>
+                                                                        <?php endif; ?>
                                                                     </div>
                                                                 </div>
                                                             </div>
