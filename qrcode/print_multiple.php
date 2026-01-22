@@ -30,7 +30,7 @@ function int_val($v) { return (int)$v; }
 
 // Paramètres ajustables avec valeurs par défaut
 // Pour page 209×296mm : ml+mr=30mm, mt+mb=16mm
-$ml = isset($_GET['ml']) ? floatval($_GET['ml']) : 16; // left
+$ml = isset($_GET['ml']) ? floatval($_GET['ml']) : 15; // left
 $mr = isset($_GET['mr']) ? floatval($_GET['mr']) : 17; // right
 $mt = isset($_GET['mt']) ? floatval($_GET['mt']) : 12.5; // top
 $mb = isset($_GET['mb']) ? floatval($_GET['mb']) : 8; // bottom

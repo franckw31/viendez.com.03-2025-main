@@ -908,7 +908,7 @@ if (!$member) {
                                     <a href="#" id="css3" class="btnnav" onmouseover="afficher('css3')">Notifs</a>
                                     <a href="#" id="js" class="btnnav" onmouseover="afficher('js')">Compét.</a>
                                     <a href="#" id="php" class="btnnav" onmouseover="afficher('php')">Loisirs</a>
-                                    <a href="#" id="col" class="btnnav" onmouseover="afficher('col')">Tombolas</a>
+                                    <a href="#" id="col" class="btnnav" onmouseover="afficher('col')">Tombola</a>
                                     <a href="#" id="ks" class="btnnav" onmouseover="afficher('ks')">Activités</a>
                                     <a href="#" id="portefeuille" class="btnnav" onmouseover="afficher('portefeuille')">$$$</a>
                                 </div>

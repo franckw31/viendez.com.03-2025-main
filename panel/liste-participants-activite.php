@@ -476,9 +476,9 @@ if (strlen($_SESSION['id']) == 0) {
                                                                                     ?></td>
                                                                                     <td class="editable checkbox-cell" data-field="latereg"><?= $row['latereg'] ? 'Oui' : 'Non' ?></td>
                                                                                     <td><?= formatFrenchDate($row['ds']) ?></td>
-                                                                                    <td class="col-small"><?= $row['buyin'] ?></td>
-                                                                                    <td class="col-small"><?= $row['bounty'] ?></td>
-                                                                                    <td class="col-small"><?= $row['rake'] ?></td>
+                                                                                    <td class="col-small" data-field="buyin"><?= $row['buyin'] ?></td>
+                                                                                    <td class="col-small" data-field="bounty"><?= $row['bounty'] ?></td>
+                                                                                    <td class="col-small" data-field="rake"><?= $row['rake'] ?></td>
                                                                                     <td class="editable col-small" data-field="cout_in"><?= $row['cout_in'] ?></td>
                                                                                     <td class="editable col-small" data-field="classement"><?= $row['classement'] ?></td>
                                                                                     <td class="editable col-small" data-field="gain"><?= $row['gain'] ?></td>

@@ -56,7 +56,7 @@ if (!$is_admin) {
         .stat-card strong {
             display: block;
             font-size: 0.9em;
-            color: #fff;
+            color: #aaa;
             margin-bottom: 10px;
         }
         .stat-card .value {
