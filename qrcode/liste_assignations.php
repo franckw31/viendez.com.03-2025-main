@@ -19,26 +19,47 @@ if (strlen($_SESSION['id']) == 0) {
         if ($_POST['action'] === 'assign') {
             $id_indiv = intval($_POST['id_membre']);
             if ($id_indiv === 0) {
-                $_SESSION['msg'] = "Choisissez un membre pour assigner.";
+                $_SESSION['msg'] = "Choisissez un membre valide pour assigner.";
                 header("Location: " . $_SERVER['PHP_SELF']);
                 exit;
             }
+            // Vérifier que le collection existe
+            $check_col = mysqli_query($con, "SELECT id_collection FROM collections WHERE id_collection = $id_col");
+            if (mysqli_num_rows($check_col) === 0) {
+                $_SESSION['msg'] = "La carte QR n'existe pas.";
+                header("Location: " . $_SERVER['PHP_SELF']);
+                exit;
+            }
+            
             $check = mysqli_query($con, "SELECT * FROM `collections-individu` WHERE id_col = $id_col");
             if (mysqli_num_rows($check) > 0) {
-                mysqli_query($con, "UPDATE `collections-individu` SET `id-indiv` = $id_indiv WHERE id_col = $id_col");
+                $result_update = mysqli_query($con, "UPDATE `collections-individu` SET `id-indiv` = $id_indiv WHERE id_col = $id_col");
+                if (!$result_update) {
+                    $_SESSION['msg'] = "Erreur lors de la mise à jour : " . mysqli_error($con);
+                } else {
+                    $_SESSION['msg'] = "Propriétaire mis à jour !";
+                }
             } else {
                 $q_val = mysqli_query($con, "SELECT valeur FROM collections WHERE id_collection = $id_col");
                 $r_val = mysqli_fetch_assoc($q_val);
                 $valeur = intval($r_val['valeur']);
-                mysqli_query($con, "INSERT INTO `collections-individu` (id_col, `id-indiv`, co, valeur) VALUES ($id_col, $id_indiv, 'Manual', $valeur)");
+                $result_insert = mysqli_query($con, "INSERT INTO `collections-individu` (id_col, `id-indiv`, co, valeur) VALUES ($id_col, $id_indiv, 'Manual', $valeur)");
+                if (!$result_insert) {
+                    $_SESSION['msg'] = "Erreur lors de l'assignation : " . mysqli_error($con);
+                } else {
+                    $_SESSION['msg'] = "Propriétaire assigné !";
+                }
             }
-            $_SESSION['msg'] = "Propriétaire mis à jour !";
         } elseif ($_POST['action'] === 'unassign') {
             $ok = mysqli_query($con, "DELETE FROM `collections-individu` WHERE id_col = $id_col");
-            if ($ok && mysqli_affected_rows($con) > 0) {
-                $_SESSION['msg'] = "Assignation supprimée !";
+            if ($ok) {
+                if (mysqli_affected_rows($con) > 0) {
+                    $_SESSION['msg'] = "Assignation supprimée !";
+                } else {
+                    $_SESSION['msg'] = "Aucune assignation trouvée pour cette carte.";
+                }
             } else {
-                $_SESSION['msg'] = "Aucune assignation trouvée ou erreur : " . mysqli_error($con);
+                $_SESSION['msg'] = "Erreur lors de la suppression : " . mysqli_error($con);
             }
         }
         header("Location: " . $_SERVER['PHP_SELF']);
@@ -152,7 +173,7 @@ if (strlen($_SESSION['id']) == 0) {
                                                                             </thead>
                                                                             <tbody>
                                                                                 <?php while($row = mysqli_fetch_assoc($result)): ?>
-                                                                                <tr class="clickable-row" onclick="if(!event.target.closest('button')) window.location='../panel/voir-membre.php?id=<?php echo $row['id-membre']; ?>'" style="cursor:pointer;">
+                                                                                <tr class="clickable-row" onclick="<?php if ($row['id-membre']): ?>if(!event.target.closest('button')) window.location='../panel/voir-membre.php?id=<?php echo $row['id-membre']; ?>'<?php endif; ?>" style="cursor:<?php echo $row['id-membre'] ? 'pointer' : 'default'; ?>;">
                                                                                     <td><code><?php echo htmlspecialchars($row['nom']); ?></code></td>
                                                                                     <td data-order="<?php echo $row['valeur']; ?>">
                                                                                         <span class="valeur-tag <?php echo ($row['valeur'] == 2) ? 'val-2' : 'val-1'; ?>">
@@ -233,9 +254,9 @@ if (strlen($_SESSION['id']) == 0) {
                     </div>
                     <div class="modal-footer">
                         <input type="hidden" name="action" id="modal_action" value="">
-                        <button type="button" id="btn-unassign" class="btn btn-danger pull-left" onclick="if(confirm('Supprimer l\'assignation ?')) { document.getElementById('modal_action').value='unassign'; document.getElementById('assignForm').submit(); }">Désassigner</button>
+                        <button type="button" id="btn-unassign" class="btn btn-danger pull-left" style="margin-right: auto;" onclick="if(confirm('Supprimer l\'assignation ?')) { document.getElementById('modal_action').value='unassign'; document.getElementById('assignForm').submit(); }">Désassigner</button>
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-                        <button type="button" id="btn-assign" class="btn btn-success" onclick="document.getElementById('modal_action').value='assign'; document.getElementById('assignForm').submit();">Enregistrer</button>
+                        <button type="button" id="btn-assign" class="btn btn-success" onclick="validateAndSubmit();">Enregistrer</button>
                     </div>
                 </form>
             </div>
@@ -267,7 +288,18 @@ if (strlen($_SESSION['id']) == 0) {
             $('#modal_id_col').val(id_col);
             $('#modal_nom_qr').text(nom);
             $('#id_membre').val(id_membre || '');
+            $('#modal_action').val(''); // Reset action
             $('#editModal').modal('show');
+        }
+        
+        function validateAndSubmit() {
+            var id_membre = $('#id_membre').val();
+            if (!id_membre) {
+                alert('Veuillez choisir un membre pour assigner.');
+                return false;
+            }
+            document.getElementById('modal_action').value='assign';
+            document.getElementById('assignForm').submit();
         }
     </script>
 </body>

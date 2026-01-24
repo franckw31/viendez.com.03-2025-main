@@ -105,6 +105,11 @@ function render_admin_menu()
               </a>
             </li>
             <li>
+              <a href="/tts/index.php">
+                <div class="item-content"><div class="item-media"><i class="fa fa-microphone"></i></div><div class="item-inner"><span class="title"> Générateur MP3 (TTS) </span></div></div>
+              </a>
+            </li>
+            <li>
               <a href="/panel/quickview.php">
                 <div class="item-content"><div class="item-media"><i class="ti-id-badge"></i></div><div class="item-inner"><span class="title"><i class="fa fa-passport"></i> Passeport </span></div></div>
               </a>
@@ -140,10 +145,10 @@ function render_user_menu()
                 <div class="item-content"><div class="item-media"><i class="ti-calendar"></i></div><div class="item-inner"><span class="title"> Activités </span><i class="icon-arrow"></i></div></div>
               </a>
               <ul class="sub-menu">
-                <li><a href="/panel/ajout-activite.php"><span class="title"> Créer une Activité </span></a></li>
+                
                 <li><a href="/panel/prochaines-activites.php"><span class="title"> Prochaines Activités </span></a></li>
-                <li><a href="/panel/liste-activites.php"><span class="title"> Gérer les Activités </span></a></li>
-                <li><a href="/panel/liste-membre-part.php"><span class="title"> Résultats (activité en cours) </span></a></li>
+                
+                <li><a href="/panel/liste-membres-part.php"><span class="title"> Résultats (activité en cours) </span></a></li>
               </ul>
             </li>
 
@@ -154,18 +159,6 @@ function render_user_menu()
               <ul class="sub-menu">
                 <li><a href="/panel/ajout-competences.php"><span class="title"> Gestion des Competences </span></a></li>
                 <li><a href="/panel/ajout-loisirs.php"><span class="title"> Gestion des Loisirs </span></a></li>
-                <li><a href="/panel/ajout-blindes.php"><span class="title"> Gestion des Blindes </span></a></li>
-                <li><a href="/panel/ajout-structures.php"><span class="title"> Gestion des Structures </span></a></li>
-              </ul>
-            </li>
-
-            <li>
-              <a href="javascript:void(0)">
-                <div class="item-content"><div class="item-media"><i class="fa fa-flag-checkered"></i></div><div class="item-inner"><span class="title"> Challenges </span><i class="icon-arrow"></i></div></div>
-              </a>
-              <ul class="sub-menu">
-                <li><a href="/panel/ajout-challenge.php"><span class="title"> Ajouter challenge</span></a></li>
-                <li><a href="/panel/gestion-challenge.php"><span class="title"> Gérer les challenges </span></a></li>
               </ul>
             </li>
 
@@ -175,15 +168,17 @@ function render_user_menu()
               </a>
             </li>
             <li>
-              <a href="/panel/quick-part.php">
-                <div class="item-content"><div class="item-media"><i class="ti-search"></i></div><div class="item-inner"><span class="title"> Quick Particip. </span></div></div>
+              <a href="/tts/index.php">
+                <div class="item-content"><div class="item-media"><i class="fa fa-microphone"></i></div><div class="item-inner"><span class="title"> Générateur MP3 (TTS) </span></div></div>
               </a>
             </li>
             <li>
               <a href="/panel/quickview.php">
-                <div class="item-content"><div class="item-media"><i class="fa fa-id-card-o"></i></div><div class="item-inner"><span class="title"> Passeport </span></div></div>
+                <div class="item-content"><div class="item-media"><i class="ti-id-badge"></i></div><div class="item-inner"><span class="title"><i class="fa fa-passport"></i> Passeport </span></div></div>
               </a>
             </li>
+            
+            
             <li>
               <a href="/panel/chat.php">
                 <div class="item-content"><div class="item-media"><i class="fa fa-whatsapp"></i></div><div class="item-inner"><span class="title"> Chat Joueurs </span></div></div>

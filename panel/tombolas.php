@@ -166,6 +166,11 @@ if (!$is_admin) {
             border-radius: 20px;
             font-size: 12px;
             font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        .badge:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
         }
         .badge-success {
             background-color: #4CAF50;
@@ -212,8 +217,32 @@ if (!$is_admin) {
                                                                 <li class="breadcrumb-item active">Tombolas</li>
                                                             </ol>
                                                             
+                                                            <?php if(!empty($_SESSION['msg'])): ?>
+                                                                <div class="alert alert-info alert-dismissible" role="alert">
+                                                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                                                        <span aria-hidden="true">&times;</span>
+                                                                    </button>
+                                                                    <?php echo htmlspecialchars($_SESSION['msg']); unset($_SESSION['msg']); ?>
+                                                                </div>
+                                                            <?php endif; ?>
+                                                            
                                                             <?php
-                                                            echo htmlentities($_SESSION['msg'] = "");
+                                                            // Traitement de la mise à jour du champ aff_rake
+                                                            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['toggle_rake'])) {
+                                                                $ci_id = intval($_POST['ci_id']);
+                                                                $current_rake = intval($_POST['current_rake']);
+                                                                $new_rake = ($current_rake === 1) ? 0 : 1;
+                                                                
+                                                                $update_query = mysqli_query($con, "UPDATE `collections-individu` SET `aff_rake` = $new_rake WHERE `id` = $ci_id");
+                                                                if ($update_query) {
+                                                                    $_SESSION['msg'] = "Statut Rake mis à jour avec succès !";
+                                                                } else {
+                                                                    $_SESSION['msg'] = "Erreur lors de la mise à jour : " . mysqli_error($con);
+                                                                }
+                                                                // Reste sur la page avec un simple echo pour la réponse AJAX
+                                                                echo json_encode(['success' => $update_query ? true : false]);
+                                                                exit;
+                                                            }
                                                             
                                                             // Gestion du tri
                                                             $sort_by = isset($_GET['sort']) ? $_GET['sort'] : 'pseudo';
@@ -372,6 +401,60 @@ if (!$is_admin) {
                                                                     ?>
                                                                 </div>
                                                             </div>
+
+                                                            <!-- QR Codes non assignés à un pseudo -->
+                                                            <div class="card mb-4 mt-4">
+                                                                <div class="card-header">
+                                                                    <h4 class="mb-0">📋 QR Codes non assignés</h4>
+                                                                </div>
+                                                                <div class="card-body p-0">
+                                                                    <div class="table-responsive">
+                                                                        <table class="table">
+                                                                            <thead>
+                                                                                <tr>
+                                                                                    <th>QRcode</th>
+                                                                                    <th>Valeur</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody>
+                                                                                <?php
+                                                                                try {
+                                                                                    $query_unassigned = "SELECT c.id_collection, c.nom, c.valeur
+                                                                                        FROM collections c
+                                                                                        LEFT JOIN `collections-individu` ci ON c.id_collection = ci.id_col
+                                                                                        LEFT JOIN membres m ON ci.`id-indiv` = m.`id-membre`
+                                                                                        WHERE ci.id_col IS NULL
+                                                                                          OR ci.`id-indiv` IS NULL
+                                                                                          OR ci.`id-indiv` = 0
+                                                                                          OR m.`pseudo` IS NULL
+                                                                                          OR m.`pseudo` = ''
+                                                                                        ORDER BY c.id_collection DESC";
+                                                                                    $result_unassigned = mysqli_query($con, $query_unassigned);
+                                                                                    if (!$result_unassigned) {
+                                                                                        throw new Exception("Erreur requête: " . mysqli_error($con));
+                                                                                    }
+
+                                                                                    $has_unassigned = false;
+                                                                                    while ($row_u = mysqli_fetch_array($result_unassigned)) {
+                                                                                        $has_unassigned = true;
+                                                                                        echo "<tr>";
+                                                                                        echo "<td>" . htmlspecialchars($row_u['nom']) . "</td>";
+                                                                                        echo "<td>" . number_format($row_u['valeur'], 0, ',', ' ') . "</td>";
+                                                                                        echo "</tr>";
+                                                                                    }
+
+                                                                                    if (!$has_unassigned) {
+                                                                                        echo "<tr><td colspan='2' style='text-align: center; padding: 20px; color: #ccc;'>Tous les QR Codes sont assignés</td></tr>";
+                                                                                    }
+                                                                                } catch (Exception $e) {
+                                                                                    echo "<tr><td colspan='2' style='text-align: center; color: #f00;'>Erreur: " . htmlspecialchars($e->getMessage()) . "</td></tr>";
+                                                                                }
+                                                                                ?>
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
                                                             
                                                             <!-- TABLEAU COMPLET -->
                                                             <div class="card mb-4 mt-4">
@@ -434,7 +517,7 @@ if (!$is_admin) {
                                                                         $titre_activite = $activite_row ? $activite_row['titre-activite'] : '-';
                                                                         
                                                                         $row_class = (intval($aff_rake) === 1) ? 'table-success' : 'table-warning';
-                                                                        $rake_label = (intval($aff_rake) === 1) ? '<span class="badge badge-success">OUI</span>' : '<span class="badge badge-danger">NON</span>';
+                                                                        $rake_label = (intval($aff_rake) === 1) ? '<span class="badge badge-success" style="cursor:pointer;" onclick="toggleRake(' . $row['id'] . ', 1)" title="Cliquer pour désassigner du Rake">OUI</span>' : '<span class="badge badge-danger" style="cursor:pointer;" onclick="toggleRake(' . $row['id'] . ', 0)" title="Cliquer pour assigner au Rake">NON</span>';
                                                                         
                                                                         echo "<tr class='$row_class'>";
                                                                         echo "<td><strong><a href='voir-membre.php?id=$id_indiv'>" . htmlspecialchars($pseudo) . "</a></strong></td>";
@@ -552,6 +635,8 @@ if (!$is_admin) {
         </div>
     </div>
 
+    <!-- Formulaire caché pour mettre à jour le champ aff_rake -->
+
     <script src="vendor/jquery/jquery.min.js"></script>
     <script src="vendor/bootstrap/js/bootstrap.min.js"></script>
     <script src="vendor/modernizr/modernizr.js"></script>
@@ -573,6 +658,24 @@ if (!$is_admin) {
             Main.init();
             FormElements.init();
         });
+
+        function toggleRake(ci_id, current_rake) {
+            $.ajax({
+                type: 'POST',
+                url: 'tombolas.php',
+                data: {
+                    toggle_rake: 1,
+                    ci_id: ci_id,
+                    current_rake: current_rake
+                },
+                success: function(response) {
+                    location.reload();
+                },
+                error: function() {
+                    alert('Erreur lors de la mise à jour');
+                }
+            });
+        }
     </script>
 </body>
 </html>

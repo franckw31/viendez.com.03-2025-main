@@ -244,11 +244,15 @@ if (isset($_POST['update_participation'])) {
             WHERE `id-participation` = ?";
 
         $stmt_update = mysqli_prepare($con, $sql_update);
-        if ($stmt_update) {
+        // Prepared SELECT to fetch current values for comparison
+        $sql_select_current = "SELECT challenger, `id-table`, `id-siege`, rake, recave, classement, tf, win, remise, gain, points, cagnotte, cout_in FROM participation WHERE `id-participation` = ?";
+        $stmt_select_current = mysqli_prepare($con, $sql_select_current);
+        
+        if ($stmt_update && $stmt_select_current) {
             foreach ($_POST['participations'] as $participation) {
                 if (!isset($participation['id_participation'])) continue;
 
-                // Get form values
+                // Posted values
                 $challenger = isset($participation['challenger']) ? 1 : 0;
                 $table = intval($participation['table']);
                 $siege = intval($participation['siege']);
@@ -264,6 +268,43 @@ if (isset($_POST['update_participation'])) {
                 $buyin = isset($participation['buyin_display']) ? floatval($participation['buyin_display']) : 0;
                 $cout_in = $buyin + $rake + ($challenger ? 5 : 0);
 
+                // Fetch current DB values
+                mysqli_stmt_bind_param($stmt_select_current, "i", $participation['id_participation']);
+                mysqli_stmt_execute($stmt_select_current);
+                $res_cur = mysqli_stmt_get_result($stmt_select_current);
+                $cur = $res_cur ? mysqli_fetch_assoc($res_cur) : null;
+                mysqli_free_result($res_cur);
+
+                // Decide if anything changed (with small epsilon for floats)
+                $eps = 0.0001;
+                $changed = false;
+                if ($cur) {
+                    $changed = (
+                        intval($cur['challenger']) !== $challenger ||
+                        intval($cur['id-table']) !== $table ||
+                        intval($cur['id-siege']) !== $siege ||
+                        abs(floatval($cur['rake']) - $rake) > $eps ||
+                        intval($cur['recave']) !== $recave ||
+                        intval($cur['classement']) !== $classement ||
+                        intval($cur['tf']) !== $tf ||
+                        intval($cur['win']) !== $win ||
+                        intval($cur['remise']) !== $remise ||
+                        abs(floatval($cur['gain']) - $gain) > $eps ||
+                        intval($cur['points']) !== $points ||
+                        abs(floatval($cur['cagnotte']) - $cagnotte) > $eps ||
+                        abs(floatval($cur['cout_in']) - $cout_in) > $eps
+                    );
+                } else {
+                    // If we cannot fetch current values, be safe and treat as changed
+                    $changed = true;
+                }
+
+                if (!$changed) {
+                    // Skip update entirely to avoid touching ds
+                    continue;
+                }
+
+                // Proceed with update; ds will be set to NOW() only when changed
                 mysqli_stmt_bind_param($stmt_update, "iiidiiiiddiddi",
                     $challenger,
                     $table,
@@ -283,6 +324,7 @@ if (isset($_POST['update_participation'])) {
                 mysqli_stmt_execute($stmt_update);
             }
             mysqli_stmt_close($stmt_update);
+            mysqli_stmt_close($stmt_select_current);
         }
 
         // Après la mise à jour des participations, mettre à jour gain_cumul pour tout le challenge
