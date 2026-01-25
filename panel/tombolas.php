@@ -56,14 +56,12 @@ if (!$is_admin) {
         .stat-card strong {
             display: block;
             font-size: 0.9em;
-            color: #fff;
             margin-bottom: 10px;
         }
         .stat-card .value {
             display: block;
             font-size: 1.8em;
             font-weight: bold;
-            color: #ffc107;
         }
         .stat-card.success { background: linear-gradient(135deg, #4CAF50, #45a049); }
         .stat-card.warning { background: linear-gradient(135deg, #ff9800, #ff8a65); }
@@ -211,7 +209,7 @@ if (!$is_admin) {
                                                 <div id="layoutSidenav_content">
                                                     <main>
                                                         <div class="container-fluid px-4">
-                                                            <h1 class="mt-4">Gestion des Tombolas</h1>
+                                                            <h1 class="mt-4">Gestion des Tombolas <span style="float:right;font-size:1.0em;font-weight:normal;"><?php setlocale(LC_TIME, 'fr_FR.UTF-8'); echo strftime('%A %d %B'); ?></span></h1>
                                                             <ol class="breadcrumb mb-4">
                                                                 <li class="breadcrumb-item"><a href="dashboard.php">Dashboard</a></li>
                                                                 <li class="breadcrumb-item active">Tombolas</li>
@@ -359,19 +357,27 @@ if (!$is_admin) {
                                                                         
                                                                         $montant_not_rake = $montant_total - $montant_rake;
                                                                         
-                                                                        echo '<div class="stat-card success">';
-                                                                        echo '<strong>📦 Total Tickets</strong>';
+                                                                        echo '<div class="stat-card warning" style="color:#111 !important">';
+                                                                        echo '<strong>📦 Tickets Offerts</strong>';
                                                                         echo '<span class="value">' . $total_tickets . '</span>';
                                                                         echo '</div>';
                                                                         
-                                                                        echo '<div class="stat-card success">';
-                                                                        echo '<strong>✅ Affectés au Rake</strong>';
-                                                                        echo '<span class="value">' . $rake_tickets . '</span>';
-                                                                        echo '</div>';
+                                                                        echo '<div class="stat-card success"><strong style="color:#fff">✅ Tickets pour réduction Rake</strong><span class="value" style="color:#fff">' . $rake_tickets . '</span></div>';
+                                                                        echo '<div class="stat-card success"><strong style="color:#fff">❌ Tickets pour la Tombola</strong><span class="value" style="color:#fff">' . $not_rake_tickets . '</span></div>';
+                                                                    } catch (Exception $e) {
+                                                                        echo '<div class="stat-card danger"><strong>Erreur</strong><span class="value">!</span></div>';
+                                                                    }
+                                                                    ?>
+                                                                </div>
+                                                                <div class="stat-row">
+                                                                    <?php
+                                                                    try {
+                                                                        echo '<div class="stat-card success"><strong style="color:#fff">💰 Montant Total</strong><span class="value" style="color:#fff">' . number_format($montant_total, 2, ',', ' ') . ' €</span></div>';
+                                                                        echo '<div class="stat-card success"><strong style="color:#fff">✅ Montant réduction Rake</strong><span class="value" style="color:#fff">' . number_format($montant_rake, 2, ',', ' ') . ' €</span></div>';
                                                                         
-                                                                        echo '<div class="stat-card warning">';
-                                                                        echo '<strong>❌ Non Affectés</strong>';
-                                                                        echo '<span class="value">' . $not_rake_tickets . '</span>';
+                                                                        echo '<div class="stat-card warning" style="color:#111 !important">';
+                                                                        echo '<strong>❌ Montant Future Tombola</strong>';
+                                                                        echo '<span class="value">' . number_format($montant_not_rake, 2, ',', ' ') . ' €</span>';
                                                                         echo '</div>';
                                                                     } catch (Exception $e) {
                                                                         echo '<div class="stat-card danger"><strong>Erreur</strong><span class="value">!</span></div>';
@@ -381,20 +387,28 @@ if (!$is_admin) {
                                                                 <div class="stat-row">
                                                                     <?php
                                                                     try {
-                                                                        echo '<div class="stat-card success">';
-                                                                        echo '<strong>💰 Montant Total</strong>';
-                                                                        echo '<span class="value">' . number_format($montant_total, 2, ',', ' ') . ' €</span>';
+                                                                        // 7ème case : Nb de Joueurs Uniques (ayant au moins un ticket)
+                                                                        $total_joueurs_query = mysqli_query($con, "SELECT COUNT(DISTINCT ci.`id-indiv`) as total FROM `collections-individu` ci");
+                                                                        $total_joueurs_row = mysqli_fetch_array($total_joueurs_query);
+                                                                        $total_joueurs = $total_joueurs_row['total'] ?: 0;
+                                                                        
+                                                                        // 8ème case : Joueurs uniques ayant affecté au moins un ticket au rake
+                                                                        $joueurs_rake_query = mysqli_query($con, "SELECT COUNT(DISTINCT ci.`id-indiv`) as total FROM `collections-individu` ci WHERE ci.`aff_rake` = 1");
+                                                                        $joueurs_rake_row = mysqli_fetch_array($joueurs_rake_query);
+                                                                        $joueurs_rake = $joueurs_rake_row['total'] ?: 0;
+                                                                        
+                                                                        // 9ème case : Joueurs inscrits à la tombola (avec au moins 1 ticket non affecté au rake)
+                                                                        $joueurs_tombola_query = mysqli_query($con, "SELECT COUNT(DISTINCT ci.`id-indiv`) as total FROM `collections-individu` ci WHERE ci.`aff_rake` = 0 OR ci.`aff_rake` IS NULL");
+                                                                        $joueurs_tombola_row = mysqli_fetch_array($joueurs_tombola_query);
+                                                                        $joueurs_tombola = $joueurs_tombola_row['total'] ?: 0;
+                                                                        
+                                                                        echo '<div class="stat-card warning" style="color:#111 !important">';
+                                                                        echo '<strong>👥 Nb de Joueurs Uniques</strong>';
+                                                                        echo '<span class="value">' . $total_joueurs . '</span>';
                                                                         echo '</div>';
                                                                         
-                                                                        echo '<div class="stat-card success">';
-                                                                        echo '<strong>✅ Montant Affecté</strong>';
-                                                                        echo '<span class="value">' . number_format($montant_rake, 2, ',', ' ') . ' €</span>';
-                                                                        echo '</div>';
-                                                                        
-                                                                        echo '<div class="stat-card warning">';
-                                                                        echo '<strong>❌ Montant Non Affecté</strong>';
-                                                                        echo '<span class="value">' . number_format($montant_not_rake, 2, ',', ' ') . ' €</span>';
-                                                                        echo '</div>';
+                                                                        echo '<div class="stat-card success"><strong style="color:#fff">💸 Joueurs optant réduction Rake</strong><span class="value" style="color:#fff">' . $joueurs_rake . '</span></div>';
+                                                                        echo '<div class="stat-card success"><strong style="color:#fff">🎫 Joueurs inscrits à la tombola</strong><span class="value" style="color:#fff">' . $joueurs_tombola . '</span></div>';
                                                                     } catch (Exception $e) {
                                                                         echo '<div class="stat-card danger"><strong>Erreur</strong><span class="value">!</span></div>';
                                                                     }
@@ -543,83 +557,6 @@ if (!$is_admin) {
                                                                 </div>
                                                             </div>
 
-                                                            <!-- Tableau des tickets non affectés au Rake -->
-                                                            <div class="card mb-4 mt-4">
-                                                                <div class="card-header">
-                                                                    <h4 class="mb-0">📋 Tickets Non Affectés au Rake</h4>
-                                                                </div>
-                                                                <div class="card-body p-0">
-                                                                    <div class="table-responsive">
-                                                                        <table class="table">
-                                                                            <thead>
-                                                                                <tr>
-                                                                                    <th><?php echo getSortLink('pseudo', 'Membre', $sort_by, $sort_order); ?></th>
-                                                                                    <th><?php echo getSortLink('qrcode', 'QRcode', $sort_by, $sort_order); ?></th>
-                                                                                    <th><?php echo getSortLink('valeur', 'Valeur', $sort_by, $sort_order); ?></th>
-                                                                                    <th><?php echo getSortLink('date', 'Date', $sort_by, $sort_order); ?></th>
-                                                                                    <th>Titre Activité</th>
-                                                                                </tr>
-                                                                            </thead>
-                                                                            <tbody>
-                                                                                <?php
-                                                                                try {
-                                                                                    $query_not_rake = "SELECT 
-                                                                            ci.`id`,
-                                                                            ci.`id-indiv` as id_indiv,
-                                                                            ci.`id_col`,
-                                                                            ci.`date`,
-                                                                            c.`nom` as qrcode,
-                                                                            c.`valeur`,
-                                                                            m.`pseudo`
-                                                                            FROM `collections-individu` ci
-                                                                            JOIN `collections` c ON ci.`id_col` = c.`id_collection`
-                                                                            JOIN `membres` m ON ci.`id-indiv` = m.`id-membre`
-                                                                            WHERE ci.`aff_rake` = 0 OR ci.`aff_rake` IS NULL
-                                                                            ORDER BY " . ($sort_by === 'valeur' ? 'c.valeur' : ($sort_by === 'qrcode' ? 'c.nom' : 'm.' . $sort_by)) . " $sort_order";
-                                                                    
-                                                                    $result_not_rake = mysqli_query($con, $query_not_rake);
-                                                                    
-                                                                    if (!$result_not_rake) {
-                                                                        throw new Exception("Erreur requête: " . mysqli_error($con));
-                                                                    }
-                                                                    
-                                                                    $has_data_not_rake = false;
-                                                                    
-                                                                    while ($row_not = mysqli_fetch_array($result_not_rake)) {
-                                                                        $has_data_not_rake = true;
-                                                                        $id_indiv = $row_not['id_indiv'];
-                                                                        $qrcode = $row_not['qrcode'];
-                                                                        $valeur = $row_not['valeur'];
-                                                                        $date = $row_not['date'];
-                                                                        $pseudo = $row_not['pseudo'];
-                                                                        
-                                                                        $date_simple = date('Y-m-d', strtotime($date));
-                                                                        $activite_query = mysqli_query($con, "SELECT `titre-activite` FROM `activite` WHERE DATE(`date_depart`) = '$date_simple'");
-                                                                        $activite_row = mysqli_fetch_array($activite_query);
-                                                                        $titre_activite = $activite_row ? $activite_row['titre-activite'] : '-';
-                                                                        
-                                                                        echo "<tr>";
-                                                                        echo "<td><strong><a href='voir-membre.php?id=$id_indiv'>" . htmlspecialchars($pseudo) . "</a></strong></td>";
-                                                                        echo "<td>" . htmlspecialchars($qrcode) . "</td>";
-                                                                        echo "<td>" . number_format($valeur, 2, ',', ' ') . " €</td>";
-                                                                        echo "<td>" . date('d/m/Y', strtotime($date)) . "</td>";
-                                                                        echo "<td>" . htmlspecialchars($titre_activite) . "</td>";
-                                                                        echo "</tr>";
-                                                                    }
-                                                                    
-                                                                    if (!$has_data_not_rake) {
-                                                                        echo "<tr><td colspan='5' style='text-align: center; padding: 20px; color: #ccc;'>Tous les tickets sont affectés au Rake</td></tr>";
-                                                                    }
-                                                                    
-                                                                } catch (Exception $e) {
-                                                                    echo "<tr><td colspan='5' style='text-align: center; color: #f00;'>Erreur: " . htmlspecialchars($e->getMessage()) . "</td></tr>";
-                                                                }
-                                                                ?>
-                                                                            </tbody>
-                                                                        </table>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
                                                         </div>
                                                     </main>
                                                 </div>

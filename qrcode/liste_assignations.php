@@ -277,10 +277,10 @@ if (strlen($_SESSION['id']) == 0) {
             $('#assignationTable').DataTable({
                 language: { url: '//cdn.datatables.net/plug-ins/1.13.7/i18n/fr-FR.json' },
                 dom: '<"row"<"col"B><"col"f>>rt<"row"<"col"i><"col"p>>',
-                pageLength: 10,
-                order: [[2, 'asc']],
+                pageLength: 25,
+                order: [[3, 'desc']],
                 responsive: true,
-                autoWidth: false
+                autoWidth: true
             });
         });
 
