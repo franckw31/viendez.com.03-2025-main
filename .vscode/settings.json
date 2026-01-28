@@ -50,14 +50,17 @@
         }
     ],
     "githubPullRequests.queries": [
-        
+        {
+            "label": "Local Pull Request Branches",
+            "query": "default"
+        },
         {
             "label": "Copilot on My Behalf",
             "query": "repo:${owner}/${repository} is:open author:copilot involves:${user}"
         },
         {
             "label": "Local Pull Request Branches",
-            "query": "default"
+            "query": "repo:${owner}/${repository} default"
         },
         {
             "label": "Waiting For My Review",
@@ -66,6 +69,10 @@
         {
             "label": "Created By Me",
             "query": "repo:${owner}/${repository} is:open author:${user}"
+        },
+        {
+            "label": "All Open",
+            "query": "repo:${owner}/${repository} default"
         },
         {
             "label": "All Open",
