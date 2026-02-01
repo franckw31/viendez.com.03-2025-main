@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/include/functions_logs.php';
+requi
+
 
 // Fonction pour géolocaliser une IP
 function getCity($ip) {
